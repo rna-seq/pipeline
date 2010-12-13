@@ -1,0 +1,70 @@
+CREATE TABLE IF NOT EXISTS annotation_tables (
+       species varchar(50) NOT NULL,
+       genome varchar(100) NOT NULL,
+       annotation varchar(100) NOT NULL,
+       filetype varchar(20) NOT NULL,
+       location varchar(200) NOT NULL,
+       index idx_genome (genome),
+       index idx_annotation (annotation),
+       index idx_filetype (filetype)
+);
+CREATE TABLE IF NOT EXISTS exclusion_files (
+       species varchar(50) NOT NULL,
+       genome varchar(100) NOT NULL,
+       annotation varchar(100) NOT NULL,
+       filetype varchar(20) NOT NULL,
+       location varchar(200) NOT NULL,
+       index idx_genome (genome),
+       index idx_annotation (annotation),
+       index idx_filetype (filetype)
+);
+CREATE TABLE IF NOT EXISTS fasta_files (
+       species varchar(50) NOT NULL,
+       genome varchar(100) NOT NULL,
+       annotation varchar(100) NOT NULL,
+       sidelength varchar(5) NOT NULL,
+       filetype varchar(20) NOT NULL,
+       location varchar(200) NOT NULL,
+       index idx_genome (genome),
+       index idx_annotation (annotation),
+       index idx_filetype (filetype)
+);
+
+# These tables depend on the annotation the geneome version and/or the read_length
+DROP TABLE IF EXISTS annotation_read_length_junctions;
+CREATE TABLE annotation_read_length_junctions (
+       junction_id varchar(100) NOT NULL,
+       type varchar(20) NOT NULL,
+       gene_id varchar(50) NOT NULL,
+       exon1_id varchar(50) NOT NULL,
+       exon2_id varchar(50) NOT NULL,
+       index idx_junction (junction_id),
+       index idx_gene (gene_id),
+       index idx_exon1 (exon1_id),
+       index idx_exon2 (exon2_id),
+	primary key (junction_id)
+);
+DROP TABLE IF EXISTS `gencode_data_rel2b_H_sapiens_genome_hg18_main_exonsclass`;
+CREATE TABLE `gencode_data_rel2b_H_sapiens_genome_hg18_main_exonsclass` (
+  `exon_id` varchar(50) NOT NULL,
+  `start` int(10) unsigned NOT NULL,
+  `end` int(10) unsigned NOT NULL,
+  `gene_id` varchar(50) NOT NULL,
+  `transcript_id` varchar(50) NOT NULL,
+  `overlaps` mediumint(8) unsigned NOT NULL,
+  KEY `idx_exon` (`exon_id`),
+  KEY `idx_start` (`start`),
+  KEY `idx_end` (`end`),
+  KEY `idx_gene` (`gene_id`),
+  KEY `idx_transcript` (`transcript_id`)
+);
+DROP TABLE IF EXISTS `gencode_data_rel2b_H_sapiens_genome_hg18_main_junctionsclass`;
+CREATE TABLE `gencode_data_rel2b_H_sapiens_genome_hg18_main_junctionsclass` (
+  `junction_id` varchar(100) NOT NULL,
+  `gene_id` varchar(50) NOT NULL,
+  `transcript_id` varchar(50) NOT NULL,
+  KEY `idx_junc` (`junction_id`),
+  KEY `idx_gene` (`gene_id`),
+  KEY `idx_transcript` (`transcript_id`),
+	primary key (junction_id)
+);
