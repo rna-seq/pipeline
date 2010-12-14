@@ -17,8 +17,8 @@ bin/start_RNAseq_pipeline.3.0.pl -species 'Homo sapiens' -genome /users/rg/dgonz
 vi read.list.txt
 
 # Make sure the soft links to the flux.sh and overlap (if the binary is not there) are in the bin directory or the binaries are in the path (also in the cluster)
-overlap: /users/rg/sdjebali/bin/overlap
-flux.sh: /users/rg/dgonzalez/bin/flux.sh
+overlap: ln -s /users/rg/sdjebali/bin/overlap bin
+flux.sh: ln -s /users/rg/dgonzalez/bin/flux.sh bin
 
 # Run the execute script with the step up to which the pipeline needs to run
 bin/execute_RNAseq_pipeline3.0.pl all |tee -a pipeline.log
