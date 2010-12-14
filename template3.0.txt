@@ -159,7 +159,7 @@ _junctions_mapping: _indices _dataset
 	plot_mapping_graph.RNAseq.pl -graph _junctions_mapping -type 'Junctions'
 	mv _junctions_mapping.ps $GRAPHS
 	all_no_log_table
-	check_mappings.RNAseq.pl -type _transcriptome_mapping
+	check_mappings.RNAseq.pl -type _junctions_mapping
 
 #_junctions_mapping: _indices _read_stats
 #	for file in `cat $FILELIST |gawk '{print $1}'`; do run_mapper.RNAseq.pl -index $JUNCTIONSINDEX -i $LOCALDIR/$file -o $LOCALDIR > $JUNCTIONSDIR/$file.mapping.log; done
