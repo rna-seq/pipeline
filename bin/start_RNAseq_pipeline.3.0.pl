@@ -1,4 +1,5 @@
-#!/opt/local/bin/perl
+#!/soft/bin/perl
+
 use strict;
 use warnings;
 
