@@ -1,5 +1,4 @@
 * text=auto !eol
-/RNAseq_Pipeline.txt -text
 /Readme.txt -text
 bin/build_EJEI.RNAseq.pl -text
 bin/build_clusters.RNAseq.pl -text
@@ -117,8 +116,4 @@ lib/RNAseq_pipeline3.pm -text
 lib/RNAseq_pipeline_settings3.pm -text
 lib/RNAseq_pipeline_start3.pm -text
 lib/RNAseq_pipeline_stats3.pm -text
-mysql/table_build/annotation_files.sql -text
-mysql/table_build/common.txt -text
-mysql/table_build/exclusion_files.sql -text
-mysql/table_build/fasta_files.sql -text
 /template3.0.txt -text
