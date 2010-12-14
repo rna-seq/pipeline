@@ -93,7 +93,7 @@ Options:
 = Starting on a demo server =
 
 {{{
-bin/start_RNAseq_pipeline.3.0.pl -species 'Homo sapiens' -genome /Users/maik/Pipeline/ReferenceGenomes/H.sapiens/H.sapiens.genome.hg19.sanger.fa -annotation /Users/maik/ReferenceAnnotations/H.sapiens/H.sapiens.EnsEMBL.55.parsed.gtf -project CLL -experiment 009TR40 -template template3.0.txt -readlength 40 -threads 2 -database RNAseqPipeline -commondb RNAseqPipelineCommon -host localhost 
+perl bin/start_RNAseq_pipeline.3.0.pl -species 'Homo sapiens' -genome /Users/maik/Pipeline/ReferenceGenomes/H.sapiens/H.sapiens.genome.hg19.sanger.fa -annotation /Users/maik/Pipeline/ReferenceAnnotations/H.sapiens/H.sapiens.EnsEMBL.55.parsed.gtf -project CLL -experiment 009TR40 -template template3.0.txt -readlength 40 -threads 2 -database RNAseqPipeline -commondb RNAseqPipelineCommon -host localhost 
 }}}
 
 In the database, you should now have the following tables:
