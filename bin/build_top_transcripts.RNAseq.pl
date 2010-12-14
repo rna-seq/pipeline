@@ -4,6 +4,14 @@
 use strict;
 use warnings;
 
+# Add the path to the library to be used
+BEGIN {
+    use Cwd 'abs_path';
+    my $libdir=abs_path($0);
+    $libdir=~s/bin\/.*$/lib/;
+    unshift @INC, "$libdir";
+}
+
 # Objective
 # This script will take as input an annotation file.
 # it will read the transcript_RPKM table for the dataset in question and it will

@@ -3,6 +3,14 @@
 use strict;
 use warnings;
 
+# Add the path to the library to be used
+BEGIN {
+    use Cwd 'abs_path';
+    my $libdir=abs_path($0);
+    $libdir=~s/bin\/.*$/lib/;
+    unshift @INC, "$libdir";
+}
+
 # Objective
 # This script should use the database to collect the junction combinations
 # and the exons fasta file in order to build a set of all junction sequences

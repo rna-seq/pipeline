@@ -3,6 +3,14 @@
 use strict;
 use warnings;
 
+# Add the path to the library to be used
+BEGIN {
+    use Cwd 'abs_path';
+    my $libdir=abs_path($0);
+    $libdir=~s/bin\/.*$/lib/;
+    unshift @INC, "$libdir";
+}
+
 # Objective
 # This script will take as an input the overlap.total result of an experiment
 # and it will extract from it the features that have at least one (or the 

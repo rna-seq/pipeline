@@ -4,6 +4,14 @@
 use strict;
 use warnings;
 
+# Add the path to the library to be used
+BEGIN {
+    use Cwd 'abs_path';
+    my $libdir=abs_path($0);
+    $libdir=~s/bin\/.*$/lib/;
+    unshift @INC, "$libdir";
+}
+
 # Objective
 # This script will take as an argument the name of a script. This must be a
 # single word, and it will run that script on the cluster

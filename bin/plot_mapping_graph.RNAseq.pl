@@ -3,6 +3,14 @@
 use strict;
 use warnings;
 
+# Add the path to the library to be used
+BEGIN {
+    use Cwd 'abs_path';
+    my $libdir=abs_path($0);
+    $libdir=~s/bin\/.*$/lib/;
+    unshift @INC, "$libdir";
+}
+
 # Objective
 # This script should build for a mapped file the following stats:
 # Total number of reads, number of reads mapped, number of unique mappings

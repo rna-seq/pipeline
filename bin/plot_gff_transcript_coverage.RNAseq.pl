@@ -3,6 +3,14 @@
 use strict;
 use warnings;
 
+# Add the path to the library to be used
+BEGIN {
+    use Cwd 'abs_path';
+    my $libdir=abs_path($0);
+    $libdir=~s/bin\/.*$/lib/;
+    unshift @INC, "$libdir";
+}
+
 # Objective
 # This script will take a file with a set of transcript lengths, and a gtf file
 # with a set of mappings, and it will generate a distribution of read mappings

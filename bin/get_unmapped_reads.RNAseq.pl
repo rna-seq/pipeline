@@ -3,8 +3,12 @@
 use strict;
 use warnings;
 
+# Add the path to the library to be used
 BEGIN {
-    unshift @INC, '/users/rg/dgonzalez/lib/Perl';
+    use Cwd 'abs_path';
+    my $libdir=abs_path($0);
+    $libdir=~s/bin\/.*$/lib/;
+    unshift @INC, "$libdir";
 }
 
 # Objective
