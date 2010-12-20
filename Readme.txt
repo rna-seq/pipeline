@@ -125,8 +125,15 @@ bin/start_RNAseq_pipeline.3.0.pl -species 'Homo sapiens' -genome /users/rg/dgonz
 
 # Edit the read.list.txt file if necessary to add the pair Id and the read Id separated by tabs and in the fourth field optionally a tag that will be used to group different samples
 vi read.list.txt
+Paired
+001TR.r1.fastq	001TR	001TR.1 Tumor
+001TR.r2.fastq	001TR	001TR.2	Tumor
+Single (pair id = read_id)
+001TR.r1.fastq  001TR.1 001TR.1 Tumor
+001TR.r2.fastq  001TR.2	001TR.2 Tumor
 
 # Make sure the soft links to the flux.sh and overlap (if the binary is not there) are in the bin directory or the binaries are in the path (also in the cluster)
+http://big.crg.cat/services_and_software
 overlap: ln -s /users/rg/sdjebali/bin/overlap bin
 flux.sh: ln -s /users/rg/dgonzalez/bin/flux.sh bin
 
