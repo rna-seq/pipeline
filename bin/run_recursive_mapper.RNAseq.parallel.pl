@@ -316,7 +316,7 @@ sub combine_mapping_files{
     my $final_file="$$.recursive.map";
 
     print $log_fh "combining the mapped files...\n";
-    $ENC{'LC_ALL'}='C';
+    $ENV{'LC_ALL'}='C';
     my $command='cat ';
     $command.=join(' ',@{$files});
     $command.=" |sort -T $tmpdir| uniq";
