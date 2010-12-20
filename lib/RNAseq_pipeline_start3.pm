@@ -19,7 +19,7 @@ use warnings;
 BEGIN {
     use Cwd 'abs_path';
     my $libdir=abs_path($0);
-    $libdir=~s/bin\/.*$/lib/;
+    $libdir=~s/bin\/[^\/]*$/lib/;
     unshift @INC, "$libdir";
 }
 
