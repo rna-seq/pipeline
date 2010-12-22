@@ -18,6 +18,7 @@ BEGIN {
 use Getopt::Long;
 use DBI;
 use Cwd;
+use RNAseq_pipeline3 qw(MySQL_DB_Connect);
 
 # Set some general variables that will be used through the script:
 #my $usage='execute_RNAseq_pipeline.pl [options]';
@@ -491,26 +492,6 @@ sub processFile {
 	    die "Pip syntax error: $line\n";
 	}
     }    
-}
-
-# Connect to the database server, checking first if there actually is a
-# .my.cnf file for the user
-sub MySQL_DB_Connect {
-    my $database=shift;
-    my $host='pou';
-    my $datasource = "DBI:mysql:$database;host=$host";
-    my $dbh;
-    my $cnf_file='.my.cnf';
-
-    # Check for .my.cnf
-    if (-e "$ENV{HOME}/$cnf_file") {
-	$datasource .= ";mysql_read_default_file=$ENV{HOME}/$cnf_file";
-	$dbh = DBI->connect($datasource, undef, undef, {RaiseError => 1});
-    } else {
-	# Here we could ask for a username and password
-	print STDERR "Unable to find $ENV{HOME}/.my.cnf\n";
-    }
-    return $dbh;
 }
 
 sub printHelp {
