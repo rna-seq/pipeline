@@ -981,7 +981,7 @@ sub get_split_bed_coords {
     }
 
     my $size=join(',',$size1,$size2);
-    my $start=join(',',0,$start2 - $start1);
+    my $start=join(',',0,$start2 - $rstart1);
 
     if ($size1 + $size2 != $coords->{'length'} + $inslength) {
 	warn "coordinate_problem: added half lengths longer than total\n";
@@ -1002,17 +1002,25 @@ sub get_split_bed_coords {
 	($size2 > 0)) {
 	my $bed=join("\t",
 		     $chr1,
-		     $start1 - 1,
-		     $end2,
+		     $rstart1 - 1,
+		     $rend2,
 		     $coords->{'id'},
 		     0,
 		     $outstrand,
-		     $start1,
-		     $end2,
+		     $rstart1 - 1,
+		     $rend2,
 		     '255,0,0',
 		     2,
 		     $size,
 		     $start);
+
+	# Run a check to make sure the bed format is correct
+	my @sizes=split(',',$size);
+	my @starts=split(',',$start);
+	if ($rend2 != ($rstart1 + $sizes[-1] + $starts[-1] - 1)) {
+	    die "Incorrect bed format\n$bed\n";
+	}
+
 	return($bed);
     } else {
 	print STDERR "This should never happen:\t";
