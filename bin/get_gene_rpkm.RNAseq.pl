@@ -319,6 +319,9 @@ sub get_projected_length {
 	while (my $line=<$projfh>){
 	    my %line=%{parse_gff_line($line)};
 	    my $gene=$line{'feature'}{'gene_id'};
+	    unless ($gene) {
+		die "Unknown gene in $line\n";
+	    }
 	    $gene=~s/"//g;
 	    # substract the read length
 	    my $length=$line{'end'} - $line{'start'} + 1;
