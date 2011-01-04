@@ -1,6 +1,7 @@
 * text=auto !eol
 /Readme.txt -text
 /ToDo.txt -text
+/Version.txt -text
 bin/build_EJEI.RNAseq.pl -text
 bin/build_clusters.RNAseq.pl -text
 bin/build_dataset.RNAseq.pl -text
