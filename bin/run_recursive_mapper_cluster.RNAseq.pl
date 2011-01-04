@@ -16,8 +16,8 @@ BEGIN {
 # on the cluster
 
 use Getopt::Long;
-use RNAseq_pipeline3 qw(get_fh send2cluster);
-use RNAseq_pipeline_settings3 qw(read_config_file read_file_list get_dbh);
+use RNAseq_pipeline3 qw(get_fh);
+use RNAseq_pipeline_settings3 qw(read_config_file read_file_list get_dbh send2cluster);
 use RNAseq_GEM3 ('check_index','determine_quality_type','get_mapper_routines',
 		 'check_input');
 

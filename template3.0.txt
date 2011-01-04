@@ -82,16 +82,15 @@ preprocess: _start
 _read_stats: _start
 	prepare_files.RNAseq.pl	
 	cluster_run.RNAseq.pl build_read_stats.RNAseq.pl
-        mysql $DB < $TABLES/$(echo $PREFIX)_qualitiespos.sql
-        mysqlimport -L $DB _qualitiespos.txt
-        gzip -9 _qualitiespos.txt
-        mv _qualitiespos.txt.gz $TAB_DAT
-        mysql $DB < $TABLES/$(echo $PREFIX)_ambiguous.sql
-        mysqlimport -L $DB _ambiguous.txt
-        gzip -9 _ambiguous.txt
-#	mv _read_stats.ps $GRAPHS
-        mv _ambiguous.txt.gz $TAB_DAT
 	mv prepare_files.RNAseq.log build_read_stats.RNAseq.log $LOGS
+	all_no_log_table
+
+# Load the average quality per position into the database
+_qualitiespos: _read_stats
+	all_no_log_table
+
+# Load the number of ambiguous bases per position into the database
+_ambiguous: _qualitiespos
 	all_no_log_table
 
 # Create a table that reflects the read_list file

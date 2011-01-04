@@ -16,20 +16,22 @@ BEGIN {
 # This script will take as an argument the name of a script. This must be a
 # single word, and it will run that script on the cluster
 
-use RNAseq_pipeline3 qw(get_fh send2cluster);
-use RNAseq_pipeline_settings3 qw(read_config_file);
+use RNAseq_pipeline3 qw(get_fh run_system_command);
+use RNAseq_pipeline_settings3 qw(read_config_file send2cluster);
 
 # Declare some variables
 my $bindir;
 my $script;
 my $queue;
 my $projdir;
+my $logsdir;
 
 # get some options from the config file
 my %options=%{read_config_file()};
 $bindir=$options{'BIN'};
 $projdir=$options{'PROJECT'};
-$queue=$options{'CLUSTER'} || 'mem_6';
+$queue=$options{'CLUSTER'};
+$logsdir=$options{'LOGS'};
 
 $script=shift;
 
@@ -38,20 +40,19 @@ unless($script) {
 }
 
 if ($projdir=~/^\/users/) {
-    my $subfile=build_script_submission($script,
-					$bindir);    
+    my ($subfile,$jobname)=build_script_submission($script,
+						   $bindir);    
     send2cluster($subfile,
-		 $queue);
+		 $queue,
+		 $jobname);
 
     # Clean up
     my $command="rm $subfile";
-    print STDERR "Executing:\t$command\n";
-    system($command);
+    run_system_command($command);
 } else {
     print STDERR "Unable to run this on the cluster. running locally\n";
     my $command=$bindir.'/'.$script;
-    print STDERR "Executing: $command\n";
-    system($command);
+    run_system_command($command);
 }
 
 exit;
@@ -76,7 +77,7 @@ sub build_script_submission {
     my $subfile="subfile.$$.job";
     my $outfh=get_fh($subfile,1);
     
-   print STDERR "Building submission file for $jobname...";
+    print STDERR "Building submission file for $jobname...";
 
     print $outfh <<FORMEND;
 # Get the job name
@@ -85,6 +86,7 @@ sub build_script_submission {
 # Write in to the current working directory
 #\$ -cwd 
 export PATH=\$PATH:/soft/bin
+export LC_ALL='C'
 
 $bindir/$script
 FORMEND
@@ -92,7 +94,7 @@ FORMEND
     close($outfh);
     print STDERR "done\n";
 
-    return($subfile);
+    return($subfile,$jobname);
 }
 
 __END__

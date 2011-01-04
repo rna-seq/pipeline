@@ -10,7 +10,7 @@ use Exporter;
 	    'get_gff_chrom_freq','get_junction_no','get_unique_exons',
 	    'get_unique_transcripts','get_common_dbh',
 	    'get_gene_from_trans_sub','get_gene_from_exon_sub',
-	    'is_paired',
+	    'is_paired','send2cluster',
 	    'get_junction_type_sub','get_gene_from_junc_sub',
 	    'get_gene_junctions_sub',
 	    'get_gene_from_short_junc_sub',
@@ -33,7 +33,7 @@ BEGIN {
 # well as extracting data from them
 
 # Load subs from other modules
-use RNAseq_pipeline3 qw(MySQL_DB_Connect get_fh);
+use RNAseq_pipeline3 qw(MySQL_DB_Connect get_fh run_system_command);
 use Cwd;
 
 # This sub will read the configuration settings from the file project_config.txt
@@ -859,4 +859,78 @@ sub get_mapping_fh {
     
     return($fh);
 }
+
+### Sub to send stuff to the cluster
+sub send2cluster {
+    my $file=shift;
+    my $queue=shift;
+    my $jobname=shift;
+    my %options=%{read_config_file()};
+
+    unless ($queue) {
+	$queue=$options{'CLUSTER'};
+    }
+    my $logs=$options{'LOGS'};
+
+    # Submit to the cluster
+    my $command="qsub -q $queue $file";
+    sleep(1);
+    my $execute=`$command`;
+
+    # monitor the execution
+    my ($job_id)=(split(/\s+/,$execute))[2];
+    $job_id=~s/\..+$//;
+    print STDERR "Running job $job_id on $queue\n";
+    
+    $command="qstat -j $job_id 2>&1";
+    print STDERR "Waiting for job $job_id";
+    while (1) {
+	my @running=`$command`;
+	my $success=$?;
+	my $finished=1;
+
+	while (my $line=shift(@running)) {
+	    if ($line=~/^=+$/) {
+		next;
+	    } elsif ($line=~/^job_number/o) {
+		# The job is queued or running
+		my @line=split(/\s+/,$line);
+		$finished=0;
+		print STDERR '.';
+		last;
+	    } elsif ($line=~/^Following\sjobs\sdo\snot\sexist/o) {
+		# The job has finished
+		last;
+	    } else {
+		# There is a problem
+		print STDERR $line,"\n";
+		print STDERR "\nProblem\n",@running,"\n";
+		die;
+	    }
+	}
+	
+	if ($finished) {
+	    print STDERR "done\n";
+	    last;
+	} else {
+	    sleep(10);
+	}
+    }
+
+    # collect the output of the cluster node into the log file for the
+    # step
+    $command="cat $jobname.[eo]$job_id* > $jobname.$queue.log";
+    run_system_command($command);
+
+    # Remove the files
+    $command="rm $jobname.[eo]$job_id*";
+    run_system_command($command);
+
+    # Move the log file to the LOGS directory
+    $command="mv $jobname.$queue.log $logs";
+    run_system_command($command);
+
+    return($job_id);
+}
+
 1;

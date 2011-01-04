@@ -21,7 +21,7 @@ push @EXPORT_OK,('get_Average',
 		 'get_exon_mappable_length_sub','get_exon_sequences',
 		 'get_exon_coverage_1000nt');
 push @EXPORT_OK,('get_distinct_col_value_from_tab','plot_heatmap');
-push @EXPORT_OK,('get_feat_mappable_length_sub','send2cluster');
+push @EXPORT_OK,('get_feat_mappable_length_sub');
 
 use strict;
 use warnings;
@@ -2075,53 +2075,6 @@ sub get_exon_coverage_1000nt {
     }
 
     print STDERR "done\n";
-}
-
-# Send the job to the cluster
-### TO DO this has to be fixed in order to automatically choose the correct
-### queue for this the sub has to be moved to the pipeline settings library
-sub send2cluster {
-    my $file=shift;
-    my $queue=shift;
-
-    unless($queue) {
-	$queue='mem_6';
-	print STDERR "No queue supplied, setting to $queue\n";
-    }
-
-    # Submit to the cluster
-    my $command="qsub -q $queue $file";
-    my $execute=`$command`;
-
-    # monitor the execution
-    my ($job_id)=(split(/\s+/,$execute))[2];
-    $job_id=~s/\..+$//;
-    print STDERR "Running job $job_id on $queue\n";
-    
-    $command="qstat -j $job_id 2> /dev/null";
-    print STDERR "Waiting for job $job_id";
-    while (1) {
-	my @running=`$command`;
-	my $finished=1;
-	
-	while (my $line=shift(@running)) {
-	    if ($line=~/^job_number/) {
-		my @line=split(/\s+/,$line);
-		$finished=0;
-		print STDERR '.';
-		last;
-	    }
-	}
-	
-	if ($finished) {
-	    print STDERR "done\n";
-	    last;
-	} else {
-	    sleep(120);
-	}
-    }
-
-    return($job_id);
 }
 
 sub build_run_overlap_submission {

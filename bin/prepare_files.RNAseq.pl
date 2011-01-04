@@ -17,7 +17,7 @@ BEGIN {
 # specified. This should avoid problems with compressed or uncompressed files
 
 # Load some modules
-use RNAseq_pipeline3 qw(get_log_fh);
+use RNAseq_pipeline3 qw(get_log_fh run_system_command);
 use RNAseq_pipeline_settings3 qw(read_config_file read_file_list);
 
 # Get some options from the configuration file
@@ -59,8 +59,8 @@ foreach my $readfile (keys %files) {
 	die "I can't find $infile(.gz)\n";
     }
 
-    print $log_fh "Executing: $command\n";
-    system($command);
+    run_system_command($command,
+		       $log_fh);
 }
 close($log_fh);
 
