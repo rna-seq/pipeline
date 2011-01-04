@@ -1,19 +1,16 @@
-#!/soft/bin/perl
+#!/usr/bin/perl
 
 use strict;
 use warnings;
 
-# Add the path to the library to be used
-BEGIN {
-    use Cwd 'abs_path';
-    my $libdir=abs_path($0);
-    $libdir=~s/bin\/[^\/]*$/lib/;
-    unshift @INC, "$libdir";
-}
-
 # Objective
 # This script should prepare everything for the execution of the RNAseq
 # analysis pipeline
+# It will also do some basic checks on the provided input.
+# - This is check the format of the gft annotation file if ok add to the DB
+# - Check the chromosome entries in the genome file
+# - Insert the genome annotation into the 
+# It can be used also to provide information to the database such as the 
 # - Takes one species and project identification as arguments and creates a
 # code to identify them (DmeImdisc)
 # - Checks for the presence of all the necessary directories and if they
@@ -26,15 +23,27 @@ BEGIN {
 
 ### TO DO:
 # Add an option to insert an experiment description or a project description
+# Add umask(0115)
+
+# Add the path to the current library to be used
+BEGIN {
+    use Cwd 'abs_path';
+    my $libdir=abs_path($0);
+    $libdir=~s/bin\/[^\/]*$/lib/;
+    unshift @INC, "$libdir";
+}
 
 use Pod::Usage;
 use Getopt::Long;
-use RNAseq_pipeline_start3 ('defaults','get_species_hash','base_table_build',
-			    'check_base_tables','get_existing_data_subs',
+use RNAseq_pipeline_start3 ('check_option_characters','defaults','check_base_tables',
+			    'get_species_hash','base_table_build',
+			    'get_existing_data_subs',
 			    'get_tables_hash', 'build_table_files',
 			    'create_directory_structure','build_file_list',
 			    'print_config_file','print_pipeline_file',
-			    'add_project','add_experiment');
+			    'add_project','add_proj_info','add_exp_info',
+			    'add_experiment',
+			    'clear_tables','clear_dirs','clear_common_tables');
 use RNAseq_pipeline3 ('MySQL_DB_Connect','get_fh','get_log_fh');
 use Cwd;
 
@@ -51,7 +60,7 @@ my $cluster;
 my $clean;
 my $help;
 my $man;
-my $debug;
+my $debug=0;
 
 # Basic files
 my $template;
@@ -65,6 +74,7 @@ my $host;
 my $commondb='RNAseqPipelineCommon';
 my $database='RNAseqPipeline';
 my $junctionstable;
+my $geneclasstable;
 my $junctionsclasstable;
 my $exonsclasstable;
 
@@ -75,7 +85,6 @@ my $stranded;
 my $readlength;
 my $mapper;
 my $threads;
-my $parallel;
 my $qualities;
 
 # Indices
@@ -93,6 +102,8 @@ my $cellline;
 my $compartment;
 my $proj_description;
 my $exp_description;
+my $rnafraction;
+my $bioreplicate;
 
 # Get the command line for the log file
 my $program_name=$0;
@@ -123,6 +134,7 @@ my %options=('species' => \$species,
 	     'host' => \$host,
 	     'commondb' => \$commondb,
 	     'database' => \$database,
+	     'geneclass' => \$geneclasstable,
 	     'junctionstable' => \$junctionstable,
 	     'junctionsclass' => \$junctionsclasstable,
 	     'exonsclass' => \$exonsclasstable,
@@ -132,7 +144,6 @@ my %options=('species' => \$species,
 	     'readlength' => \$readlength,
 	     'mapper' => \$mapper,
 	     'threads' => \$threads,
-	     'parallel' => \$parallel,
 	     'localdir' => \$localdir,
 	     'genomeindex' => \$genomeindex,
 	     'transcriptomeindex' => \$transcriptomeindex,
@@ -143,7 +154,13 @@ my %options=('species' => \$species,
 	     'transcriptomefasta' => \$transcriptomefasta,
 	     'exclusionfile' => \$exclusionfile,
 	     'cluster' => \$cluster,
-	     'qualities' => \$qualities
+	     'qualities' => \$qualities,
+	     'cellline' => \$cellline,
+	     'compartment' => \$compartment,
+	     'expdesc' => \$exp_description,
+	     'projdesc' => \$proj_description,
+	     'rnafrac' => \$rnafraction,
+	     'bioreplicate' => \$bioreplicate
     );
 GetOptions(\%options,
 	   'species|s=s',
@@ -160,6 +177,7 @@ GetOptions(\%options,
 	   'host=s',
 	   'commondb=s',
 	   'database=s',
+	   'geneclass=s',
 	   'junctionstable=s',
 	   'junctionsclass=s',
 	   'exonsclass=s',
@@ -169,7 +187,6 @@ GetOptions(\%options,
 	   'readlength=i',
 	   'mapper=s',
 	   'threads=i',
-	   'parallel',
 	   'genomeindex=s',
 	   'transcriptomeindex=s',
 	   'junctionsindex=s',
@@ -177,40 +194,71 @@ GetOptions(\%options,
 	   'exclusionfile=s',
 	   'localdir=s',
 	   'cluster=s',
-	   'qualities=s'
+	   'qualities=s',
+	   'cellline=s',
+	   'compartment=s',
+	   'expdesc=s',
+	   'projdesc=s',
+	   'rnafrac=s',
+	   'bioreplicate=s'
     );
 
 # Print help and exit if required
 pod2usage(1) if $help;
 pod2usage(-verbose => 2) if $man;
 
-# Print message if in clean mode
+# Get a log file
+my $log_fh=get_log_fh('start_RNAseq_pipeline.log',
+		      $debug);
+print $log_fh "Executing: $command_line\n";
+
+# Get some useful subs
+*check_default=defaults($log_fh);
+
+# Select the mode in which we will run:
 if ($clean) {
+    # We need to make sure we have values for the different options (so maybe
+    # it would be good to add here something to read the config file or at
+    # least to have)
+
+    unless (${$options{'project'}} && ${$options{'experiment'}} &&
+	    ${$options{'commondb'}} && ${$options{'database'}}) {
+	die "I need to know both the project and the experiment you want to remove\n";
+    }
+
+    # Print message if in clean mode
     print STDERR "WARNING: Clean mode.\n";
-    print STDERR "This will remove all tables for this experiment as well as
-the common tables\n";
+    print STDERR "This will remove the following:\n";
+    print STDERR "\tAll tables for this experiment\n";
+    print STDERR "\tAll direactories that the script created originally with the files within (this includes all mappings), with the exception of the readData directory.\n";
+    print STDERR "\tAll entries in the common tables corresponding to this experiment\n";
     print STDERR "Do you want to continue? (y/N)\n";
     my $reply=<STDIN>;
     unless ($reply=~/y/i) {
 	die "Aborting\n";
     }
+
+    # Clear the database
+    clear_tables(\%options);
+
+    # Clear the directories
+    clear_dirs(\%options);
+
+    # Clear the entries from the projects and experiments tables in the commondb
+    clear_common_tables(\%options);
+
+    exit;
+} else {
+    # We go to the main body of the script
+    # check all the options for the presence of dashes or unauthorized
+    # characters that may cause problems with the database if used for naming
+    #tables
+    check_option_characters(\%options,
+			    $log_fh);
 }
 
-# Print message if debuging
-my $log_fh=get_log_fh('start_RNAseq_pipeline.log',
-		      $debug);
-print $log_fh "Executing: $command_line\n";
-
-### TO DO
-# check all the options for the presence of dashes or unauthorized characters
-# that may cause problems with the database if used for naming tables
-check_options(\%options,
-	      $log_fh);
-
-# Get some useful subs
-*check_default=defaults();
-
-# Check the input
+# Check the option actual values to see if we are missing any important
+# information for the executeion of the pipeline
 my ($missing,$guessmaster)=check_option_values(\%options);
 pod2usage("WARNING: $missing information is necessary but missing") if $missing;
 
@@ -221,8 +269,6 @@ check_base_tables($host,
 		  $commondb,
 		  $log_fh,
 		  $clean,);
-# Now if we have used calena we have to exit, because the database is empty
-if ($clean) {exit;};
 
 # For those values that have not been provided do a bit of guess work
 # First get the required subroutines. This MUST be done here, after using check
@@ -240,6 +286,11 @@ if ($clean) {exit;};
 if (keys %{$guessmaster}) {
     guess_values($guessmaster,
 		 \%options);
+
+    # This is specific to the CRG
+    if ($localdir!~/^\/users/) {
+	$options{'cluster'}='';
+    }
 }
 
 # Check that the template file that has been supplied is readable
@@ -311,36 +362,17 @@ add_project($host,
 add_experiment(\%options,
 	       $log_fh);
 
+# Add any additional information to the project and experiment tables
+add_proj_info(\%options,
+	      $log_fh);
+
+add_exp_info(\%options,
+	     $log_fh);
+
 # close the log file
 close($log_fh);
 
 exit;
-
-sub check_table {
-    my $dbh=shift;
-    my $table=shift;
-
-    print STDERR "Checking database for $table...\n";
-
-    my ($query,$sth);
-    $query ='SELECT count(*) ';
-    $query.="FROM $table";
-
-    $sth = $dbh->table_info(undef,undef,$table,"TABLE");
-
-    my $count=$sth->execute();
-    my $results=$sth->fetchall_arrayref();
-    my $present=0;
-    
-    if (@{$results}) {
-	# Print the table location for the junctions of this experiment
-	print STDERR join("\t",
-			  $table,
-			  "Present"),"\n";
-	$present=1;
-    }
-    return($present);
-}
 
 # This script should for each of the necessary files
 sub guess_values {
@@ -359,7 +391,7 @@ sub guess_values {
 
 
 # Check if the options are set and if not set the defaults.
-# If any option remains undefiuned it means we have no default and the user
+# If any option remains undefined it means we have no default and the user
 # has to supply it
 sub check_option_values {
     my $options=shift;
@@ -383,45 +415,25 @@ sub check_option_values {
     return($missing,\%guessmaster);
 }
 
-sub check_options {
-    my $options=shift;
-    my $log_fh=shift;
-
-    print $log_fh "Checking options for unadvisable characters...\n";
-    foreach my $option (keys %{$options}) {
-	my $value=${$options->{$option}} || '';
-	if ($value=~/([^\w_\/\. ])/) {
-	    my $char=$1;
-	    die "$value contains an invalid character: '$char'\n";
-	}
-    }
-    print $log_fh "done\n";
-
-    print $log_fh "Print checking options for common problems...\n";
-    # Check the species name to see if it has 2 words
-    my $species=${$options->{'species'}};
-    my @species=split(/\s+/,$species);
-    if (@species < 2) {
-	die "Species name ($species) does not look right. Should have a Genus and species name at least\n";
-    }
-
-    print $log_fh "done\n";
-}
-
 __END__
 
 =head1 NAME
     
-    start_RNAseq_pipeline.3.0.pl
+    start_RNAseq_pipeline.X.0.pl
     
 =head1 SYNOPSIS
     
-    start_pair_pipeline.3.0.pl -species ... -genome ... -annotation ... -project ... -experiment ... -template ... -readlength...
+    start_pair_pipeline.3.0.pl -species ... -genome ... -annotation ... -project ... -experiment ... -template ... -readlength...-qualities
     
   Help options:
     -help:           brief help message
     -man:            full documentation
     -debug:
+
+  Behavior options
+    -clean:          Remove all the tables corresponding to the project and
+                     experiment as well as all directories
+
   Mandatory options:
     -species:        Species for which the pipeline is run.
     -genome:         File with the genomic sequence.
@@ -430,6 +442,7 @@ __END__
     -experiment:     The set of reads to be added.
     -template:       File containing the commands that will be executed.
     -readlength:     Nucleotide length of the reads.
+
   Mapping Options:
     -mapper:         Mapper to be used.
                       Defaults to GEM which is the only one supported currently
@@ -446,6 +459,13 @@ __END__
     -host:           Sets the host where the databases are located.
     -localdir:       Directory in which to store the temporary files generated during the pipeline execution. It is recommandable to set it to a local drive.
 
+  Optional
+    -cellline:      Sets the cell line on which the experiment was performed
+    -compartment:   Sets the compartment on which the experiment was performed
+    -expdesc:       Experiment description
+    -projdesc:      Project description
+    -rnafrac:       RNA fraction on whihc the experiment was performed
+    -bioreplicate:  Bioreplicate (if the experiment is a bioreplicate)
         
 =head1 OPTIONS
     
@@ -458,6 +478,15 @@ __END__
 =item B<-man>
     
     Prints the manual page and exits.
+
+=item B<-clean>
+    
+    This option will remove all the tables from the database as well as removing
+    all the directories in the project directory with the exception of the bin
+    and readData directories.
+
+    In order to work it needs to know the project Id, experiment id and database
+    names
     
 =back
     

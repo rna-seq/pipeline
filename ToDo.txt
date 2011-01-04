@@ -1,1 +1,4 @@
 # Add to the start script a sub that will link the overlap and flux to the bin directory
+# Change the hardcoding of the server in the MySQLDBConnect sub in the execute script
+# Check the rule for the gene_maps class and pool the results by lane when reads are paired. Currently they are separated by mate
+# Check EJEI rule, as the Gene name is not dereferenced correctly

@@ -16,11 +16,18 @@ BEGIN {
 # table to load in the database with this information
 
 use Getopt::Long;
-use RNAseq_pipeline3 qw(get_fh parse_gff_line);
+use RNAseq_pipeline3 qw(get_fh get_log_fh parse_gff_line);
 use RNAseq_pipeline_settings3 qw(read_file_list get_gene_from_trans_sub);
+
+# declare some variables
+my $debug=0;
 
 # get subroutines
 *trans2gene=get_gene_from_trans_sub();
+
+# Get the log_fh
+my $log_fh=get_log_fh('build_transcript_expression_levels.RNAseq.log',
+		      $debug);
 
 # First get a list of the bed files we are going to process
 my %files=%{read_file_list()};
@@ -32,7 +39,8 @@ foreach my $lane (keys %lanes) {
 
     if (-r $filename) {
 	process_file($filename,
-		     $lane);
+		     $lane,
+		     $log_fh);
 	my $command="rm $filename";
 	print STDERR "Executing:\t$command\n";
 	system($command);
@@ -41,16 +49,20 @@ foreach my $lane (keys %lanes) {
     }
 }
 
+close($log_fh);
+
 exit;
 
 sub process_file {
     my $infile=shift;
     my $lane=shift;
+    my $log_fh=shift;
 
     my $infh=get_fh($infile);
 
     while (my $line=<$infh>) {
-	my %line=%{parse_gff_line($line)};
+	my %line=%{parse_gff_line($line,
+				  $log_fh)};
 
 	my $type=$line{'type'};
 

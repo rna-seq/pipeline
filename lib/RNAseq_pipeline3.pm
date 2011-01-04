@@ -6,6 +6,9 @@ package RNAseq_pipeline3;
 use Exporter;
 @ISA=('Exporter');
 push @EXPORT_OK,('MySQL_DB_Connect','get_fh','get_log_fh');
+push @EXPORT_OK,('check_table_existence','check_file_existence');
+push @EXPORT_OK,('check_gff_file','check_fasta_file');
+push @EXPORT_OK,('run_system_command');
 push @EXPORT_OK,('print_gff','get_sorted_gff_fh','parse_gff_line');
 push @EXPORT_OK,('get_files_from_table_sub');
 push @EXPORT_OK,('get_annotation_from_gtf','build_annotated_junctions');
@@ -66,6 +69,50 @@ sub MySQL_DB_Connect {
     return $dbh;
 }
 
+# Check if a table exists in the database
+### 4.0 ok
+sub check_table_existence {
+    my $dbh=shift;
+    my $table=shift;
+
+    print STDERR "Checking database for $table...\n";
+
+    my ($query,$sth);
+    $query ='SELECT count(*) ';
+    $query.="FROM $table";
+
+    $sth = $dbh->table_info(undef,undef,$table,"TABLE");
+
+    my $count=$sth->execute();
+    my $results=$sth->fetchall_arrayref();
+    my $present=0;
+    
+    if (@{$results}) {
+	# Print the table location for the junctions of this experiment
+	print STDERR "Present\n";
+	$present=1;
+    } else {
+	print STDERR "Absent\n";
+    }
+    return($present);
+}
+
+# Get a small subroutine to run system commands
+sub run_system_command {
+    my $command=shift;
+    my $log_fh=shift;
+
+    if ($log_fh) {
+	print $log_fh "Executing: $command\n";
+	print $log_fh `$command`,"\n";
+    } else {
+	$log_fh=*STDERR;
+	print $log_fh "Executing: $command\n";
+	system($command);
+    }
+    sleep(1);
+}
+
 # Read or write from a file (gzipped or not)
 ### OK
 sub get_fh {
@@ -79,7 +126,7 @@ sub get_fh {
     if ($write) {
 	if ($filename=~/.gz$/) {
 	    warn "Piping $filename through gzip\n";
-	    # Use gzip -7 as the increase in comperssion between 7 an 9 is quite
+	    # Use gzip -7 as the increase in compression between 7 an 9 is quite
 	    # small and the extra time invested quite large
 	    $openstring="| gzip -7 -c > $filename";
 	} else {
@@ -122,6 +169,72 @@ sub get_log_fh {
     return($log_fh);
 }
 
+# Check if a file exists and is readable by the user
+sub check_file_existence {
+    my $file=shift;
+    my $logfh=shift;
+
+    if (-r $file) {
+	if ($logfh) {
+	    print $logfh "$file is present and readable\n";
+	} else {
+	    print STDERR "$file is present and readable\n";
+	}
+    } else {
+	die "$file is not readable\n";
+    }
+}
+
+# Check if the fasta file identifiers contain any spaces and warn if thise is
+# the case
+sub check_fasta_file {
+    my $file=shift;
+
+    print STDERR "Checking the genome file...";
+    my $in  = Bio::SeqIO->new(-file => $file ,
+			      -format => 'Fasta');
+
+    while ( my $seq = $in->next_seq() ) {
+	my $seqid=$seq->display_id();
+	unless ($seqid=~/^\s*\w+\s*$/o) {
+	    print STDERR "WARNING: Spacing in the fasta identifiers may cause problems: $seqid\n";
+	}
+    }
+    $in->close();
+    print STDERR "fasta file is OK\n";
+}
+
+# Check if a file conformas to the UCSC specifications of GTF
+sub check_gff_file {
+    my $file=shift;
+
+    print STDERR "Checking annotation file...";
+    my %features;
+    my $infh=get_fh($file);
+    while (my $line=<$infh>) {
+	if ($line=~/^#/o) {
+	    next;
+	}
+	my %line=%{parse_gff_line($line)};
+	$features{$line{'type'}}++;
+    }
+
+    # Issue some warnings if the file looks strange
+    if ($features{'exon'} < 1) {
+	die "No exons found in $infh\n";
+    } elsif ($features{'exon'} < 10000) {
+	print STDERR "WARNING: Only $features{'exon'} exons found in $file\n";
+    }
+    if ($features{'gene'} < 1) {
+	print STDERR "WARNING: No genes found in $file\n";
+    }
+    if ($features{'transcript'} < 1) {
+	print STDERR "WARNING: No transcripts found in $file\n";
+    }
+    print STDERR "annotation seems fine\n";
+
+    close($infh);
+}
 
 # This should get all the distinct values present in a certain column of a
 # MySQL table. The database handle as well as the column and table names must
@@ -897,15 +1010,23 @@ sub get_sorted_gff_fh {
     return($fh);
 }
 
+# Parse strictly and return and die if any problems are encountered 
 sub parse_gff_line {
     my $line=shift;
+    my $log_fh=shift;
+
+    # If no log_fh is provided redirect to STDERR
+    unless ($log_fh) {
+	$log_fh=*STDERR;
+    }
+
     chomp($line);
     my %line;
 
     my @line=split("\t",$line);
 
     unless (@line >=8) {
-	return({});
+	die "Insufficient fields in $line\n";
     }
 
     $line{'chr'}=$line[0];
@@ -920,48 +1041,55 @@ sub parse_gff_line {
     
     # Parse the info fields
     if ($line[8]) {
-	$line[8]=~s/^\s*//;
+	$line[8]=~s/^\s*//o;
 	my @info;
 
-	if ($line[8]=~/;/) {
-	    $line[8]=~s/;$//;
+	if ($line[8]=~/;/o) {
+	    $line[8]=~s/;$//o;
 	    @info=split(/; /,$line[8]);
+	} elsif ($line[8]=~/^gene_id/o) {
+	    # Check is there is only one key-value pair as in this case there
+	    # is not necessarily a ';' If this is the case the attribute should
+	    # be gene_id
+		@info=($line[8]);
+	} else {
+	    die "Info field does not seem correct in:\n\t$line\n";
+	}
 
+
+	# If the info field is present print it
+	if (@info) {
 	    for (my $i=0;$i<@info;$i+=1) {
 		my ($key,$value)=split(' ',$info[$i],2);
+
 		if ($value) {
-		    $value=~s/"//g;
+		    $value=~s/"//og;
 		    # Add something in order to be compatible with the old
 		    # version of overlap
 
 		    # Allow for multiple values of the same tag
 		    if ((exists $line{'feature'})&&
 			(exists $line{'feature'}{$key})) {
-			$line{'feature'}{$key}.=",$value";
+			if ($key eq 'gene_id') {
+			    die "gene_id is presence more than once in $line\n";
+			} elsif ($key eq 'transcript_id') {
+			    die "transcript_id is presence more than once in $line\n";
+			} else {
+			    $line{'feature'}{$key}.=",$value";
+			}
 		    } else {
 			$line{'feature'}{$key}=$value;
 		    }
 		} else {
-		    # The entry is not really standard as it does not come
-		    # as a key value pair
-		    if ((exists $line{'feature'})&&
-			(exists $line{'feature'}{'unknown'})) {
-			$line{'feature'}{'unknown'}.=",$key";
+		    if ($line{'type'}!~/(exon|transcript|gene)/o) {
+			print $log_fh "Unknown key $key in $line{'type'} line $line\n";
 		    } else {
-			$line{'feature'}{'unknown'}=$key;
+			die "No value found for key $key in $line{'type'} line $line\n";
 		    }
 		}
 	    }
 	} else {
-	    @info=split(' ',$line[8]);
-	    for (my $i=0;$i<@info;$i+=2) {
-		if ((exists $line{'feature'})&&
-		    (exists $line{'feature'}{$info[$i]})) {
-		    warn "Repeated feature $info[$i] in $line\n";
-		} else {
-		    $line{'feature'}{$info[$i]}=$info[$i + 1];
-		}
-	    }
+	    die "Info field is missing from gtf in:\n$line\n";
 	}
     }
 
