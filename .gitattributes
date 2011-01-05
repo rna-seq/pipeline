@@ -32,7 +32,6 @@ bin/build_transcript_expression_levels_pooled.RNAseq.pl -text
 bin/build_transcript_sequences.RNAseq.pl -text
 bin/check_completed_steps.RNAseq.pl -text
 bin/check_mappings.RNAseq.pl -text
-bin/classify_mapped_read.RNAseq.2.pl -text
 bin/classify_mapped_read.RNAseq.pl -text
 bin/cluster_run.RNAseq.pl -text
 bin/compare_gene_RPKM.RNAseqComp.pl -text
@@ -48,16 +47,12 @@ bin/gem2gff_transcriptome.RNAseq.pl -text
 bin/gemjunc2gemsplit.RNAseq.pl -text
 bin/get_exon_inclusion_exclusion_rates.RNAseq.2.pl -text
 bin/get_exon_inclusion_exclusion_rates.RNAseq.pl -text
-bin/get_exon_overlaps.RNAseq.pl -text
 bin/get_exon_overlaps_cluster.RNAseq.pl -text
 bin/get_exon_rpkm.RNAseq.pl -text
 bin/get_exon_rpkm_pooled.RNAseq.pl -text
 bin/get_exon_rpmkm.RNAseq.pl -text
 bin/get_exon_total_inclusion.RNAseq.pl -text
 bin/get_fusion_transcripts.RNAseq.pl -text
-bin/get_gene_overlaps.RNAseq.custom.pl -text
-bin/get_gene_overlaps.RNAseq.pl -text
-bin/get_gene_overlaps_cluster.RNAseq.pl -text
 bin/get_gene_rpkm.RNAseq.pl -text
 bin/get_gene_rpkm_pooled.RNAseq.pl -text
 bin/get_gene_rpmkm.RNAseq.pl -text
@@ -68,7 +63,6 @@ bin/get_junction_classification_all_pooled.RNAseq.pl -text
 bin/get_junction_read_contributions.RNAseq.pl -text
 bin/get_junction_total_inclusion.RNAseq.pl -text
 bin/get_pooled_exon_inclusion_rates.RNAseq.pl -text
-bin/get_proj_overlaps.RNAseq.pl -text
 bin/get_proj_overlaps_cluster.RNAseq.pl -text
 bin/get_proj_rpkm.RNAseq.pl -text
 bin/get_proj_total_inclusion.RNAseq.pl -text

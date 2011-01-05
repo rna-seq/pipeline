@@ -15,8 +15,9 @@ BEGIN {
 # This script should run overlap on a set reads and exon projections
 
 # Load some modules
-use RNAseq_pipeline3 ('get_fh','get_feature_overlap_sub');
-use RNAseq_pipeline_settings3 ('read_config_file','read_file_list');
+use RNAseq_pipeline3 ('get_fh');
+use RNAseq_pipeline_settings3 ('read_config_file','read_file_list',
+			       'get_feature_overlap_sub');
 use Getopt::Long;
 
 # Declare some variables

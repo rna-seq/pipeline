@@ -16,9 +16,9 @@ BEGIN {
 
 # Load some modules
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
-use RNAseq_pipeline3 ('get_fh','parse_gff_line',
-		      'get_feature_overlap_sub');
-use RNAseq_pipeline_settings3 ('read_config_file','read_file_list');
+use RNAseq_pipeline3 ('get_fh','parse_gff_line');
+use RNAseq_pipeline_settings3 ('read_config_file','read_file_list',
+			       'get_feature_overlap_sub');
 use Getopt::Long;
 
 # Declare some variables
