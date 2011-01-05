@@ -94,7 +94,7 @@ _ambiguous: _qualitiespos
 	all_no_log_table
 
 # Create a table that reflects the read_list file
-_dataset: _read_stats
+_dataset: _ambiguous
 	build_dataset.RNAseq.pl > _dataset.txt
 	all_no_log_table
 
@@ -527,6 +527,14 @@ _summaries: _exon_RPKM_pooled _gene_RPKM_dist _inclusion_dist _transcript_expres
 _completion_status: @
 	completed.RNAseq.pl > _completion_status.txt
 	all_no_log_table
+
+# Store the reads
+# This rule will store the bam files in the ftp server when it is available
+# and it will also generate an md5sum for each of the read files which will be
+# stored in the database in order to identify the dataset
+#_store_reads: _merged_SAM
+#	build_store_reads.RNAseq.pl
+#	all_no_log_table
 
 # Clean up
 # We need to remove the sequence files from the local directory
