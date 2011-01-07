@@ -17,7 +17,7 @@ BEGIN {
 # overlaps completely with the gene 
 
 # Load some modules
-use RNAseq_pipeline2 qw(get_fh parse_gff_line);
+use RNAseq_pipeline3 qw(get_fh parse_gff_line);
 
 # Declare some variables
 my $threshold=1;

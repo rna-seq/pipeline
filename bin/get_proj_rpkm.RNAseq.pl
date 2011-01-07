@@ -19,8 +19,8 @@ BEGIN {
 # the genes in the file
 
 use Bio::Range;
-use RNAseq_pipeline2 qw(get_fh parse_gff_line get_feature_overlap);
-use RNAseq_pipeline_settings ('read_config_file','get_dbh','read_file_list');
+use RNAseq_pipeline3 qw(get_fh parse_gff_line get_feature_overlap);
+use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list');
 
 # Declare some variables
 my $prefix;

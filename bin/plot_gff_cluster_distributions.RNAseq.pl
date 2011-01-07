@@ -17,8 +17,8 @@ BEGIN {
 # of the unique reads and plot the resulting summaries using R
 # These summaries will be the distribution along the chromosomes of the reads
 
-use RNAseq_pipeline2 qw(get_fh);
-use RNAseq_pipeline_settings qw(read_config_file read_file_list);
+use RNAseq_pipeline3 qw(get_fh);
+use RNAseq_pipeline_settings3 qw(read_config_file read_file_list);
 
 my $species;
 my $projectid;

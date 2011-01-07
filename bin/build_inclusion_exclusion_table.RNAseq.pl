@@ -20,8 +20,8 @@ BEGIN {
 # if a certain number of exons are selected in a separate file it will only
 # calculate the exclusion junctions for those
 
-use RNAseq_pipeline2 qw(get_fh parse_gff_line);
-use RNAseq_pipeline_settings ('read_config_file');
+use RNAseq_pipeline3 qw(get_fh parse_gff_line);
+use RNAseq_pipeline_settings3 ('read_config_file');
 
 # Declare some variables
 my $annotation;

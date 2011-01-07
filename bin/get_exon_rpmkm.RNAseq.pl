@@ -20,8 +20,8 @@ BEGIN {
 # their entirety this causes a bit of a difference in the mappings
 
 use Bio::Range;
-use RNAseq_pipeline2 qw(get_fh parse_gff_line get_exon_mappable_length_sub);
-use RNAseq_pipeline_settings ('read_config_file','get_dbh','read_file_list');
+use RNAseq_pipeline3 qw(get_fh parse_gff_line get_exon_mappable_length_sub);
+use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list');
 
 # Declare some variables
 my $prefix;

@@ -18,8 +18,8 @@ BEGIN {
 # It will use this to build a saturation curve for the lanes
 
 # Load some modules
-use RNAseq_pipeline2 qw(get_fh);
-use RNAseq_pipeline_settings ('read_config_file','read_file_list',
+use RNAseq_pipeline3 qw(get_fh);
+use RNAseq_pipeline_settings3 ('read_config_file','read_file_list',
 			      'get_numbers_from_annotation',
 			      'get_saturation_curve');
 use Getopt::Long;

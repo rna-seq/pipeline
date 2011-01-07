@@ -17,8 +17,8 @@ BEGIN {
 # order to obtain a set of non-overlapping projections for each gene
 
 use Bio::Range;
-use RNAseq_pipeline2 qw(get_fh parse_gff_line);
-use RNAseq_pipeline_settings ('read_config_file');
+use RNAseq_pipeline3 qw(get_fh parse_gff_line);
+use RNAseq_pipeline_settings3 ('read_config_file');
 use Getopt::Long;
 
 # Declare some variables

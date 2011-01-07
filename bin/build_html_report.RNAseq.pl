@@ -16,8 +16,8 @@ BEGIN {
 # This script should work as a cgi script
 
 use CGI qw(th td Tr caption table);
-use RNAseq_pipeline2 qw(get_fh);
-use RNAseq_pipeline_settings qw(read_config_file read_file_list);
+use RNAseq_pipeline3 qw(get_fh);
+use RNAseq_pipeline_settings3 qw(read_config_file read_file_list);
 
 my $graphsdir;
 my $project_id;
