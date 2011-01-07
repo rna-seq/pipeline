@@ -1198,7 +1198,7 @@ sub gff_line_check {
 	my @features;
 	
 	for (my $i=0;$i<@info;$i+=2) {
-	    unless ($info[$i + 1]) {
+	    unless (defined ($info[$i + 1])) {
 		print STDERR "Error at:\t$line\n";
 		die "Incorrect number of fields\n";
 	    }
