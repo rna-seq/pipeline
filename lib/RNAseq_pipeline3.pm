@@ -1199,6 +1199,7 @@ sub gff_line_check {
 	
 	for (my $i=0;$i<@info;$i+=2) {
 	    unless ($info[$i + 1]) {
+		print STDERR "Error at:\t$line\n";
 		die "Incorrect number of fields\n";
 	    }
 	    my $feature='"'.$info[$i + 1].'";';
