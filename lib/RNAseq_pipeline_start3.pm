@@ -1302,7 +1302,9 @@ CREATE TABLE ${prefix}_store_reads (
     uncompressed int unsigned not null,
     md5uncomp char(32) not null,
     compressed int unsigned not null,
-    md5comp char(32) not null
+    md5comp char(32) not null,
+    bamfile varchar(100) not null,
+    md5bam char(32) not null
     );",
 		'_gene_mappable_RPKM' => "DROP TABLE IF EXISTS ${prefix}_gene_mappable_RPKM;
 CREATE TABLE ${prefix}_gene_mappable_RPKM (

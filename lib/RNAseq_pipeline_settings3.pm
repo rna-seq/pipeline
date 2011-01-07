@@ -925,15 +925,16 @@ sub send2cluster {
 
     # collect the output of the cluster node into the log file for the
     # step
-    $command="cat $jobname.[eo]$job_id* > $jobname.$queue.log";
+    # First indicate which job the output beloiongs to:
+    $command="echo $job_id >> $logs/$jobname.$queue.log";
+    run_system_command($command);
+
+    # Add the command output
+    $command="cat $jobname.[eo]$job_id* >> $logs/$jobname.$queue.log";
     run_system_command($command);
 
     # Remove the files
     $command="rm $jobname.[eo]$job_id*";
-    run_system_command($command);
-
-    # Move the log file to the LOGS directory
-    $command="mv $jobname.$queue.log $logs";
     run_system_command($command);
 
     return($job_id);
