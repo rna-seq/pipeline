@@ -126,9 +126,45 @@ _transcript_seqs: _exon_seqs
 	$BIN/build_transcript_sequences.RNAseq.pl
 	all_no_log_table
 
-# Build the indices for each of the files
+### Build the indices for each of the files
 _indices: _junction_seqs _transcript_seqs
 	$BIN/build_indices.RNAseq.pl
+	all_no_log_table
+
+### Extract some necessary information from the annotation
+# Once the mapping steps and the summary of these is done we will determine the
+# maps that hit the annotatied genes and exons, and use this to determine the
+# correlation between lanes.
+
+# This rule should parse the gff file and build a table with the genes and any
+# information attached to them in it (basically type and status)
+_genes: _indices
+	$BIN/build_genes.RNAseq.pl
+	mv build_genes.RNAseq.log $LOGS
+	all_no_log_table
+
+# First we need to get the files containing exons and gene annotations We will
+# Build a file with the gene and exon annotations in gtf format. This step will
+# also build a file with the projection of all exons for each of the genes
+_extract_annotation: _genes
+	split_gtf_annotation.RNAseq.pl > _extract_annotation.txt
+	build_gene_projections.RNAseq.pl >> _extract_annotation.txt
+	all_no_log_table
+
+# Build a table that contains for every annotated exon and exon junction which
+# transcript and gene it belongs to. This will allow us to extract a set of
+# exons and junctions that are constitutive and a set of exons and junctions
+# that are alternative, as well as the transcript to which they correspond.
+# This step depends on the annotation only, so it does not need to be repeated
+# necessarily.
+# The Overlaps field in the table corresponds to the number of exons that
+# overlap this exon
+_exon_classification: _extract_annotation
+	build_exon_spliceform_distribution.RNAseq.pl
+	[[ -r $PREFIX.exons.overlap.gz ]] && rm $PREFIX.exons.overlap.gz || echo "Both tables present"
+	all_no_log_table
+
+_junction_classification: _exon_classification
 	all_no_log_table
 
 ##############
@@ -209,35 +245,6 @@ _merged_mapping: _split_mapping
 # Build BAM and SAM files for all the mapping files after merging them
 _merged_SAM: _merged_mapping
 	run_gem2sam.RNAseq.pl > _merged_SAM.txt
-	all_no_log_table
-
-### Extract some necessary information from the annotation
-# Once the mapping steps and the summary of these is done we will determine the
-# maps that hit the annotatied genes and exons, and use this to determine the
-# correlation between lanes.
-
-# First we need to get the files containing exons and gene annotations We will
-# Build a file with the gene and exon annotations in gtf format. This step will
-# also build a file with the projection of all exons for each of the genes
-_extract_annotation: _indices
-	split_gtf_annotation.RNAseq.pl > _extract_annotation.txt
-	build_gene_projections.RNAseq.pl >> _extract_annotation.txt
-	all_no_log_table
-
-# Build a table that contains for every annotated exon and exon junction which
-# transcript and gene it belongs to. This will allow us to extract a set of
-# exons and junctions that are constitutive and a set of exons and junctions
-# that are alternative, as well as the transcript to which they correspond.
-# This step depends on the annotation only, so it does not need to be repeated
-# necessarily.
-# The Overlaps field in the table corresponds to the number of exons that
-# overlap this exon
-_exon_classification: _extract_annotation
-	build_exon_spliceform_distribution.RNAseq.pl
-	[[ -r $PREFIX.exons.overlap.gz ]] && rm $PREFIX.exons.overlap.gz || echo "Both tables present"
-	all_no_log_table
-
-_junction_classification: _exon_classification
 	all_no_log_table
 
 ### Extract some stats from the mappings as well as the unique reads to be used

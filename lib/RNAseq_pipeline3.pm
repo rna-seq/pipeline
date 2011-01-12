@@ -364,14 +364,18 @@ sub plot_heatmap {
     return(@roworder);
 }
 
+### Process teh annotation to extrac the different parts of information we are
+# interested in
 # Extract from a gtf annotation all the gene objects using the parse_gff sub
 ### OK
 sub get_annotation_from_gtf {
     my $file=shift;
     my $log_fh=shift;
+    my $subset=shift || '';
 
     my $fh=get_fh($file);
     my %genes;
+    my %exons;
     my %excluded;
     my $count=0;
     my %trans_count;
@@ -379,6 +383,13 @@ sub get_annotation_from_gtf {
     # If we have no $log_fh redirect to STDERR
     unless ($log_fh) {
 	$log_fh=*STDERR;
+    }
+
+    # Check the subset
+    if ($subset eq 'exons') {
+	print $log_fh "extracting only exons from $file\n";
+    } else {
+	print $log_fh "extracting genes, transcripts and exons from $file\n";
     }
 
     print $log_fh "Reading $file\n";
@@ -389,37 +400,38 @@ sub get_annotation_from_gtf {
 	chomp($line);
 
 	# Skip possible comments
-	if ($line=~/^#/) {
+	if ($line=~/^#/o) {
 	    next;
 	}
 
 	# use the parse_gff  subroutine to parse the lines
-	my ($chr,$type,$start,$end,$strand,$frame,$info);
-	my %line=%{parse_gff_line($line)};
-	$chr=$line{'chr'};
-	$type=$line{'type'};
-	$start=$line{'start'};
-	$end=$line{'end'};
-	$frame=$line{'frame'};
+	my ($chr,$type,$start,$end,$strand,$frame,$info,$source);
+	my $line=parse_gff_line($line);
+	$chr=$line->{'chr'};
+	$type=$line->{'type'};
+	$start=$line->{'start'};
+	$end=$line->{'end'};
+	$frame=$line->{'frame'};
 
 	# Skip entries we are not interested in
 	# Skip non-exon entries
-	unless ($type=~/^(exon|transcript|gene)$/) {
+	unless ($type=~/^(exon|transcript|gene)$/o) {
 	    next;
 	}
+
 	# Skip random and haplotype chromosomes
-	if ($chr=~/random/i) {
+	if ($chr=~/random/io) {
 	    next;
-	} elsif ($chr=~/hap/) {
+	} elsif ($chr=~/hap/o) {
 	    next;
-	} elsif ($chr=~/^chrU/) {
+	} elsif ($chr=~/^chrU/o) {
 	    next;
-	} elsif ($chr=~/^Un\./) {
+	} elsif ($chr=~/^Un\./o) {
 	    # This is for EnsEMBL cow
 	    next;
-	} elsif ($chr=~/^(chr)?HSCHR/) {
+	} elsif ($chr=~/^(chr)?HSCHR/o) {
 	    next;
-	} elsif ($chr=~/^AAFC03011182/) {
+	} elsif ($chr=~/^AAFC03011182/o) {
 	    # EnsEMBL cow
 	    next;
 	}
@@ -429,17 +441,17 @@ sub get_annotation_from_gtf {
 	# may cause some problems if we are looking at contigs etc... but
 	# it should only activate if the chromosomens are named as the humans
 	# but with no chr
-	if ($chr!~/^(chr|contig|scaffold|supercontig)/) {
-	    $chr=~s/^/chr/;
-	}
+#	if ($chr!~/^(chr|contig|scaffold|supercontig)/) {
+#	    $chr=~s/^/chr/;
+#	}
 	# To prevent problems with the naming of the chromosomes we will change
 	# the chrMT to chrM
-	$chr=~s/chrMT/chrM/;
+#	$chr=~s/chrMT/chrM/;
 
 	# Check the strand
-	if ($line{'strand'} eq '+') {
+	if ($line->{'strand'} eq '+') {
 	    $strand=1;
-	} elsif ($line{'strand'} eq '-') {
+	} elsif ($line->{'strand'} eq '-') {
 	    $strand=-1;
 	} else {
 	    warn "Unknown strand $strand\n";
@@ -447,15 +459,15 @@ sub get_annotation_from_gtf {
 
 	# Get the gene_id and transcript_id info
 	my ($gene_id,$trans_id);
-	$gene_id=$line{'feature'}{'gene_id'};
+	$gene_id=$line->{'feature'}{'gene_id'};
 	unless ($gene_id) {
-	    $gene_id=$line{'feature'}{'ID'};
+	    $gene_id=$line->{'feature'}{'ID'};
 	}
-	$trans_id=$line{'feature'}{'transcript_id'};
+	$trans_id=$line->{'feature'}{'transcript_id'};
 
 	# Complain if there is anything missing
 	unless ($gene_id) {
-	    print $log_fh "No Gene ID found in:\n",$line,"\n";
+	    print $log_fh "No gene_id found in:\n",$line,"\n";
 	    next;
 	}
 	unless ($trans_id) {
@@ -495,8 +507,13 @@ sub get_annotation_from_gtf {
 		    -display_name => $gene_id);
 		$genes{$gene_id}{'gene'}=$gene_feat;
 		$genes{$gene_id}{'chr'}=$chr;
+		$genes{$gene_id}{'start'}=$start;
+		$genes{$gene_id}{'end'}=$end;
+		$genes{$gene_id}{'strand'}=$line->{'strand'};
+		$genes{$gene_id}{'type'}=$type;
+		$genes{$gene_id}{'feature'}=$line->{'feature'};
 	    }
-	} elsif ($type =~ /^transcript$/) {
+	} elsif ($type =~ /^transcript$/o) {
 	    # Get the transcript feature
 	    # If the gene object does not exist build it on the fly. This could
 	    # happen with unordered files or files with only the exons
@@ -519,7 +536,7 @@ sub get_annotation_from_gtf {
 		    -display_name => $trans_id);
 		$genes{$gene_id}{'transcripts'}{$trans_id}=$trans_feat;
 	    }
-	} elsif ($type =~ /exon/) {
+	} elsif ($type =~ /exon/o) {
 	    # Get the exon feature
 	    # If the gene object does not exist build it on the fly
 	    unless ($genes{$gene_id}{'gene'}) {
@@ -547,6 +564,7 @@ sub get_annotation_from_gtf {
 			     $start,
 			     $end,
 			     $strand);
+	    $exons{$exon_id}='';
 	    my $exon_feat = Bio::SeqFeature::Gene::Exon->new(
 		-start        => $start,
 		-end          => $end,
@@ -563,11 +581,24 @@ sub get_annotation_from_gtf {
     }
     close($fh);
 
+    # If we only need the exons return this
+    if ($subset eq 'exons') {
+	$count=keys %exons;
+	print STDERR $count, "\tExon entries obtained\n";
+	return(\%exons);
+    } elsif ($subset eq 'gene') {
+	$count=keys %genes;
+	print STDERR $count, "\tGene entries obtained\n";
+	return(\%genes);
+    }
+
+    # If we want the full annotation continue
     # Add all the transcripts to their corresponding gene feature
     foreach my $gene_id (keys %genes) {
 	foreach my $trans_id (keys %{$genes{$gene_id}{'transcripts'}}) {
 	    $genes{$gene_id}{'gene'}->add_transcript($genes{$gene_id}{'transcripts'}{$trans_id});
 	}
+	delete $genes{$gene_id}{'feature'}{'transcript_id'};
     }
     print $log_fh $count,"\tLines read\n";
 
