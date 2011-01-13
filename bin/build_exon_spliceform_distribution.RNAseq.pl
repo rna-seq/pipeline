@@ -19,9 +19,10 @@ BEGIN {
 # The introns, regardless of the strand will alway be ordered from the 5'
 # coordinate to the 3'
 
-use RNAseq_pipeline3 ('get_fh','get_feature_overlap','parse_gff_line',
+use RNAseq_pipeline3 ('get_fh','parse_gff_line',
 		      'get_annotation_from_gtf');
-use RNAseq_pipeline_settings3 ('read_config_file','read_file_list','check_db');
+use RNAseq_pipeline_settings3 ('read_config_file','read_file_list','check_db',
+			       'get_feature_overlap_sub');
 use Bio::Range;
 use Bio::SeqFeature::Gene::GeneStructure;
 use Bio::SeqFeature::Gene::Transcript;
@@ -40,6 +41,9 @@ my $junctable;
 my $database;
 my $command;
 my $prefix;
+my $parallel='cluster';
+my $paralleltmp;
+my $bindir;
 
 # Read the options file
 my %options=%{read_config_file()};
@@ -52,6 +56,21 @@ $stranded=$options{'STRANDED'};
 $exontable=$options{'EXONSCLASSTABLE'};
 $junctable=$options{'JUNCTIONSCLASSTABLE'};
 $database=$options{'COMMONDB'};
+$paralleltmp=$options{'PROJECT'}.'/'.$options{'LOCALPARALLEL'};
+$bindir=$options{'BIN'};
+unless($options{'PROJECT'}=~/^\/users/) {
+    print STDERR "Running locally, cannot use parallel\n";
+    $parallel='default';
+}
+
+unless ($paralleltmp) {
+    $paralleltmp=$options{'PROJECT'}.'/work';
+}
+
+# Get some subroutines
+*get_feature_overlap=get_feature_overlap_sub($parallel,
+					     $paralleltmp,
+					     $bindir);
 
 # First check if the tables need to be created or not
 my $exon_present=check_db($exontable,

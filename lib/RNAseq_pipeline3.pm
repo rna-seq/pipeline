@@ -73,7 +73,7 @@ sub check_table_existence {
     my $dbh=shift;
     my $table=shift;
 
-    print STDERR "Checking database for $table...\n";
+    print STDERR "Checking database for $table...";
 
     my ($query,$sth);
     $query ='SELECT count(*) ';
@@ -663,6 +663,14 @@ sub get_files_from_table_sub {
     my $dbh=shift;
     my $table=shift;
 
+    # First check if the table exists and if not die graciously
+    my $present=check_table_existence($dbh,
+				      $table);
+
+    unless ($present) {
+	die "Required table $table does not seem to be present in the database...\nI'm quitting\n";
+    }
+
     my %cache;
 
     my ($query,$sth,$count);
@@ -1249,6 +1257,7 @@ sub gff_line_check {
 # regardless of their size
 ### TO DO
 sub get_feature_overlap {
+    warn "THIS SHOULD NEVER HAPPEN\n";
     my $features=shift;
     my $annotation=shift;
     my $stranded=shift;
