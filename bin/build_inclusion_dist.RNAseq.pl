@@ -72,7 +72,7 @@ sub get_info_from_table {
     while (my ($gene_id,$exon_id,$ExIncl,$JuncInc,
 	       $JuncExc,$inc,$set)=$sth->fetchrow_array()) {
 	my $value=int($inc * 100);
-	if ($value) {
+	if (defined $value) {
 	    $hist{$value}{$set}++;
 	}
     }
