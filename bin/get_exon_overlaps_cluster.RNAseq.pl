@@ -57,9 +57,6 @@ unless($options{'PROJECT'}=~/^\/users/) {
     print STDERR "Running locally, cannot use parallel\n";
     $parallel='default';
 }
-#if ($options{'PARALLEL'}) {
-#    $parallel='parallel';
-#}
 
 unless ($paralleltmp) {
     $paralleltmp=$options{'PROJECT'}.'/work';
