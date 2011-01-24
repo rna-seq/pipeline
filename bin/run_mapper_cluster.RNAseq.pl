@@ -150,13 +150,16 @@ unless (@filepairs) {
 
 if ($usecluster) {
     # Build the submission file
+    my $jobname='RNAseqMap';
     my $subfile=build_run_mapper_submission(\@filepairs,
 					    $bindir,
 					    $index,
-					    $threads);
+					    $threads,
+					    $jobname);
     my $queue=$options{'CLUSTER'};
     send2cluster($subfile,
-		 $queue);
+		 $queue,
+		 $jobname);
 
     # clean up
     my $command="rm $subfile";
@@ -184,6 +187,7 @@ sub build_run_mapper_submission {
     my $bidir=shift;
     my $index=shift;
     my $threads=shift || 2;
+    my $jobname=shift;
 
     print STDERR 'Building submission file...';
     my $filenum=@{$pairs};
@@ -206,7 +210,7 @@ sub build_run_mapper_submission {
     
     print $outfh <<FORMEND;
 # Get the job name
-#\$ -N RNAseqMap
+#\$ -N $jobname
     
 # Set the array jobs
 #\$ -t 1-$filenum

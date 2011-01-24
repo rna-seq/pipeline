@@ -13,6 +13,7 @@ bin/build_fusion_cluster_support.RNAseq.pl -text
 bin/build_fusion_clusters.RNAseq.pl -text
 bin/build_gene_projections.RNAseq.pl -text
 bin/build_gene_rpkm_dist.RNAseq.pl -text
+bin/build_genes.RNAseq.pl -text
 bin/build_html_report.RNAseq.pl -text
 bin/build_inclusion_correlation.RNAseq.pl -text
 bin/build_inclusion_dist.RNAseq.pl -text
