@@ -190,7 +190,7 @@ sub process_splits {
 	    if ($splits->{$split_id}) {
 		$splits->{$split_id}->[5]++;
 	    } else {
-		$splits->{$split_id}=[$chr1,$start,$chr2,$end,$type,0,
+		$splits->{$split_id}=[$chr1,$start,$chr2,$end,$type,1,
 				      $start_exons,$end_exons,$pair];
 	    }
 	    ($chr1,$chr2,$start,$end)=('','','','');
