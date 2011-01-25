@@ -137,5 +137,15 @@ http://big.crg.cat/services_and_software
 overlap: ln -s /users/rg/sdjebali/bin/overlap bin
 flux.sh: ln -s /users/rg/dgonzalez/bin/flux.sh bin
 
+This is an example of a flux.sh file:
+
+-------------------------------------------------------------------------------
+export LD_LIBRARY_PATH=/users/rg/dgonzalez/local/FluxCapacitor/lib/native/lpsolve55/unix/x86/64
+
+java -Xms500m -Xmx12G -XX:MaxNewSize=1500m -XX:NewSize=120m -XX:+UseParNewGC -XX:+UseConcMarkSweepGC  -XX:+CMSParallelRemarkEnabled -XX:TargetSurvivorRatio=90 -Djava.library.path="/users/rg/dgonzal
+ez/local/FluxCapacitor/lib/native/lpsolve55/unix/x86/64" -jar "/users/rg/dgonzalez/local/FluxCapacitor/lib/FluxCapacitor.jar" $@
+-------------------------------------------------------------------------------
+_
+
 # Run the execute script with the step up to which the pipeline needs to run
 bin/execute_RNAseq_pipeline3.0.pl all |tee -a pipeline.log
