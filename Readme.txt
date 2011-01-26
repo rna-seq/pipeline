@@ -2,11 +2,35 @@
 
 = Dependencies =
 
+==Perl Modules==
+
+* DBI
+
+* DBD::mysql
+
 * Bio::DB::Fasta
 
 * Bundle::BioPerl
 
-== Installation ==
+==Programs==
+
+* R
+
+* GEM (http://big.crg.cat/services_and_software)
+
+* Flux capacitor (http://big.crg.cat/services_and_software)
+
+* overlap (http://big.crg.cat/services_and_software)
+
+==Other==
+
+* SGI cluster
+
+* 64bit machines
+
+* 8Gb RAM in each of the machines/nodes that will be used. It can run with 4Gb in smaller datasets, but may have trouble with the bigger ones
+
+= Installation =
 
 # Create a new directory
 mkdir 009TR.PE40
@@ -137,7 +161,7 @@ http://big.crg.cat/services_and_software
 overlap: ln -s /users/rg/sdjebali/bin/overlap bin
 flux.sh: ln -s /users/rg/dgonzalez/bin/flux.sh bin
 
-This is an example of a flux.sh file:
+This is an example of a flux.sh file. This file is created by the installer script when the Flux Capacitor is installed:
 
 -------------------------------------------------------------------------------
 export LD_LIBRARY_PATH=/users/rg/dgonzalez/local/FluxCapacitor/lib/native/lpsolve55/unix/x86/64
@@ -146,6 +170,8 @@ java -Xms500m -Xmx12G -XX:MaxNewSize=1500m -XX:NewSize=120m -XX:+UseParNewGC -XX
 ez/local/FluxCapacitor/lib/native/lpsolve55/unix/x86/64" -jar "/users/rg/dgonzalez/local/FluxCapacitor/lib/FluxCapacitor.jar" $@
 -------------------------------------------------------------------------------
 _
+
+# Check that the GEM tools are available both to the computer running the pipeline and the cluster nodes where jobs will be run.
 
 # Run the execute script with the step up to which the pipeline needs to run
 bin/execute_RNAseq_pipeline3.0.pl all |tee -a pipeline.log
