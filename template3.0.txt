@@ -556,7 +556,7 @@ cleanup: @
 
 
 # ENCODE info we should add the transcript expression from the flux
-encode: _summaries _all_junctions_class _merged_mapping _read_classification
+encode: _summaries _all_junctions_class_pooled _merged_mapping _read_classification
 
 # Data for the browser
 browser:

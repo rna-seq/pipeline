@@ -1404,6 +1404,18 @@ CREATE TABLE ${prefix}_all_junctions_class (
     exons2 text,
     LaneName varchar(50) not null
     );",
+		'_all_junctions_class_pooled' => "DROP TABLE IF EXISTS ${prefix}_all_junctions_class_pooled;
+CREATE TABLE ${prefix}_all_junctions_class_pooled (
+    chr1 varchar(50) not null,
+    start int unsigned not null,
+    chr2 varchar(50) not null,
+    end int unsigned not null,
+    junc_type varchar(50) not null,
+    support int unsigned not null,
+    exons1 text,
+    exons2 text,
+    sample varchar(50) not null
+    );",
 		'_exon_coverage' => "DROP TABLE IF EXISTS ${prefix}_exon_coverage;
 CREATE TABLE ${prefix}_exon_coverage (
     filename varchar(100),
