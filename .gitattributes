@@ -36,6 +36,7 @@ bin/check_mappings.RNAseq.pl -text
 bin/classify_mapped_read.RNAseq.pl -text
 bin/cluster_run.RNAseq.pl -text
 bin/compare_gene_RPKM.RNAseqComp.pl -text
+bin/compare_splicing.RNAseqComp.pl -text
 bin/completed.RNAseq.pl -text
 bin/execute_RNAseq_pipeline3.0.pl -text
 bin/gem2bed_combined.RNAseq.pl -text
@@ -109,6 +110,7 @@ bin/start_RNAseq_pipeline.3.0.pl -text
 lib/RNAseq_GEM3.pm -text
 lib/RNAseq_mapping_summary3.pm -text
 lib/RNAseq_pipeline3.pm -text
+lib/RNAseq_pipeline_comp3.pm -text
 lib/RNAseq_pipeline_settings3.pm -text
 lib/RNAseq_pipeline_start3.pm -text
 lib/RNAseq_pipeline_stats3.pm -text
