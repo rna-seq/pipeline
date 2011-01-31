@@ -201,7 +201,7 @@ sub plot_graphs_R {
     $r_string.="genesdist<-dist(t(rpkms),method='canberra')\n";
 
     # Setup the figure
-    $r_string.="postscript(\"$outfile.ps\")\n";
+    $r_string.="pdf(\"$outfile.pdf\")\n";
 
     # Build the tree
     $r_string.="plot(hclust(genesdist))\n";

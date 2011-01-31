@@ -93,6 +93,7 @@ bin/plot_proj_detection.RNAseq.pl -text
 bin/plot_transcript_saturation.RNAseq.pl -text
 bin/prepare_files.RNAseq.pl -text
 bin/preprocess.RNAseq.pl -text
+bin/run_IDR.RNAseqComp.pl -text
 bin/run_flux.RNAseq.pl -text
 bin/run_flux_pooled.RNAseq.pl -text
 bin/run_gem2sam.RNAseq.pl -text
