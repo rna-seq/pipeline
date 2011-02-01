@@ -1747,7 +1747,8 @@ sub check_dir {
 	print $log_fh "$dir already exists\n";
 	print $log_fh "Skipping\n";
     } elsif ($dir=~/^bin/) {
-	my $targetdir='/users/rg/dgonzalez/Projects/RNAseq_analysis_pipe4.0/bin';
+	warn "THIS SHOULD NOT HAPPEN\n";
+	my $targetdir='/users/rg/dgonzalez/Projects/RNAseq_analysis_pipe3.0/bin';
 	print $log_fh "Linking dir $dir to $targetdir\n";
 	my $command="ln -s $targetdir $dir";
 	print $log_fh "Executing: $command\n";
