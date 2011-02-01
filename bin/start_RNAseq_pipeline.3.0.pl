@@ -442,13 +442,13 @@ __END__
     -experiment:     The set of reads to be added.
     -template:       File containing the commands that will be executed.
     -readlength:     Nucleotide length of the reads.
+    -qualities:      Encoding of the qualities in fastq format (solexa|phred|none). The none option will perform the mapping ignoring the quality information
 
   Mapping Options:
     -mapper:         Mapper to be used.
                       Defaults to GEM which is the only one supported currently
     -mismatches:     Number of mismatches with which the mapping will be done.
                       Default 2.
-    -paired:         Reads are paired.
     -stranded:       Reads are stranded.
     -threads:        Number of threads to use for mapping.
                       (if mapper allows multiple threads)

@@ -25,7 +25,7 @@ BEGIN {
 
 
 use Getopt::Long;
-use RNAseq_pipeline3 qw(get_fh get_log_fh);
+use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
 use RNAseq_pipeline_settings3 qw(read_config_file);
 use RNAseq_GEM3 ('check_index','determine_quality_type','get_mapper_routines',
 		 'check_split_input','trim_ambiguous','get_unmapped',
@@ -36,7 +36,7 @@ my $index;
 my $outdir;
 
 my $mapper='GEM';
-my $threads=8;
+my $threads;
 
 my $qualities;
 my $ignore_quals;
@@ -183,8 +183,7 @@ while ($mismatches < $maxmismatch) {
 	      $mismatches);
 
     $command="rm $unmapped";
-    print $log_fh "Executing:\t$command\n";
-    system($command);
+    run_system_command($command);
 
     # collect the mapped file
     push @mapping_files, $mapped.".split-map";
@@ -209,8 +208,7 @@ while (1) {
 			   $trimthreshold);
 
     $command="rm $unmapped";
-    print $log_fh "Executing:\t$command\n";
-    system($command);
+    run_system_command($command);
 
     # map the unmapped reads
     my $mapped=$tempdir.'/'.$basename.".mapped.$mismatches.$round.$$";
@@ -222,8 +220,7 @@ while (1) {
 		       $tempdir,
 		       $mismatches);
     $command="rm $trimmed";
-    print $log_fh "Executing:\t$command\n";
-    system($command);
+    run_system_command($command);
 
     # collect the mapped file
     push @mapping_files, $mapped.".map";
@@ -249,8 +246,7 @@ while (1) {
 	      $mismatches);
 
     $command="rm $unmapped";
-    print $log_fh "Executing:\t$command\n";
-    system($command);
+    run_system_command($command);
 
     # collect the mapped file
     push @mapping_files, $split.".split-map";
@@ -270,19 +266,11 @@ while (1) {
 	last;
     }
     $round++;
-
-    # This should sidestep the multithread problem that may make gem get stuck
-    # when the number of reads in the mapping file is small
-    if ($threads > int(($left2 / 10000) + 0.5)) {
-	$threads=int(($left2 / 10000) + 0.5);
-	print $log_fh "Setting threads to $threads\n";
-    }
 }
 
 # Remove the final file
 my $command="rm $unmapped";
-print $log_fh "Executing:\t$command\n";
-system($command);
+run_system_command($command);
 
 my $final_mapping=$outdir.'/'.$basename.".recursive.map";
 combine_mapping_files(\@mapping_files,
@@ -308,8 +296,7 @@ sub combine_mapping_files{
     $command.=" |sort -T $tmpdir| uniq";
     $command.=" > $final_file";
     
-    print $log_fh "Executing:\t$command\n";
-    system($command);
+    run_system_command($command);
 
     # Go through the mapped file and select for each of the reads the longest
     # hit. There should only be one hit in any case, so if there are more we
@@ -363,12 +350,8 @@ sub combine_mapping_files{
     # clean up
     $command ='rm ';
     $command.=join(' ',@{$files});
-
-    print $log_fh "Executing:\t$command\n";
-    system($command);
+    run_system_command($command);
 
     $command = "rm $final_file";
-    print $log_fh "Executing:\t$command\n";
-    system($command);
-
+    run_system_command($command);
 }

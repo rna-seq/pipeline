@@ -37,6 +37,7 @@ bin/classify_mapped_read.RNAseq.pl -text
 bin/cluster_run.RNAseq.pl -text
 bin/compare_gene_RPKM.RNAseqComp.pl -text
 bin/compare_splicing.RNAseqComp.pl -text
+bin/compare_transcript_RPKM.RNAseqComp.pl -text
 bin/completed.RNAseq.pl -text
 bin/execute_RNAseq_pipeline3.0.pl -text
 bin/gem2bed_combined.RNAseq.pl -text

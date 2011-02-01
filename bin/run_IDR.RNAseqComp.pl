@@ -1,5 +1,5 @@
 #!/soft/bin/perl
-# DGK
+# DGK & A.Merkel
 
 use strict;
 use warnings;
@@ -75,8 +75,8 @@ foreach my $sample (keys %pairs) {
     }
     if (@files==2) {
 	my $outputfile=$sample.'.IDR.out';
-	print STDERR "I have two replicates for $sample\n";
-	print STDERR "printing IDR to $outputfile\n";
+	print $log_fh "I have two replicates for $sample\n";
+	print $log_fh "printing IDR to $outputfile\n";
 	my $command="/users/rg/amerkel/bin/RAPexonRPKM_to_IDR_matchedPeaks.pl ";
 	$command.="-i1 $files[0] ";
 	$command.="-i2 $files[1] ";
@@ -84,84 +84,21 @@ foreach my $sample (keys %pairs) {
 	run_system_command($command);
 	$command="rm $files[0] $files[1]";
 	run_system_command($command);
+	
+	# Run the IDR code
+	$command="/users/rg/amerkel/bin/runR.sh /users/rg/amerkel/projects/ENCODE/gene_expression/IDR-discret.Qunha/batch-IDR-mappedInput-discrete-p.r $outputfile $sample T 10 0.95";
+	run_system_command($command);
+	
+	# IDR code fix: reassign the element IDs back to the peaks (they are not
+	# kept in the original code)
+	$command="/users/rg/amerkel/bin/Idrdiscrete_to_overlapPeaks.pl--infile *-categories.txt --ref *matchedPeaks.txt --outfile somemeaningfulname";
+	run_system_command($command);
+
 	last;
     }
 }
 
-# Remove any tables that do not exist
-#check_tables($dbh,
-#	     \%tables);
-
-# For each of tables extract the RPKMs of interest and get for each of the
-# tables the different samples present in them
-#my %samples=%{get_samples(\%tables,
-#			  $dbh,
-#			  $breakdown)};
-#my @experiments=sort {$a cmp $b} keys %samples;
-#my @values;
-#my %all_genes;
-#foreach my $experiment (@experiments) {
-#    my ($table,$sample)=split('_sample_',$experiment);
-#    print $log_fh "Extracting $sample, data from $table\n";
-#    my $data=get_RPKM_data($dbh,
-#			   $table,
-#			   \%all_genes,
-#			   $sample,
-#			   $breakdown);
-#    if ($data) {
-#	push @values, [$experiment,$data];
-#    } else {
-#	print STDERR "Skipping $experiment\n";
-#    }
-#}
-
-# Get the human readable lables
-#oreach my $experiment (@experiments) {
-#   my $label;
-#   if ($nolabels) {
-#	$label=$samples{$experiment}->[1];
-#   } else {
-#	$label=get_labels($experiment);
-#   }
-#   if ($label) {
-#	$experiment=$label;
-#   }
-#
-
-# Print the expression values for each gene in each of the tables into a
-# temporary file
-my $tmpfn="Expression.$project.txt";
-my $tmpfh=get_fh($tmpfn,1);
-#print $tmpfh join("\t",@experiments),"\n";
-#foreach my $gene (keys %all_genes) {
-#    my @row;
-#    my $no_print=0;
-#    foreach my $exp (@values) {
-#	my $value=0;
-#	if ($exp->[1] &&
-#	    ($exp->[1]->{$gene})) {
-#	    $value=$exp->[1]->{$gene};
-#	} else {
-#	    $no_print=1;
-#	}
-#	push @row,$value;
-#    }
-#    unless ($no_print) {
-#	print $tmpfh join("\t",
-#			  $gene,
-#			  @row),"\n";
-#    }
-#}
-#close($tmpfh);
-
-# Plot the correlation graph if we have more than 2 samples
-#if (@experiments > 2) {
-#    my $outfn=$project.".clusters";
-#    plot_graphs_R($tmpfn,
-#		  $outfn);
-#} else {
-#    print STDERR "Not enough samples to cluster\n";
-#}
+close($log_fh);
 
 exit;
 
@@ -232,40 +169,5 @@ sub write_gene_table {
 			  $gene,$rpkm),"\n";
     }
     close($outfh);
-}
-
-# Build a postscript tree using the  canberra distance and the complete linkage
-# for clustering
-sub plot_graphs_R {
-    my $statsfn=shift;
-    my $outfile=shift;
-
-    # Build the R command file
-    my $execution_file="execution.$$.r";
-    my $exec_fh=get_fh($execution_file,1);
-    my $r_string;
-
-    # Read the data
-    $r_string.="rpkms<-read.table(\"$statsfn\",sep=\"\t\",header=T)\n";
-
-    # Calculate the distance matrix
-    $r_string.="genesdist<-dist(t(rpkms),method='canberra')\n";
-
-    # Setup the figure
-    $r_string.="pdf(\"$outfile.pdf\")\n";
-
-    # Build the tree
-    $r_string.="plot(hclust(genesdist))\n";
-    $r_string.="dev.off()\n";
-	
-    print $exec_fh $r_string;
-    close($exec_fh);
-
-    # execute the R file
-    my $command="R --vanilla --quiet < $execution_file";
-    run_system_command($command);
-
-    $command="rm $execution_file";
-    run_system_command($command);
 }
 

@@ -15,6 +15,7 @@
 ==Programs==
 
 * R
+  Within R the following specific package(adapt) is needed
 
 * GEM (http://big.crg.cat/services_and_software)
 
@@ -95,7 +96,6 @@ Usage:
                           Defaults to GEM which is the only one supported currently
         -mismatches:     Number of mismatches with which the mapping will be done.
                           Default 2.
-        -paired:         Reads are paired.
         -stranded:       Reads are stranded.
         -threads:        Number of threads to use for mapping.
                           (if mapper allows multiple threads)
