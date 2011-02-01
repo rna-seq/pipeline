@@ -16,7 +16,7 @@ BEGIN {
 # on the cluster
 
 use Getopt::Long;
-use RNAseq_pipeline3 qw(get_fh);
+use RNAseq_pipeline3 qw(get_fh run_system_command);
 use RNAseq_pipeline_settings3 qw(read_config_file read_file_list get_dbh send2cluster);
 use RNAseq_GEM3 ('check_index','determine_quality_type','get_mapper_routines',
 		 'check_input');
@@ -123,14 +123,14 @@ if ($usecluster) {
 	foreach my $pair (@filepairs) {
 	    # Map the file
 	    # Run the recursive mapper for each of the files
-	    my $command="run_recursive_mapper.RNAseq.pl ";
+	    my $command="$bindir/run_recursive_mapper.RNAseq.pl ";
 	    my $genomeindex=$options{'GENOMEINDEX'};
 	    my $recmapdir=$options{'RECMAPDIR'};
 	    $command.="-index $genomeindex ";
 	    $command.='-i '.$pair->[0].' ';
-	    $command.="-o $recmapdir > $recmapdir/";
-	    $command.=$pair->[0].'.rec.mapping.log';
-	    print STDERR "Executing: $command\n";
+	    $command.="-o $recmapdir > ";
+	    $command.=$pair->[1].'/rec.mapping.log';
+	    run_system_command($command);
 	}
 }
 exit;
