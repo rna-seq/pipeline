@@ -139,13 +139,6 @@ unless($left) {
     die "No unmapped reads found\n";
 }
 
-# This should sidestep the multithread problem that may make gem get stuck
-# when the number of reads in the mapping file is small
-if ($threads > int(($left / 10000) + 0.5)) {
-    $threads=int(($left / 10000) + 0.5);
-    print $log_fh "Setting threads to $threads\n";
-}
-
 my @mapping_files;
 
 # Map with increased mismatches
@@ -202,13 +195,6 @@ while ($mismatches < $maxmismatch) {
     my $left2=get_unmapped($mapped.".split-map",
 			   $unmapped,
 			   $log_fh);
-
-    # This should sidestep the multithread problem that may make gem get stuck
-    # when the number of reads in the mapping file is small
-    if ($threads > int(($left2 / 10000) + 0.5)) {
-	$threads=int(($left2 / 10000) + 0.5);
-	print $log_fh "Setting threads to $threads\n";
-    }
 }
 
 # Map with the initial number of mismatches but trimming the reads
@@ -285,13 +271,6 @@ while (1) {
 	last;
     }
     $round++;
-
-    # This should sidestep the multithread problem that may make gem get stuck
-    # when the number of reads in the mapping file is small
-    if ($threads > int(($left2 / 10000) + 0.5)) {
-	$threads=int(($left2 / 10000) + 0.5);
-	print $log_fh "Setting threads to $threads\n";
-    }
 }
 
 # Remove the final file
