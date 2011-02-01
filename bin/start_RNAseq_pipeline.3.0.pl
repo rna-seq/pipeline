@@ -289,7 +289,7 @@ if (keys %{$guessmaster}) {
 
     # This is specific to the CRG
     if ($localdir!~/^\/users/) {
-	$options{'cluster'}='';
+	${$options{'cluster'}}='';
     }
 }
 
