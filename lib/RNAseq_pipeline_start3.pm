@@ -37,6 +37,7 @@ use DBD::mysql;
 
 ## Bio::Perl modules
 use Bio::DB::Fasta;
+use Bio::SeqIO;
 use Bio::SeqFeature::Gene::GeneStructure;
 use Bio::SeqFeature::Gene::Transcript;
 use Bio::SeqFeature::Gene::Exon;
