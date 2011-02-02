@@ -59,8 +59,9 @@ status: @
 	mysql $DB -e 'SHOW TABLE STATUS'
 
 _start:	@
+	check_prerequisites.RNAseq.pl
 	all_no_log_table
-	mv start_RNAseq_pipeline.log $LOGS
+	mv start_RNAseq_pipeline.log check_prerequisites.RNAseq.log $LOGS
 
 # This rule will be a preprocessing step to change the format of the seq.txt
 # or qseq.txt files into fasta or fastq respectively as well as organizing the
