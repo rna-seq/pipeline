@@ -20,7 +20,7 @@ BEGIN {
 # Make the mapper take a list of files
 
 use Getopt::Long;
-use RNAseq_pipeline3 qw(get_fh);
+use RNAseq_pipeline3 qw(get_fh run_system_command);
 use RNAseq_pipeline_settings3 qw(read_config_file read_file_list send2cluster);
 use RNAseq_GEM3 ('check_index','determine_quality_type',
 		 'get_split_mapper_routines','check_input');
@@ -145,8 +145,7 @@ if ($usecluster) {
 
     # clean up
     my $command="rm $subfile";
-    print STDERR "Executing: $command\n";
-    system($command);
+    run_system_command($command);
 
     } else {
 	my %mapper=%{get_split_mapper_routines()};

@@ -18,6 +18,9 @@ BEGIN {
 # through R
 # We have to be able to decide what table to get the data from (pooled or not)
 # And also we have to be able to select genes that are expressed 
+# In order to get set the descriptions after using the script get_EnsEMBL_gene_info.pl and a list of genes:
+# gawk -F"\t" '{print "UPDATE 1_H_sapiens_EnsEMBL_55_parsed_gt_geneclass set description=\""$4"\" WHERE gene_id=\""$1"\";"}' all.genes.desc.txt > add.description.sql
+
 
 use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
 use RNAseq_pipeline_settings3 qw(get_dbh read_config_file);
@@ -60,6 +63,8 @@ $dbhcommon=get_dbh(1);
 
 # Get subroutines
 *get_labels=get_labels_sub($dbhcommon);
+*gene2chr=get_chr_from_gene_sub();
+*gene2desc=get_desc_from_gene_sub();
 
 # Get the tables belonging to the project
 my %tables=%{get_tables($dbhcommon,
@@ -125,7 +130,12 @@ foreach my $gene (keys %all_genes) {
 	}
 	push @row,$value;
     }
-    unless ($no_print) {
+
+    if (gene2chr($gene)=~/chrM/o) {
+	next;
+    } elsif (gene2desc($gene)=~/ribosom(e|al)/io) {
+	next;
+    } else {
 	print $tmpfh join("\t",
 			  $gene,
 			  @row),"\n";
@@ -143,6 +153,74 @@ if (@experiments > 2) {
 }
 
 exit;
+
+sub get_chr_from_gene_sub {
+    my %options=%{read_config_file()};
+    my $dbh=get_dbh(1);
+    my $table=$options{'GENECLASSTABLE'};
+
+    # For saving time
+    my %cache;
+
+    my ($query,$sth,$count);
+
+    $query ='SELECT chr ';
+    $query.="FROM $table ";
+    $query.='WHERE gene_id = ?';
+    $sth=$dbh->prepare($query);
+
+    my $subroutine=sub {
+	my $gene=shift;
+
+	unless ($cache{$gene}) {
+	    $count=$sth->execute($gene);
+
+	    if ($count != 1) {
+		warn "We do not have a single chr corresponding to $gene\n";
+		return();
+	    } else {
+		my ($chr)=$sth->fetchrow_array();
+		$cache{$gene}=$chr;
+	    }
+	}
+	return($cache{$gene});
+    };
+    return($subroutine);
+}
+
+sub get_desc_from_gene_sub {
+    my %options=%{read_config_file()};
+    my $dbh=get_dbh(1);
+    my $table=$options{'GENECLASSTABLE'};
+
+    # For saving time
+    my %cache;
+
+    my ($query,$sth,$count);
+
+    $query ='SELECT description ';
+    $query.="FROM $table ";
+    $query.='WHERE gene_id = ?';
+    $sth=$dbh->prepare($query);
+
+    my $subroutine=sub {
+	my $gene=shift;
+
+	unless ($cache{$gene}) {
+	    $count=$sth->execute($gene);
+
+	    if ($count != 1) {
+		warn "We do not have a single description corresponding to $gene\n";
+		return();
+	    } else {
+		my ($desc)=$sth->fetchrow_array();
+		$cache{$gene}=$desc;
+	    }
+	}
+	return($cache{$gene});
+    };
+    return($subroutine);
+}
 
 sub get_RPKM_data {
     my $dbh=shift;

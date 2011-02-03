@@ -220,16 +220,19 @@ sub check_gff_file {
     # Issue some warnings if the file looks strange
     if ($features{'exon'} < 1) {
 	die "No exons found in $infh\n";
-    } elsif ($features{'exon'} < 10000) {
-	print STDERR "WARNING: Only $features{'exon'} exons found in $file\n";
+    } elsif ($features{'exon'} &&
+	     $features{'exon'} < 10000) {
+	print STDERR "WARNING: Only $features{'exon'} exons found in $file, maybe it is incomplete\n";
     }
-    if ($features{'gene'} < 1) {
+    if ($features{'gene'} &&
+	$features{'gene'} < 1) {
 	print STDERR "WARNING: No genes found in $file\n";
     }
-    if ($features{'transcript'} < 1) {
+    if ($features{'transcript'} &&
+	$features{'transcript'} < 1) {
 	print STDERR "WARNING: No transcripts found in $file\n";
     }
-    print STDERR "annotation seems fine\n";
+    print STDERR "Annotation seems fine\n";
 
     close($infh);
 }

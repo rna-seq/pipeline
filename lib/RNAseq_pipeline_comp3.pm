@@ -4,7 +4,8 @@ package RNAseq_pipeline_comp3;
 # Must be done before strict is used
 use Exporter;
 @ISA=('Exporter');
-@EXPORT_OK=('get_tables','check_tables','get_labels_sub','get_samples');
+@EXPORT_OK=('get_tables','check_tables','get_labels_sub','get_samples',
+	    'get_filenames');
 
 use strict;
 use warnings;
@@ -134,6 +135,31 @@ sub get_samples {
 	} else {
 	    $query ='SELECT distinct sample ';
 	}
+	$query.="FROM $table";
+	
+	$sth = $dbh->prepare($query);
+	my $count=$sth->execute();
+	while (my ($sample)=$sth->fetchrow_array()) {
+	    my $sample_id=join('_sample_',
+			       $table,
+			       $sample);
+	    $samples{$sample_id}=[$table,$exp];
+	}	
+    }
+    return(\%samples);
+}
+
+sub get_filenames {
+    my $tables=shift;
+    my $dbh=shift;
+
+    my %samples;
+
+    foreach my $exp (keys %{$tables}) {
+	my ($query,$sth);
+	my $table=$tables->{$exp};
+	
+	$query ='SELECT distinct filename ';
 	$query.="FROM $table";
 	
 	$sth = $dbh->prepare($query);

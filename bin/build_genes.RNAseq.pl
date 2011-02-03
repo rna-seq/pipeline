@@ -30,7 +30,7 @@ my $debug=1;
 my %options=%{read_config_file()};
 $annotation_file=$options{'ANNOTATION'};
 $prefix=$options{'PREFIX'};
-$table=$options{'GENECLASSTABLE'};
+$table=$options{'GENECLASSTABLE'} || die "No GENECLASS table found\n";
 $commondb=$options{'COMMONDB'};
 $outtable=$prefix.'_genes.txt';
 
@@ -128,10 +128,13 @@ CREATE TABLE $table (
        type varchar(50) NOT NULL,
        status varchar(20) NOT NULL,
        name varchar(50) NULL,
+       description text NULL,
+       chr varchar(10) NOT NULL,
        index idx_gene (gene_id),
        index idx_type (type),
        index idx_status (status),
-       index idx_name (name)
+       index idx_name (name),
+       index idx_chr (chr)
 );\n";
     close($tablefh);
 }
@@ -150,12 +153,16 @@ sub build_gene_info {
     my $gene_type=$gene->{'feature'}{'gene_type'} || 'gene';
     my $gene_status=$gene->{'feature'}{'gene_status'} || 'unknown';
     my $gene_name=$gene->{'feature'}{'gene_name'} || '\N';
+    my $gene_desc='\N';
+    my $gene_chr=$gene->{'chr'} || '\N';
 
     $string=join("\t",
 		 $gene_id,
 		 $gene_type,
 		 $gene_status,
-		 $gene_name);
+		 $gene_name,
+		 $gene_desc,
+		 $gene_chr);
 
     return($string);
 }

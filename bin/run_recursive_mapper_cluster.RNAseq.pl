@@ -107,16 +107,18 @@ unless (@filepairs) {
 
 if ($usecluster) {
     # Build the submission file
+    my $jobname='RNAseqRecMap';
     my $subfile=build_run_mapper_submission(\@filepairs,
 					    $bindir,
-					    $index);
+					    $index,
+					    $jobname);
     send2cluster($subfile,
-		 $queue);
+		 $queue,
+		 $jobname);
 
     # clean up
     my $command="rm $subfile";
-    print STDERR "Executing: $command\n";
-    system($command);
+    run_system_command($command);
 
     } else {
 	my %mapper=%{get_mapper_routines()};
@@ -161,6 +163,7 @@ sub build_run_mapper_submission {
     my $pairs=shift;
     my $bidir=shift;
     my $index=shift;
+    my $jobname=shift;
 
     print STDERR 'Building submission file...';
     my $filenum=@{$pairs};
@@ -183,7 +186,7 @@ sub build_run_mapper_submission {
     
     print $outfh <<FORMEND;
 # Get the job name
-#\$ -N RNAseqRecMap
+#\$ -N $jobname
     
 # Set the array jobs
 #\$ -t 1-$filenum
@@ -194,6 +197,9 @@ sub build_run_mapper_submission {
 # Write in to the current working directory
 #\$ -cwd 
 export PATH=\$PATH:/soft/bin
+# Make sure the sorting order is "a la C"
+export LC_ALL=C
+
 infiles=(@infiles)
 outfiles=(@outfiles)
 
@@ -230,7 +236,7 @@ sub check_read_files {
 	} elsif (-r "$filepath3.gz") {
 	    print STDERR "Unzipping in $paralleldir\n";
 	    my $command="gunzip -c $filepath3.gz > $filepath1";
-	    system($command);
+	    run_system_command($command);
 	    $locations{$file}=$filepath1;
 	} else {
 	    die "I can't find file $file\n";
