@@ -165,13 +165,13 @@ foreach my $pair (keys %lane_files) {
 	}
 	close($splitfh);
 
-	# parse the recursive mapping This will take only those cses with a
+	# parse the recursive mapping This will take only those cases with a
 	# single
 	# split map possibility (no where one half is unique and the other multi
 	my $rec_map=$lane_files{$pair}{$lane}->[3];
 	print STDERR "Parsing rec maps from $rec_map...";
-	my $splitfh=get_fh($rec_map);
-	while (my $line=<$splitfh>) {
+	my $recfh=get_fh($rec_map);
+	while (my $line=<$recfh>) {
 	    my %line=%{parse_gem_line($line)};
 	    my $oldbed='';
 	    if ($line{'type'} eq 'S') {
@@ -215,7 +215,7 @@ foreach my $pair (keys %lane_files) {
 		}
 	    }
 	}
-	close($splitfh);
+	close($recfh);
 
 	print STDERR "done\n";
     }
