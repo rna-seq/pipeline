@@ -13,7 +13,7 @@ BEGIN {
 }
 
 # Objective
-# This script should take an eson annotation file and project the exons in
+# This script should take annotation file and project all the exons in
 # order to obtain a set of non-overlapping projections for each gene
 
 use Bio::Range;
@@ -36,6 +36,7 @@ $genomedir=$options{'GENOMEDIR'};
 
 $exonfile=$exondir.'/'.$prefix.'.exon.gtf';
 $projectionfile=$genomedir.'/'.$prefix.'.proj.gtf';
+
 # Do some checks to see we have all necessary information
 unless (-r $exonfile) {die "No exon file found at $exonfile\n";}
 
@@ -89,6 +90,7 @@ print join("\t",
 
 exit;
 
+# TO DO use a get_coords from exon name sub for getting the exon coordinates
 sub get_projections {
     my $genes=shift;
 
@@ -99,16 +101,19 @@ sub get_projections {
 	my $length=0;
 	foreach my $exon (keys %{$genes->{$gene}}) {
 	    my @location=split('_',$exon);
-	    my $exon_chr=shift(@location);
+	    my $strand=pop(@location);
+	    my $end=pop(@location);
+	    my $start=pop(@location);
+	    my $exon_chr=join('_',@location);
 	    if ($chr &&
 		$exon_chr ne $chr) {
 		warn "$gene has exons in $chr and $exon_chr\n";
 	    } else {
 		$chr=$exon_chr;
 	    }
-	    my $range=Bio::Range->new(-start => $location[0],
-				      -end => $location[1],
-				      -strand => $location[2]);
+	    my $range=Bio::Range->new(-start => $start,
+				      -end => $end,
+				      -strand => $strand);
 	    push @ranges,$range;
 	}
 	my @disc_ranges = Bio::Range->disconnected_ranges(@ranges);
@@ -127,7 +132,6 @@ sub get_exons {
     my %remove;
 
     print STDERR "Extracting exon lists from $exonfile...";
-    my $repeatfh=get_fh($repeated_exons,1);
     my $exonfh=get_fh($exonfile);
     while (my $line=<$exonfh>) {
 	my %line=%{parse_gff_line($line)};
@@ -171,13 +175,15 @@ sub get_exons {
 	}
     }
     close($exonfh);
-    close($repeatfh);
     print STDERR "done\n";
 
+    my $repeatfh=get_fh($repeated_exons,1);
     # Remove those exons that map to multiple genes
     foreach my $exon (keys %remove) {
+	print $repeatfh $exon,"\n";
 	delete $exons{$exon};
     }
+    close($repeatfh);
 
     my $count=keys %remove;
     print STDERR $count,"\tExons mapping to multiple genes removed\n";
