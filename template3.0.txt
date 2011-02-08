@@ -39,6 +39,7 @@ STRANDED =
 READLENGTH =
 HOST =
 GENECLASSTABLE =
+TRANSCLASSTABLE =
 JUNCTIONSTABLE =
 JUNCTIONSCLASSTABLE =
 EXONSCLASSTABLE =
@@ -142,6 +143,13 @@ _indices: _junction_seqs _transcript_seqs
 _genes: _indices
 	$BIN/build_genes.RNAseq.pl
 	mv build_genes.RNAseq.log $LOGS
+	all_no_log_table
+
+# This rule should parse the gff file and build a table with the transcripts and
+# information attached to them in it
+_transcripts: _indices
+	$BIN/build_transcripts.RNAseq.pl
+	mv build_transcripts.RNAseq.log $LOGS
 	all_no_log_table
 
 # First we need to get the files containing exons and gene annotations We will

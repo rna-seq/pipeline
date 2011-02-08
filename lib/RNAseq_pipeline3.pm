@@ -378,6 +378,7 @@ sub get_annotation_from_gtf {
 
     my $fh=get_fh($file);
     my %genes;
+    my %trans;
     my %exons;
     my %excluded;
     my $count=0;
@@ -539,6 +540,14 @@ sub get_annotation_from_gtf {
 		    -display_name => $trans_id);
 		$genes{$gene_id}{'transcripts'}{$trans_id}=$trans_feat;
 	    }
+	    # Add the transcript information if required
+	    if ($subset eq 'transcript') {
+		$trans{$trans_id}{'gene_id'}=$gene_id;
+		$trans{$trans_id}{'transcript_id'}=$trans_id;
+		$trans{$trans_id}{'chr'}=$chr;
+		$trans{$trans_id}{'type'}=$type;
+		$trans{$trans_id}{'feature'}=$line->{'feature'};
+	    }
 	} elsif ($type =~ /exon/o) {
 	    # Get the exon feature
 	    # If the gene object does not exist build it on the fly
@@ -567,7 +576,8 @@ sub get_annotation_from_gtf {
 			     $start,
 			     $end,
 			     $strand);
-	    $exons{$exon_id}='';
+	    # It may be useful to have the gne info in this hash
+	    $exons{$exon_id}=$gene_id;
 	    my $exon_feat = Bio::SeqFeature::Gene::Exon->new(
 		-start        => $start,
 		-end          => $end,
@@ -593,6 +603,12 @@ sub get_annotation_from_gtf {
 	$count=keys %genes;
 	print STDERR $count, "\tGene entries obtained\n";
 	return(\%genes);
+    } elsif ($subset eq 'transcript') {
+	$count=keys %trans;
+	print STDERR $count, "\tTranscript entries obtained\n";
+	return(\%trans);
+    } elsif ($subset) {
+	print STDERR "UNknown subset $subset requested. Ignoring...\n";
     }
 
     # If we want the full annotation continue

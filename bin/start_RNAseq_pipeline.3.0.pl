@@ -75,6 +75,7 @@ my $commondb='RNAseqPipelineCommon';
 my $database='RNAseqPipeline';
 my $junctionstable;
 my $geneclasstable;
+my $transclasstable;
 my $junctionsclasstable;
 my $exonsclasstable;
 
@@ -135,6 +136,7 @@ my %options=('species' => \$species,
 	     'commondb' => \$commondb,
 	     'database' => \$database,
 	     'geneclass' => \$geneclasstable,
+	     'transclass' => \$transclasstable,
 	     'junctionstable' => \$junctionstable,
 	     'junctionsclass' => \$junctionsclasstable,
 	     'exonsclass' => \$exonsclasstable,
@@ -178,6 +180,7 @@ GetOptions(\%options,
 	   'commondb=s',
 	   'database=s',
 	   'geneclass=s',
+	   'transclass=s',
 	   'junctionstable=s',
 	   'junctionsclass=s',
 	   'exonsclass=s',

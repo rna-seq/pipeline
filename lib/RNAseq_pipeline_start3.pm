@@ -877,6 +877,45 @@ sub get_existing_data_subs {
 	return($location);
     };
 
+    $guessing_subs{'transclass'}=sub {
+	my $filetype=shift;
+	my $present=0;
+	my $annot_string=substr($annotation,0,30);
+	my $table_name=$annotation_id.'_'.$annot_string;
+	$table_name.='.transclass';
+	$table_name=~s/\./_/g;
+	my $location=$table_name;
+
+	# The table naming is based on the unique indices of the genome and
+	# annotation so we don't need to check anything.
+	my $count=$sth3->execute($annotation_id,$filetype);
+	if ($count > 0) {
+	    if ($count == 1) {
+		($location)=$sth3->fetchrow_array();
+		$present=1;
+	    } else {
+		warn "More than one entry retrieved for $annotation\n";
+		$present=1
+	    }
+	}
+	if ($present) {
+	    print $log_fh "Table present at $location\n";
+	} else {
+	    print $log_fh "Table not present. Will be built at $location\n";
+	    # The entry is absent and we must set it
+	    my ($ins_query,$ins_sth);
+	    $ins_query ="INSERT INTO $table3 ";
+	    $ins_query.='SET genome_id = ?,annotation_id = ?,';
+	    $ins_query.='type = ?,table_name = ?';
+	    print $log_fh "Executing: $ins_query\n";
+	    $ins_sth=$dbh->prepare($ins_query);
+	    $ins_sth->execute($genome_id,$annotation_id,
+			      $filetype,$location);
+	    $ins_sth->finish();
+	}
+	return($location);
+    };
+
     $guessing_subs{'exonsclass'}=sub {
 	my $filetype=shift;
 	my $present=0;
@@ -1067,6 +1106,7 @@ sub get_tables_hash {
 		'_dataset' => '',
 		'_junctions' => '',
 		'_genes' => '',
+		'_transcripts' => '',
 		'_exon_seqs' => '',
 		'_junction_seqs' => '',
 		'_transcript_seqs' => '',
@@ -1585,6 +1625,11 @@ CREATE TABLE ${prefix}_genes (
        table_id varchar(200) NOT NULL,
        creation varchar(20) NOT NULL
 );",
+		'_transcripts' => "DROP TABLE IF EXISTS ${prefix}_transcripts;
+CREATE TABLE ${prefix}_transcripts (
+       table_id varchar(200) NOT NULL,
+       creation varchar(20) NOT NULL
+);",
 		'_exon_seqs' => "DROP TABLE IF EXISTS ${prefix}_exon_seqs;
 CREATE TABLE ${prefix}_exon_seqs (
        table_id varchar(200) NOT NULL,
@@ -1714,6 +1759,7 @@ sub create_directory_structure {
 	      'READLENGTH' => ${$options->{'readlength'}},
 	      'HOST' => ${$options->{'host'}},
 	      'GENECLASSTABLE' => ${$options->{'geneclass'}},
+	      'TRANSCLASSTABLE' => ${$options->{'transclass'}},
 	      'JUNCTIONSTABLE' => ${$options->{'junctionstable'}},
 	      'JUNCTIONSCLASSTABLE' => ${$options->{'junctionsclass'}},
 	      'EXONSCLASSTABLE' => ${$options->{'exonsclass'}},
@@ -1775,7 +1821,8 @@ sub print_config_file {
 
     print $log_fh "Creating the configuration file at $conf_file...";
 
-    foreach my $var (keys %{$vars}) {
+    # Print the keys sorted as it makes it easier to check the file if necessary
+    foreach my $var (sort keys %{$vars}) {
 	my $value=$vars->{$var};
 	if (defined $value) {
 	    print $conf_fh join("\t",

@@ -31,6 +31,7 @@ bin/build_top_transcripts.RNAseq.pl -text
 bin/build_transcript_expression_levels.RNAseq.pl -text
 bin/build_transcript_expression_levels_pooled.RNAseq.pl -text
 bin/build_transcript_sequences.RNAseq.pl -text
+bin/build_transcripts.RNAseq.pl -text
 bin/check_completed_steps.RNAseq.pl -text
 bin/check_mappings.RNAseq.pl -text
 bin/check_prerequisites.RNAseq.pl -text
