@@ -114,7 +114,10 @@ sub get_inclusion_exclusion_events {
     foreach my $gene (keys %{$genes}) {
 	my @exons;
 	foreach my $exon_id (keys %{$genes->{$gene}}) {
-	    my ($chr,$start,$end,$strand)=split('_',$exon_id);
+	    my @location=split('_',$exon_id);
+	    my $strand=pop(@location);
+	    my $end=pop(@location);
+	    my $start=pop(@location);
 	    my $range=Bio::Range->new(-start => $start,
 				      -end => $end);
 	    push @exons,[$exon_id,$range];
