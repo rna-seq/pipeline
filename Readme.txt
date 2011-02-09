@@ -91,6 +91,7 @@ Usage:
         -experiment:     The set of reads to be added.
         -template:       File containing the commands that will be executed.
         -readlength:     Nucleotide length of the reads.
+        -qualities:      Type of qualities given by the sequencer
       Mapping Options:
         -mapper:         Mapper to be used.
                           Defaults to GEM which is the only one supported currently
