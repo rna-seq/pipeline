@@ -21,10 +21,10 @@ use Cwd;
 use RNAseq_pipeline3 qw(MySQL_DB_Connect);
 
 # Set some general variables that will be used through the script:
-#my $usage='execute_RNAseq_pipeline.pl [options]';
 
 # Set a signal handler to kill any process started by the script if it
 # receives the kill signal.
+
 # I don't know if this will actually work but its a pain when all the children
 # keep executing after the main program dies
 my ($kill_all_sub,$add_proc_sub)=\&set_process_management;
@@ -37,9 +37,7 @@ my $pipfile = 'RNAseq_pipeline.txt';	#  -f   control file name
 my $nomake;				#  -n   print commands, don't execute
 my $silent;				#  -s   suppress log messages
 my $debug;				#  -d   print trace (debug mode)
-#my $touch;				#  -t   touch (update timestamp)
 my $force;				#  -r   restart (force execution of stage)
-#my $limit;				#  -L   limit (also set by .limit directive)
 
 my @targets;				# command line args -- names of stages to "build"
 
@@ -68,7 +66,8 @@ my $common_subs=create_common_subs();
 my @root_rules=@{get_root_rules(\%rulelist)};
 
 # Get the database handle
-$dbh=MySQL_DB_Connect($symbols{'DB'});
+$dbh=MySQL_DB_Connect($symbols{'DB'},
+		      $symbols{'HOST'});
 # Get table last modification dates
 Get_table_Dates(\%rulelist);
 
@@ -100,7 +99,6 @@ exit;
 # Execute a stage of the pipeline.  The first param is the name of the
 # stage, the second is a call level used in pretty-printing status
 # messages.  The return value is the new timestamp for the table.
-
 sub execute_rule {
     my $rule=shift;
     my $level=shift;
@@ -164,13 +162,12 @@ sub execute_rule {
     if ($ok) {
 	return $return_value;
     } else {
-	print STDERR "*** pip: rule for $rule failed\n";
+	print STDERR "*** ERROR: rule for $rule failed\n";
 	exit 0;
     }
 }
 
 # Return the current time as a MySQL DATETIME value.
-
 sub now {
     my $time = `date +"%Y-%m-%d %H:%M:%S"`;
     chomp($time);
@@ -180,7 +177,6 @@ sub now {
 # Update the timestamp for a rule X.  If X is a phony rule, or if
 # the "nomake" flag is set, simulate the update by getting the current
 # time, otherwise access the table's real timestamp in the database.
-
 sub update_time_stamp {
     my $rule = shift;;
 
@@ -310,9 +306,9 @@ sub getDate {
     # Check if the database is still responding
     eval {
 	$sth= $dbh->prepare("SHOW TABLE STATUS") or
-	    die "PIP: error at prepare: $DBI::errstr\n";
+	    die "Error at prepare: $DBI::errstr\n";
 	$sth->execute or
-	    die "PIP: error at execute: $DBI::errstr\n";
+	    die "Error at execute: $DBI::errstr\n";
     };
 
     # If not disconnect and reconnect
@@ -324,9 +320,9 @@ sub getDate {
 
 	# Try again and this time if the query failed it is true
 	$sth= $dbh->prepare("SHOW TABLE STATUS") or
-	    die "PIP: query failed: $DBI::errstr\n";
+	    die "Error: query failed: $DBI::errstr\n";
 	$sth->execute or
-	    die "PIP: query failed: $DBI::errstr\n";
+	    die "Error: query failed: $DBI::errstr\n";
     }
 
     while (my $href = $sth->fetchrow_hashref() ) {
@@ -489,7 +485,7 @@ sub processFile {
 	    # Rule definition
 	    rules($line,$rules,\@lines);
 	} else {
-	    die "Pip syntax error: $line\n";
+	    die "Template syntax error: $line\n";
 	}
     }    
 }
@@ -541,7 +537,6 @@ sub initialize {
     chomp(my $projdir = `pwd`);		# main project directory
     my $bindir = "$projdir/bin";	# project applications
     my $sqldir = "$projdir/mysql/table_build";	# project tables
-    my $datadir= "$projdir/data"; # Bulk data
     my $logsdir= "$projdir/logs"; # Logs from the scripts
     my $libdir= "$projdir/lib"; # modules required by the project scripts
     my $tabdatdir="$projdir/mysql/table_data"; # Compressed copy of the database tables
@@ -554,7 +549,6 @@ sub initialize {
 		"BIN"    => $bindir,
 		"TABLES"  => $sqldir,
 		"DB"      => $database,
-		'DATA' => $datadir,
 		'LOGS' => $logsdir,
 		'LIB' => $libdir,
 		'TAB_DAT' => $tabdatdir,

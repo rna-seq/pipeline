@@ -52,6 +52,7 @@ sub MySQL_DB_Connect {
     # This piece of code is only requred if the host is different
     unless ($host) {
 	$host='pou';
+	print STDERR "WARNING: No host was found, so I've set it to $host\n";
     }
 
     my $datasource = "DBI:mysql:$database;host=$host";
