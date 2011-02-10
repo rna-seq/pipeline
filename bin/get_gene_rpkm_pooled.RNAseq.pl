@@ -256,7 +256,7 @@ sub get_projected_length {
 
     print STDERR "Calculating gene projections\n";
 
-    # If the projected file exists read the porojection lengths from it, and
+    # If the projected file exists read the projection lengths from it, and
     # else create it
     if (-r $projfile) {
 	print STDERR $projfile,"\tpresent\n";
