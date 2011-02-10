@@ -20,19 +20,33 @@ sub get_tables {
     my $project=shift;
     my $table_sufix=shift;
     my $fraction=shift;
+    my $all=shift;
 
     my %tables;
 
     my ($query,$sth,$count);
-    $query ='SELECT experiment_id ';
-    $query.='FROM experiments ';
-    $query.='WHERE project_id = ?';
-    if ($fraction) {
-	$query.=" $fraction";
+    if ($all) {
+	$query ='SELECT project_id,experiment_id ';
+	$query.='FROM experiments ';
+	if ($fraction) {
+	    $query.=" WHERE $fraction";
+	}
+    } else {
+	$query ='SELECT project_id,experiment_id ';
+	$query.='FROM experiments ';
+	$query.='WHERE project_id = ?';
+	if ($fraction) {
+	    $query.=" AND $fraction";
+	}
     }
-    $sth=$dbh->prepare($query);
+    print STDERR $query,"\n";
 
-    $count=$sth->execute($project);
+    $sth=$dbh->prepare($query);
+    if ($all) {
+	$count=$sth->execute();
+    } else {
+	$count=$sth->execute($project);
+    }
     if ($count && ($count > 1)) {
 	print STDERR $count,"\tExperiments are present for $project\n";
     } else {
@@ -40,9 +54,9 @@ sub get_tables {
     }
 
     # get all the necessary tables
-    while (my ($experiment)=$sth->fetchrow_array()) {
+    while (my ($project_id,$experiment)=$sth->fetchrow_array()) {
 	my $table_id=join('_',
-			  $project,
+			  $project_id,
 			  $experiment,
 			  $table_sufix);
 	$tables{$experiment}=$table_id;

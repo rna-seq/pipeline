@@ -99,16 +99,16 @@ if (-r $transfn) {
 my $command;
 if (-r $table.'.sql') {
     $command="mysql $commondb < $table.sql";
-#    run_system_command($command,
-#		       $log_fh);
+    run_system_command($command,
+		       $log_fh);
 
     $command="mysqlimport -L $commondb $transfn";
-#    run_system_command($command,
-#		       $log_fh);
+    run_system_command($command,
+		       $log_fh);
 
     $command="rm $table.sql $transfn";
-#    run_system_command($command,
-#		       $log_fh);
+    run_system_command($command,
+		       $log_fh);
 } else {
     die "Can't find $table.sql\n";
 }

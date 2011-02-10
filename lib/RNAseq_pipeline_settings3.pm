@@ -17,7 +17,9 @@ use Exporter;
 	    'get_coords_from_exon_sub',
 	    'get_coords_from_junc_id_sub',
 	    'get_feature_overlap_sub','get_feature_overlap_split1',
-	    'get_pair_id','get_lane_id','get_dataset_id','get_mapping_fh');
+	    'get_pair_id','get_lane_id','get_dataset_id','get_mapping_fh',
+	    'get_gene_info_sub','get_trans_info_sub',
+	    'get_gene_RPKM_data','get_trans_expression_data');
 
 use strict;
 use warnings;
@@ -72,11 +74,10 @@ sub read_config_file {
 # files to be processed
 ### OK
 sub read_file_list {
-    my %files;
-
     my %options=%{read_config_file()};
-    my $file_list=$options{'FILELIST'};
+    my $file_list=shift || $options{'FILELIST'};
 
+    my %files;
     # Read the information form the read.list.txt file
     my $read_fh=get_fh($file_list);
     while (my $line=<$read_fh>) {
@@ -1553,6 +1554,145 @@ sub get_feature_overlap_split1 {
     clean_up(@files,
 	     @overlap_files);
 
+}
+
+# Some subroutines to retrieve analysis info from the database
+sub get_gene_RPKM_data {
+    my $dbh=shift;
+    my $table=shift;
+    my $detected=shift;
+    my $sample=shift;
+    my $breakdown=shift;
+
+    my %expression;
+
+    my ($query,$sth,$count);
+    $query ='SELECT gene_id, RPKM ';
+    $query.="FROM $table ";
+    if ($breakdown) {
+	$query.='WHERE LaneName = ?';
+    } else {
+	$query.='WHERE sample = ?';
+    }
+    $sth=$dbh->prepare($query);
+    $count=$sth->execute($sample);
+    
+    if ($count && ($count > 1)) {
+	print STDERR $count,"\tGenes are detected in $table\n";
+    } else {
+	die "No genes present in $table\n";
+    }
+
+    if ($count < 16000) {
+	print STDERR "Too few genes detected for $sample\n";
+    }
+    
+    # get all the necessary tables
+    while (my ($gene,$rpkm)=$sth->fetchrow_array()) {
+	$expression{$gene}=$rpkm;
+	$detected->{$gene}=1;
+    }
+
+    return(\%expression);
+}
+
+# Some subroutines to retrieve analysis info from the database
+sub get_trans_expression_data {
+    my $dbh=shift;
+    my $table=shift;
+    my $detected=shift;
+    my $sample=shift;
+    my $breakdown=shift;
+
+    my %expression;
+
+    my ($query,$sth,$count);
+    $query ='SELECT transcript_id, rpkm ';
+    $query.="FROM $table ";
+    if ($breakdown) {
+	$query.='WHERE LaneName = ?';
+    } else {
+	$query.='WHERE sample = ?';
+    }
+    $sth=$dbh->prepare($query);
+    $count=$sth->execute($sample);
+    
+    if ($count && ($count > 1)) {
+	print STDERR $count,"\tTranscripts are detected in $table\n";
+    } else {
+	die "No transcripts present in $table\n";
+    }
+
+    if ($count < 16000) {
+	print STDERR "Warning: Very few transcripts detected for $sample\n";
+    }
+    
+    # get all the necessary tables
+    while (my ($trans,$rpkm)=$sth->fetchrow_array()) {
+	$expression{$trans}=$rpkm;
+	$detected->{$trans}=1;
+    }
+
+    return(\%expression);
+}
+
+# Some subroutines to retrieve annotation information from the database
+sub get_gene_info_sub {
+    my $dbh=shift;
+    my $table=shift;
+
+    my %cache;
+
+    my ($query,$sth);
+    $query ='SELECT type, status ';
+    $query.="FROM $table ";
+    $query.='WHERE gene_id = ?';
+    $sth=$dbh->prepare($query);
+
+    my $get_gene_info= sub {
+	my $gene_id=shift;
+	
+	unless ($cache{$gene_id}) {
+	    my $count=$sth->execute($gene_id);
+	    unless ($count== 1) {
+		die "Incorrect number of types for $gene_id";
+	    }
+	    my ($type,$status)=$sth->fetchrow_array();
+	    $cache{$gene_id}=[$type,$status];
+	}
+	return($cache{$gene_id});
+    };
+
+    return($get_gene_info)
+}
+
+sub get_trans_info_sub {
+    my $dbh=shift;
+    my $table=shift;
+
+    my %cache;
+
+    my ($query,$sth);
+    $query ='SELECT type, status ';
+    $query.="FROM $table ";
+    $query.='WHERE transcript_id = ?';
+    $sth=$dbh->prepare($query);
+
+    my $get_trans_info= sub {
+	my $trans_id=shift;
+	
+	unless ($cache{$trans_id}) {
+	    my $count=$sth->execute($trans_id);
+	    unless ($count== 1) {
+		die "Incorrect number of types for $trans_id";
+	    }
+	    my ($type,$status)=$sth->fetchrow_array();
+	    $cache{$trans_id}=[$type,$status];
+	}
+	return($cache{$trans_id});
+    };
+
+    return($get_trans_info)
 }
 
 1;
