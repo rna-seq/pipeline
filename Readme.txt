@@ -43,7 +43,7 @@ mv ../CLL.PE40/readData/009TR.r1.fastq.gz readData/
 mv ../CLL.PE40/readData/009TR.r2.fastq.gz readData/
 
 # Get the scripts form the repository 
-svn co svn+ssh://dgonzalez@svn.crg.es/data/svn/big/pipeline/trunk .
+svn co svn://mroder@svn.crg.es/big/pipeline/trunk .
 A    lib
 A    lib/RNAseq_GEM3.pm
 ...
