@@ -155,7 +155,7 @@ _transcripts: _indices
 # First we need to get the files containing exons and gene annotations We will
 # Build a file with the gene and exon annotations in gtf format. This step will
 # also build a file with the projection of all exons for each of the genes
-_extract_annotation: _genes
+_extract_annotation: _genes _transcripts
 	split_gtf_annotation.RNAseq.pl > _extract_annotation.txt
 	build_gene_projections.RNAseq.pl >> _extract_annotation.txt
 	all_no_log_table
@@ -416,6 +416,11 @@ _gene_RPKM_pooled: _gene_RPKM
 	zcat $GENOMEDIR/*.gene.rpkm.pooled.txt.gz > _gene_RPKM_pooled.txt
 	all_no_log_table
 
+_detected_genes: _gene_RPKM_pooled
+	build_detected_genes.RNAseq.pl
+	mv build_detected_genes.RNAseq.log $LOGS
+	all_no_log_table
+
 _gene_RPKM_dist: _gene_RPKM_pooled
 	build_gene_rpkm_dist.RNAseq.pl > _gene_RPKM_dist.txt
 	all_no_log_table
@@ -503,6 +508,11 @@ _transcript_expression_levels_pooled: _bed_files _junction_classification _trans
 	cluster_run.RNAseq.pl run_flux_pooled.RNAseq.pl
 	build_transcript_expression_levels_pooled.RNAseq.pl > _transcript_expression_levels_pooled.txt
 	mv run_flux_pooled.RNAseq.log $LOGS
+	all_no_log_table
+
+_detected_transcripts: _transcript_expression_levels_pooled
+	build_detected_transcripts.RNAseq.pl
+	mv build_detected_transcripts.RNAseq.log $LOGS
 	all_no_log_table
 
 # #####################

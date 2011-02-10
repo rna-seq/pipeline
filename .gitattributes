@@ -5,6 +5,8 @@
 bin/build_EJEI.RNAseq.pl -text
 bin/build_clusters.RNAseq.pl -text
 bin/build_dataset.RNAseq.pl -text
+bin/build_detected_genes.RNAseq.pl -text
+bin/build_detected_transcripts.RNAseq.pl -text
 bin/build_exon_junctions.RNAseq.pl -text
 bin/build_exon_sequences.RNAseq.pl -text
 bin/build_exon_spliceform_distribution.RNAseq.pl -text

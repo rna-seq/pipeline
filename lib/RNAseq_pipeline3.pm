@@ -562,6 +562,7 @@ sub get_annotation_from_gtf {
 		    -display_name => $gene_id);
 		$genes{$gene_id}{'gene'}=$gene_feat;
 		$genes{$gene_id}{'chr'}=$chr;
+		$genes{$gene_id}{'type'}='gene';
 	    }
 	    # If the transcript object does not exist build it on the fly
 	    unless ($genes{$gene_id}{'transcripts'}{$trans_id}) {
@@ -572,6 +573,10 @@ sub get_annotation_from_gtf {
 		    -primary      => 'transcript', # -primary_tag is a synonym
 		    -display_name => $trans_id);
 		$genes{$gene_id}{'transcripts'}{$trans_id}=$trans_feat;
+		$trans{$trans_id}{'gene_id'}=$gene_id;
+		$trans{$trans_id}{'transcript_id'}=$trans_id;
+		$trans{$trans_id}{'chr'}=$chr;
+		$trans{$trans_id}{'type'}='transcript';
 	    }
 	    my $exon_id=join('_',
 			     $chr,

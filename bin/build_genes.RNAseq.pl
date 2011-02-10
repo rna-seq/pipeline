@@ -129,7 +129,7 @@ CREATE TABLE $table (
        status varchar(20) NOT NULL,
        name varchar(50) NULL,
        description text NULL,
-       chr varchar(10) NOT NULL,
+       chr varchar(50) NOT NULL,
        index idx_gene (gene_id),
        index idx_type (type),
        index idx_status (status),

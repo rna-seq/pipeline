@@ -1106,7 +1106,9 @@ sub get_tables_hash {
 		'_dataset' => '',
 		'_junctions' => '',
 		'_genes' => '',
+		'_detected_genes' => '',
 		'_transcripts' => '',
+		'_detected_transcripts' => '',
 		'_exon_seqs' => '',
 		'_junction_seqs' => '',
 		'_transcript_seqs' => '',
@@ -1625,10 +1627,24 @@ CREATE TABLE ${prefix}_genes (
        table_id varchar(200) NOT NULL,
        creation varchar(20) NOT NULL
 );",
+		'_detected_genes' => "DROP TABLE IF EXISTS ${prefix}_detected_genes;
+CREATE TABLE ${prefix}_detected_genes (
+       type varchar(200) NOT NULL,
+       reliability varchar(10) NOT NULL,
+       sample varchar(50) NOT NULL,
+       detected int NOT NULL
+);",
 		'_transcripts' => "DROP TABLE IF EXISTS ${prefix}_transcripts;
 CREATE TABLE ${prefix}_transcripts (
        table_id varchar(200) NOT NULL,
        creation varchar(20) NOT NULL
+);",
+		'_detected_transcripts' => "DROP TABLE IF EXISTS ${prefix}_detected_transcripts;
+CREATE TABLE ${prefix}_detected_transcripts (
+       type varchar(200) NOT NULL,
+       reliability varchar(10) NOT NULL,
+       sample varchar(50) NOT NULL,
+       detected int NOT NULL
 );",
 		'_exon_seqs' => "DROP TABLE IF EXISTS ${prefix}_exon_seqs;
 CREATE TABLE ${prefix}_exon_seqs (
