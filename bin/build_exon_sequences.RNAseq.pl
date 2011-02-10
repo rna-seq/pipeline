@@ -15,7 +15,7 @@ BEGIN {
 # This script should take a gtf/gff containing exons with
 # gene names and it will build a set of all exon sequences
 
-use RNAseq_pipeline3 qw(get_fh get_log_fh parse_gff_line);
+use RNAseq_pipeline3 qw(get_fh get_log_fh parse_gff_line get_annotation_from_gtf);
 use RNAseq_pipeline_settings3 qw(read_config_file);
 use Bio::SeqIO;
 use Bio::DB::Fasta;
@@ -50,7 +50,9 @@ if ($present) {
 print $log_fh "Processing $annotation_file\n";
 
 # Extract all the exons coordinates belonging to each of the genes
-my %exons=%{get_exons_from_gtf($annotation_file)};
+my %exons=%{get_annotation_from_gtf($annotation_file,
+				    $log_fh,
+				    'exons')};
 
 # Get the sequence of the chromosome as well as an accessor to extract the exon
 # sequence
@@ -211,102 +213,4 @@ sub build_exon_sequences {
     }
 
     return(\%exon_seqs);
-}
-
-# This has to be combined with the get_annotation_from gtf for portability
-sub get_exons_from_gtf {
-    my $file=shift;
-    my $log_fh=shift;
-
-    my $fh=get_fh($file);
-    my %exons;
-    my $count=0;
-
-    # If we have no $log_fh redirect to STDERR
-    unless ($log_fh) {
-	$log_fh=*STDERR;
-    }
-
-    print $log_fh "Reading $file\n";
-    print $log_fh "WARNING: Skipping entries located in chr random, chr U(nknown), haplotypes and EnsEMBL assembly exceptions\n";
-
-    while (my $line=<$fh>) {
-	$count++;
-	chomp($line);
-
-	# Skip possible comments
-	if ($line=~/^#/) {
-	    next;
-	}
-
-	# use the parse_gff  subroutine to parse the lines
-	my ($chr,$type,$start,$end,$strand,$frame,$info);
-	my %line=%{parse_gff_line($line)};
-	$chr=$line{'chr'};
-	$type=$line{'type'};
-	$start=$line{'start'};
-	$end=$line{'end'};
-	$frame=$line{'frame'};
-
-	# Skip entries we are not interested in
-	# Skip non-exon entries
-	unless ($type=~/^exon$/) {
-	    next;
-	}
-	# Skip random unknown and haplotype chromosomes
-	if ($chr=~/random/i) {
-	    next;
-	} elsif ($chr=~/hap/) {
-	    next;
-	} elsif ($chr=~/^chrU/) {
-	    next;
-	} elsif ($chr=~/^Un\./) {
-	    # This is for EnsEMBL cow
-	    next;
-	} elsif ($chr=~/^(chr)?HSCHR/) {
-	    # This is for human
-	    next;
-	} elsif ($chr=~/^AAFC03011182/) {
-	    # EnsEMBL cow
-	    next;
-	}
-
-	### TO DO Fix some naming issues that may occurr
-	# If the chromosomes are not named as chr in the file name them so this
-	# may cause some problems if we are looking at contigs etc... but
-	# it should only activate if the chromosomens are named as the humans
-	# but with no chr
-	if ($chr!~/^(chr|contig|scaffold|supercontig)/) {
-	    $chr=~s/^/chr/;
-	}
-	# To prevent problems with the naming of the chromosomes we will change
-	# the chrMT to chrM
-	$chr=~s/chrMT/chrM/;
-
-	# Check the strand
-	if ($line{'strand'} eq '+') {
-	    $strand=1;
-	} elsif ($line{'strand'} eq '-') {
-	    $strand=-1;
-	} else {
-	    warn "Unknown strand $strand\n";
-	}
-
-	unless ($start && $end && $strand) {
-	    die "Missing required information\n";
-	}
-
-	my $exon_id=join('_',
-			 $chr,
-			 $start,
-			 $end,
-			 $strand);
-	$exons{$exon_id}='';
-    }
-    close($fh);
-
-    $count=keys %exons;
-    print STDERR $count, "\tExon entries obtained\n";
-
-    return(\%exons);
 }
