@@ -150,12 +150,12 @@ sub get_exon_seq_sub {
 	    # tags the script will not find them if not.
 	    my $chr2=$chr;
 	    unless ($seq) {
-		$chr2=~s/^chr//;
+#		$chr2=~s/^chr//;
 		$seq=$db->subseq($chr2,$end,$start);
 	    }
 	    # Try again with the mitochondrial sequences
 	    unless ($seq) {
-		$chr2=~s/M$/MT/;
+#		$chr2=~s/M$/MT/;
 		$seq=$db->subseq($chr2,$end,$start);
 	    }
 

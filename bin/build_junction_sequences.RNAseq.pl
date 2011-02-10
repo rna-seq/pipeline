@@ -104,6 +104,8 @@ sub get_junction_sequences {
 	$chr1=join('_',@name1);
 
 	unless ($seq1 && $seq2) {
+	    print STDERR "exon1: $seq1\n";
+	    print STDERR "exon2: $seq2\n";
 	    die "Exon sequence missing $exon1_id $exon2_id\n";
 	}
 

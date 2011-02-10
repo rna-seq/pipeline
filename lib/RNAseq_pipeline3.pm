@@ -1550,7 +1550,13 @@ sub get_exon_sequences {
 			     -format => 'fasta');
 
     while (my $seq=$infh->next_seq()) {
-	$exons{$seq->display_id()}=$seq->seq();
+	my $sequence=$seq->seq();
+	my $seq_id=$seq->display_id();
+	if($sequence) {
+	    $exons{$seq_id}=$sequence;
+	} else {
+	    die "No sequence for $seq_id\n";
+	}
     }
     $infh->close();
     print STDERR "done\n";
