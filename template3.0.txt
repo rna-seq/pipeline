@@ -421,7 +421,7 @@ _detected_genes: _gene_RPKM_pooled
 	mv build_detected_genes.RNAseq.log $LOGS
 	all_no_log_table
 
-_gene_RPKM_dist: _gene_RPKM_pooled
+_gene_RPKM_dist: _detected_genes
 	build_gene_rpkm_dist.RNAseq.pl > _gene_RPKM_dist.txt
 	all_no_log_table
 
@@ -529,7 +529,7 @@ _fusion_transcripts: _transcriptome_mapping _gene_RPKM
 # a summary of the detected junctions. this table will contain the completion
 # status of these two steps (it is only here to run the two scripts as they
 # both generate their own tables ad load them
-_summaries: _exon_RPKM_pooled _gene_RPKM_dist _inclusion_dist _transcript_expression_levels_pooled _splicing_summary _novel_junctions_summary
+_summaries: _exon_RPKM_pooled _gene_RPKM_dist _inclusion_dist _detected_transcripts _splicing_summary _novel_junctions_summary
 	build_expression_summary.RNAseq.pl > _summaries.txt
 	build_top_genes.RNAseq.pl >> _summaries.txt
 	build_top_transcripts.RNAseq.pl >> _summaries.txt
