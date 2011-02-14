@@ -414,7 +414,11 @@ sub gset_genome_id {
 	die "WARNING: Entry $genome is present more than once in $table\n";
     } else {
 	# First check if the fasta files is ok
-	check_fasta_file($file);
+	my $fileok=check_fasta_file($file);
+
+	unless ($fileok) {
+	    die "There is a problem with the genome file, so I'm quitting. Please check it\n";
+	}
 
 	# The entry is absent and we must set it
 	$query ="INSERT INTO $table ";

@@ -369,7 +369,7 @@ sub get_split_parser {
 
 	    # Parse the hit in ths case we are taking only the best one
 	    if ($matches == 1) {
-		my ($pos,$coord_string)=split('=',$matches[0]);
+		my ($pos,$coord_string)=split('=',$matches[0],2);
 		my %hit=%{get_coords($coord_string,
 				     $pos)};
 		
@@ -451,7 +451,7 @@ sub get_split_parser {
 					$read_id),"\n";
 	    } elsif ($matches > 1) {
 		foreach my $match (@matches) {
-		    my ($pos,$coord_string)=split('=',$match);
+		    my ($pos,$coord_string)=split('=',$match,2);
 		    my %hit=%{get_coords($coord_string,
 					 $pos)};
 		

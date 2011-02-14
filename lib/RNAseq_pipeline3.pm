@@ -189,6 +189,7 @@ sub check_file_existence {
 # the case
 sub check_fasta_file {
     my $file=shift;
+    my $fileok=1;
 
     print STDERR "Checking the genome file...";
     my $in  = Bio::SeqIO->new(-file => $file ,
@@ -196,12 +197,23 @@ sub check_fasta_file {
 
     while ( my $seq = $in->next_seq() ) {
 	my $seqid=$seq->display_id();
-	unless ($seqid=~/^\s*\w+\s*$/o) {
+	my $desc=$seq->desc();
+	print STDERR $desc,"\n";
+	if ($desc=~/[=~:;]/o) {
+	    print STDERR "Presence of special characters in the header may cause parsing problems after mapping\n";
+	    print STDERR "Check: $desc\n";
+	    $fileok=0;
+	} elsif ($seqid=~/^\s*\w+\s*$/o) {
+	    next;
+	} else {
 	    print STDERR "WARNING: Spacing in the fasta identifiers may cause problems: $seqid\n";
 	}
     }
     $in->close();
-    print STDERR "fasta file is OK\n";
+    if ($fileok) {
+	print STDERR "Fasta file seems fine\n";
+    }
+    return($fileok);
 }
 
 # Check if a file conformas to the UCSC specifications of GTF

@@ -460,7 +460,7 @@ __END__
     -database:       Sets the database to use for the experiment tables.
     -commondb:       Sets the database to use for the common tables.
     -host:           Sets the host where the databases are located.
-    -localdir:       Directory in which to store the temporary files generated during the pipeline execution. It is recommandable to set it to a local drive.
+    -localdir:       Directory in which to store the temporary files generated during the pipeline execution. It is advisable to set it to a local drive.
 
   Optional
     -cellline:      Sets the cell line on which the experiment was performed
