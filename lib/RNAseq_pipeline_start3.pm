@@ -225,6 +225,7 @@ sub base_table_build {
        RNAType varchar(50) NULL,
        Compartment varchar(50) NULL,
        Bioreplicate varchar(10) NULL,
+       partition varchar(50) NULL,
        PRIMARY KEY (project_id,experiment_id)
 );',
 		'annotation_files' => 'CREATE TABLE IF NOT EXISTS annotation_files (
