@@ -145,7 +145,7 @@ In the database, you should now have the following tables:
 
 = Starting on the production server =
 
-# Run the start script with wahtever options are needed
+# Run the start script with whatever options are needed
 bin/start_RNAseq_pipeline.3.0.pl -species 'Homo sapiens' -genome /users/rg/dgonzalez/ReferenceGenomes/H.sapiens/H.sapiens.genome.hg19.sanger.fa -annotation /users/rg/dgonzalez/ReferenceAnnotations/H.sapiens/H.sapiens.EnsEMBL.55.parsed.gtf -project CLL -experiment 009TR40 -template template3.0.txt -readlength 40 -threads 2
 
 # Edit the read.list.txt file if necessary to add the pair Id and the read Id separated by tabs and in the fourth field optionally a tag that will be used to group different samples
