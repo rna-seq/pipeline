@@ -52,9 +52,6 @@ initialize();
 
 # Setup some environmental variables
 $ENV{'PATH'} = $symbols{'BIN'}. ':' . $ENV{'PATH'};
-if ($ENV{'PERL5LIB'}) {
-    $ENV{'PERL5LIB'} = $symbols{'LIB'}.':'.$ENV{'PERL5LIB'};
-}
 $ENV{'DB'}=$symbols{'DB'};
 
 # Once all the variables have been initialized process the pipfile

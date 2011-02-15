@@ -121,7 +121,3 @@ lib/RNAseq_pipeline_settings3.pm -text
 lib/RNAseq_pipeline_start3.pm -text
 lib/RNAseq_pipeline_stats3.pm -text
 /template3.0.txt -text
-tests/reads/001TR.r1.fastq.gz -text
-tests/reads/001TR.r2.fastq.gz -text
-tests/reads/002TR.r1.fastq.gz -text
-tests/reads/002TR.r2.fastq.gz -text
