@@ -41,7 +41,7 @@ my $force;				#  -r   restart (force execution of stage)
 
 my @targets;				# command line args -- names of stages to "build"
 
-# Set some other global variables:
+# Set some other global variables:
 my $dbh;				# database handle
 my %rulelist; # Hash structured list of rules
 my %phony;				# rule names that aren't database tables
@@ -52,7 +52,9 @@ initialize();
 
 # Setup some environmental variables
 $ENV{'PATH'} = $symbols{'BIN'}. ':' . $ENV{'PATH'};
-$ENV{'PERL5LIB'} = $symbols{'LIB'}.':'.$ENV{'PERL5LIB'};
+if ($ENV{'PERL5LIB'}) {
+    $ENV{'PERL5LIB'} = $symbols{'LIB'}.':'.$ENV{'PERL5LIB'};
+}
 $ENV{'DB'}=$symbols{'DB'};
 
 # Once all the variables have been initialized process the pipfile
@@ -455,7 +457,7 @@ sub process_line {
 
 # Read the command file and save a list of rules and variables.  The
 # three types of file entries are:
-# PIP directives (lines starting with periods)
+# Pipeline directives (lines starting with periods)
 # Variable definitions (single lines of the form "X = Y")
 # Rule definitions.
 sub processFile {
@@ -491,7 +493,7 @@ sub processFile {
 }
 
 sub printHelp {
-    # This must be completed
+    # This must be completed ad rewritten using the Pod module
     print "Usage: execute_RNAseq_pipeline.pl [options] rulename\n";
     print "\t-h: Print help and exit\n";
     print "\t-f: Control file name. Defaults to RNAseq_pipeline.txt\n";
