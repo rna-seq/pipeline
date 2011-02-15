@@ -384,7 +384,7 @@ sub rules {
 	    last;
 	}
 	$command=process_line($command);
-	# remove any left empty lines
+	# remove any left empty lines
 	if ($command) {
 	    push @{$rules->{$target}->{'body'}},$command;
 	}
@@ -434,7 +434,7 @@ sub directive {
 	    $phony{$x} = 1;
 	}
     } else {
-	print "pip: syntax error:  unknown directive $line\n";
+	print "ERROR: syntax error:  unknown directive $line\n";
 	exit 1;
     }
 }
@@ -540,7 +540,7 @@ sub initialize {
     my $bindir = "$projdir/bin";	# project applications
     my $sqldir = "$projdir/mysql/table_build";	# project tables
     my $logsdir= "$projdir/logs"; # Logs from the scripts
-    my $libdir= "$projdir/lib"; # modules required by the project scripts
+#    my $libdir= "$projdir/lib"; # modules required by the project scripts
     my $tabdatdir="$projdir/mysql/table_data"; # Compressed copy of the database tables
     my $graphsdir="$projdir/graphs"; # Any pictures or plots from the project
     my $database=(split(/\//,$projdir))[-1];
@@ -552,7 +552,7 @@ sub initialize {
 		"TABLES"  => $sqldir,
 		"DB"      => $database,
 		'LOGS' => $logsdir,
-		'LIB' => $libdir,
+#		'LIB' => $libdir,
 		'TAB_DAT' => $tabdatdir,
 		'GRAPHS' => $graphsdir,
 		'DEBUG' => 0

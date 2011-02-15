@@ -198,7 +198,6 @@ sub check_fasta_file {
     while ( my $seq = $in->next_seq() ) {
 	my $seqid=$seq->display_id();
 	my $desc=$seq->desc();
-	print STDERR $desc,"\n";
 	if ($desc=~/[=~:;]/o) {
 	    print STDERR "Presence of special characters in the header may cause parsing problems after mapping\n";
 	    print STDERR "Check: $desc\n";

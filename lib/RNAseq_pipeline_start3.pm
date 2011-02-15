@@ -2137,8 +2137,9 @@ sub add_exp_info {
 	
 	my $overwrite=0;
 	if ($count == 1) {
-	    print STDERR "$exp_id from $proj_id already has a $key. Do you want to averwrite it?(y/n)\n";
+	    print STDERR "$exp_id from $proj_id already has a $key. Do you want to overwrite it?(y/n)\n";
 	    my $reply=<STDIN>;
+	    chomp($reply);
 	    if ($reply=~/^y/i) {
 		$overwrite=1;
 	    }
