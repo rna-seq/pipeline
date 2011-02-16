@@ -56,13 +56,14 @@ use RNAseq_pipeline3 ('get_fh','MySQL_DB_Connect','check_file_existence',
 sub check_option_characters {
     my $options=shift;
     my $log_fh=shift;
+    my $problems='';
 
     print $log_fh "Checking options for unadvisable characters...\n";
     foreach my $option (keys %{$options}) {
 	my $value=${$options->{$option}} || '';
 	if ($value=~/([^\w_\/\. ])/) {
 	    my $char=$1;
-	    die "$value contains an invalid character: '$char'\n";
+	    $problems.="Value $value corresponding to $option contains an invalid character: '$char'\n";
 	}
     }
     print $log_fh "done\n";
@@ -72,10 +73,11 @@ sub check_option_characters {
     my $species=${$options->{'species'}};
     my @species=split(/\s+/,$species);
     if (@species < 2) {
-	die "Species name ($species) does not look right. Should have a Genus and species name at least\n";
+	$problems.="Species name ($species) does not look right. Should have a Genus and species name at least\n";
     }
-
     print $log_fh "done\n";
+
+    return($problems);
 }
 
 # This contains the default values for each of the variables and contains a
@@ -2072,8 +2074,9 @@ sub add_proj_info {
 
     my $overwrite=0;
     if ($count == 1) {
-	print $log_fh "$proj_id already has a description. Do you want to averwrite it?(y/n)\n";
+	print STDERR "$proj_id already has a description. Do you want to averwrite it?(y/n)\n";
 	my $reply=<STDIN>;
+	chomp($reply);
 	if ($reply=~/^y/i) {
 	    $overwrite=1;
 	}

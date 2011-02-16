@@ -49,7 +49,7 @@ use Cwd;
 
 # Declare the variables
 # naming variables
-my $species;
+my $species='';
 my $proj_prefix;
 my $exp_prefix;
 
@@ -232,11 +232,12 @@ if ($clean) {
     # Print message if in clean mode
     print STDERR "WARNING: Clean mode.\n";
     print STDERR "This will remove the following:\n";
-    print STDERR "\tAll tables for this experiment\n";
+    print STDERR "\tAll tables for this experiment ($exp_prefix) in $proj_prefix\n";
     print STDERR "\tAll direactories that the script created originally with the files within (this includes all mappings), with the exception of the readData directory.\n";
     print STDERR "\tAll entries in the common tables corresponding to this experiment\n";
     print STDERR "Do you want to continue? (y/N)\n";
     my $reply=<STDIN>;
+    chomp($reply);
     unless ($reply=~/y/i) {
 	die "Aborting\n";
     }
@@ -256,8 +257,15 @@ if ($clean) {
     # check all the options for the presence of dashes or unauthorized
     # characters that may cause problems with the database if used for naming
     #tables
-    check_option_characters(\%options,
-			    $log_fh);
+    my $problems=check_option_characters(\%options,
+				   $log_fh);
+
+    # If any issues are found during the checking of the options print them all
+    # out as well as the help
+    if ($problems) {
+	print STDERR $problems;
+	pod2usage(1);
+    }
 }
 
 # Check the option actual values to see if we are missing any important
