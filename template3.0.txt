@@ -418,7 +418,12 @@ _gene_RPKM_pooled: _gene_RPKM
 	zcat $GENOMEDIR/*.gene.rpkm.pooled.txt.gz > _gene_RPKM_pooled.txt
 	all_no_log_table
 
-_detected_genes: _gene_RPKM_pooled
+_gene_readcount_pooled: _proj_coverage _junction_coverage
+	get_gene_readcount_pooled.RNAseq.pl
+	zcat $GENOMEDIR/*.gene.readcount.pooled.txt.gz > _gene_readcount_pooled.txt
+	all_no_log_table
+
+_detected_genes: _gene_RPKM_pooled _gene_readcount_pooled
 	build_detected_genes.RNAseq.pl
 	mv build_detected_genes.RNAseq.log $LOGS
 	all_no_log_table
@@ -536,8 +541,7 @@ _summaries: _exon_RPKM_pooled _gene_RPKM_dist _inclusion_dist _detected_transcri
 	build_top_genes.RNAseq.pl >> _summaries.txt
 	build_top_transcripts.RNAseq.pl >> _summaries.txt
 	build_top_exons.RNAseq.pl >> _summaries.txt
-	all_no_log_table
-
+	all_no_log_tab
 ### TO DO
 # Build multi map bed files including the junction mappings
 

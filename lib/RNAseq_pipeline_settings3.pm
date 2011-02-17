@@ -19,7 +19,10 @@ use Exporter;
 	    'get_feature_overlap_sub','get_feature_overlap_split1',
 	    'get_pair_id','get_lane_id','get_dataset_id','get_mapping_fh',
 	    'get_gene_info_sub','get_trans_info_sub',
-	    'get_gene_RPKM_data','get_trans_expression_data');
+	    'get_gene_RPKM_data',
+	    'get_trans_expression_data',
+	    'get_desc_from_gene_sub','get_chr_from_gene_sub',
+	    'get_type_from_gene_sub');
 
 use strict;
 use warnings;
@@ -1693,6 +1696,110 @@ sub get_trans_info_sub {
     };
 
     return($get_trans_info)
+}
+
+sub get_type_from_gene_sub {
+    my %options=%{read_config_file()};
+    my $dbh=get_dbh(1);
+    my $table=$options{'GENECLASSTABLE'};
+
+    # For saving time
+    my %cache;
+
+    my ($query,$sth,$count);
+
+    $query ='SELECT type ';
+    $query.="FROM $table ";
+    $query.='WHERE gene_id = ?';
+    $sth=$dbh->prepare($query);
+
+    my $subroutine=sub {
+	my $gene=shift;
+
+	unless ($cache{$gene}) {
+	    $count=$sth->execute($gene);
+
+	    if ($count != 1) {
+		warn "We do not have a single description corresponding to $gene\n";
+		return();
+	    } else {
+		my ($desc)=$sth->fetchrow_array();
+		$cache{$gene}=$desc || 'none';
+	    }
+	}
+	return($cache{$gene});
+    };
+    return($subroutine);
+}
+
+
+### TO DO compact these subroutines into one that takes the column as argument
+sub get_desc_from_gene_sub {
+    my %options=%{read_config_file()};
+    my $dbh=get_dbh(1);
+    my $table=$options{'GENECLASSTABLE'};
+
+    # For saving time
+    my %cache;
+
+    my ($query,$sth,$count);
+
+    $query ='SELECT description ';
+    $query.="FROM $table ";
+    $query.='WHERE gene_id = ?';
+    $sth=$dbh->prepare($query);
+
+    my $subroutine=sub {
+	my $gene=shift;
+
+	unless ($cache{$gene}) {
+	    $count=$sth->execute($gene);
+
+	    if ($count != 1) {
+		warn "We do not have a single description corresponding to $gene\n";
+		return();
+	    } else {
+		my ($desc)=$sth->fetchrow_array();
+		$cache{$gene}=$desc || 'none';
+	    }
+	}
+	return($cache{$gene});
+    };
+    return($subroutine);
+}
+
+sub get_chr_from_gene_sub {
+    my %options=%{read_config_file()};
+    my $dbh=get_dbh(1);
+    my $table=$options{'GENECLASSTABLE'};
+
+    # For saving time
+    my %cache;
+
+    my ($query,$sth,$count);
+
+    $query ='SELECT chr ';
+    $query.="FROM $table ";
+    $query.='WHERE gene_id = ?';
+    $sth=$dbh->prepare($query);
+
+    my $subroutine=sub {
+	my $gene=shift;
+
+	unless ($cache{$gene}) {
+	    $count=$sth->execute($gene);
+
+	    if ($count != 1) {
+		warn "We do not have a single chr corresponding to $gene\n";
+		return();
+	    } else {
+		my ($chr)=$sth->fetchrow_array();
+		$cache{$gene}=$chr;
+	    }
+	}
+	return($cache{$gene});
+    };
+    return($subroutine);
 }
 
 1;

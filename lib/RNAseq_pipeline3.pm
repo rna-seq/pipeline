@@ -11,7 +11,8 @@ push @EXPORT_OK,('check_gff_file','check_fasta_file');
 push @EXPORT_OK,('run_system_command');
 push @EXPORT_OK,('print_gff','get_sorted_gff_fh','parse_gff_line');
 push @EXPORT_OK,('get_files_from_table_sub');
-push @EXPORT_OK,('get_annotation_from_gtf','build_annotated_junctions');
+push @EXPORT_OK,('get_annotation_from_gtf','get_exon_list_from_gtf',
+		 'build_annotated_junctions');
 push @EXPORT_OK,('cluster_gff','get_gff_from_junc_id','get_sorted_gff_fh',
 		 'gff_line_check','format_as_gff');
 push @EXPORT_OK,('get_chr_subseq','get_feature_coverage');
@@ -380,8 +381,39 @@ sub plot_heatmap {
     return(@roworder);
 }
 
-### Process teh annotation to extrac the different parts of information we are
+
+
+### Process the annotation to extract the different parts of information we are
 # interested in
+# This will get all the exons from the annotation file and also take a gene
+# file where it will add the exon for each of the genes
+sub get_exon_list_from_gtf {
+    my $exonfile=shift;
+    my $genes=shift;
+    my $repeated_exons='rep.exons.txt';
+
+    my %exons;
+    my %remove;
+
+    %exons=%{get_annotation_from_gtf($exonfile,
+				     '',
+				     'exons')};
+
+    foreach my $exon (keys %exons) {
+	    my $gene_id=$exons{$exon};
+	    $genes->{$gene_id}->{$exon}=1;
+    }
+
+    print STDERR "done\n";
+
+    my $count=keys %exons;
+    print STDERR $count,"\tExons obtained\n";
+    $count=keys %{$genes};
+    print STDERR $count,"\tGenes\n";
+
+    return(\%exons);
+}
+
 # Extract from a gtf annotation all the gene objects using the parse_gff sub
 ### OK
 sub get_annotation_from_gtf {
@@ -393,6 +425,7 @@ sub get_annotation_from_gtf {
     my %genes;
     my %trans;
     my %exons;
+    my %remove_exons;
     my %excluded;
     my $count=0;
     my %trans_count;
@@ -562,6 +595,26 @@ sub get_annotation_from_gtf {
 		$trans{$trans_id}{'feature'}=$line->{'feature'};
 	    }
 	} elsif ($type =~ /exon/o) {
+	    my $exon_id=join('_',
+			     $chr,
+			     $start,
+			     $end,
+			     $strand);
+	    # It may be useful to have the gene info in this hash, but we will
+	    # remove those that are assigned to multiple genes
+	    if ($exons{$exon_id} && 
+		($exons{$exon_id} ne $gene_id)) {
+		$remove_exons{$exon_id}=1;
+	    } else {
+		$exons{$exon_id}=$gene_id;
+	    }
+
+	    # If we only need the basic exon list skip transcript and gene
+	    # building
+	    if ($subset eq 'exons') {
+		next;
+	    }
+
 	    # Get the exon feature
 	    # If the gene object does not exist build it on the fly
 	    unless ($genes{$gene_id}{'gene'}) {
@@ -589,13 +642,6 @@ sub get_annotation_from_gtf {
 		$trans{$trans_id}{'chr'}=$chr;
 		$trans{$trans_id}{'type'}='transcript';
 	    }
-	    my $exon_id=join('_',
-			     $chr,
-			     $start,
-			     $end,
-			     $strand);
-	    # It may be useful to have the gne info in this hash
-	    $exons{$exon_id}=$gene_id;
 	    my $exon_feat = Bio::SeqFeature::Gene::Exon->new(
 		-start        => $start,
 		-end          => $end,
@@ -616,6 +662,26 @@ sub get_annotation_from_gtf {
     if ($subset eq 'exons') {
 	$count=keys %exons;
 	print STDERR $count, "\tExon entries obtained\n";
+	# Remove those exons that map to multiple genes and prin to a file
+	# in the file does not exist
+	my $repeated_exons=$file;
+	$repeated_exons=~s/.gtf$/.rep.exons.gtf/;
+	if (-r $repeated_exons) {
+	    print STDERR $repeated_exons," is already present. Skipping...\n";
+	} else {
+	    my $repeatfh=get_fh($repeated_exons,1);
+	    foreach my $exon (keys %remove_exons) {
+		print $repeatfh join("\t",
+				     $exons{$exon},
+				     $exon),"\n";
+	    }
+	    close($repeatfh);
+	}
+	foreach my $exon (keys %remove_exons) {
+	    delete $exons{$exon};
+	}
+	$count=keys %remove_exons;
+	print STDERR $count,"\tExons mapping to multiple genes removed\n";
 	return(\%exons);
     } elsif ($subset eq 'gene') {
 	$count=keys %genes;

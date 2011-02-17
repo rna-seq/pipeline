@@ -60,6 +60,7 @@ bin/get_exon_rpkm_pooled.RNAseq.pl -text
 bin/get_exon_rpmkm.RNAseq.pl -text
 bin/get_exon_total_inclusion.RNAseq.pl -text
 bin/get_fusion_transcripts.RNAseq.pl -text
+bin/get_gene_readcount_pooled.RNAseq.pl -text
 bin/get_gene_rpkm.RNAseq.pl -text
 bin/get_gene_rpkm_pooled.RNAseq.pl -text
 bin/get_gene_rpmkm.RNAseq.pl -text

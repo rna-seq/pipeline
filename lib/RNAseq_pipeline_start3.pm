@@ -1140,6 +1140,7 @@ sub get_tables_hash {
 		'_splicing_summary' => '',
 		'_exon_RPKM' => '',
 		'_exon_RPKM_pooled' => '',
+		'_gene_readcount_pooled' => '',
 		'_gene_RPKM' => '',
 		'_gene_RPKM_pooled' => '',
 		'_gene_mappable_RPKM' => '',
@@ -1368,6 +1369,14 @@ CREATE TABLE ${prefix}_gene_mappable_RPKM (
 CREATE TABLE ${prefix}_gene_RPKM (
     gene_id varchar(100) not null,
     RPKM double unsigned not null,
+    LaneName varchar(50) not null,
+    INDEX idx_gene (gene_id),
+    INDEX idx_lane (LaneName)
+    );",
+		'_gene_readcount_pooled' => "DROP TABLE IF EXISTS ${prefix}_gene_readcount_pooled;
+CREATE TABLE ${prefix}_gene_readcount_pooled (
+    gene_id varchar(100) not null,
+    readcount int unsigned not null,
     LaneName varchar(50) not null,
     INDEX idx_gene (gene_id),
     INDEX idx_lane (LaneName)
