@@ -28,13 +28,15 @@ sub get_tables {
     if ($all) {
 	$query ='SELECT project_id,experiment_id ';
 	$query.='FROM experiments ';
+	$query.='WHERE project_id != ? ';
 	if ($fraction) {
-	    $query.=" WHERE $fraction";
+	    $query.=" AND $fraction";
 	}
+	$project='Test';
     } else {
 	$query ='SELECT project_id,experiment_id ';
 	$query.='FROM experiments ';
-	$query.='WHERE project_id = ?';
+	$query.='WHERE project_id = ? ';
 	if ($fraction) {
 	    $query.=" AND $fraction";
 	}
@@ -42,11 +44,8 @@ sub get_tables {
     print STDERR $query,"\n";
 
     $sth=$dbh->prepare($query);
-    if ($all) {
-	$count=$sth->execute();
-    } else {
-	$count=$sth->execute($project);
-    }
+    $count=$sth->execute($project);
+
     if ($count && ($count > 1)) {
 	print STDERR $count,"\tExperiments are present for $project\n";
     } else {
@@ -104,6 +103,7 @@ sub get_labels_sub {
 
     my $subroutine=sub {
 	my $table_id=shift;
+	$table_id=~s/_(gene|transcript|junctions).*$//;
 	my ($proj_id,$exp_id)=split('_',$table_id);
 
 	my $key=join('_',$proj_id,$exp_id);
@@ -124,7 +124,7 @@ sub get_labels_sub {
 		}
 		$cache{$key}=join('.',@label);
 	    } else {
-		die "Wrong number of elements ($count) returned for $key\n";
+	        warn "Wrong number of elements ($count) returned for $key\n";
 	    }
 	}
 	return($cache{$key});

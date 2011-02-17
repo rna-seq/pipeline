@@ -1639,7 +1639,8 @@ sub get_trans_expression_data {
     return(\%expression);
 }
 
-# Some subroutines to retrieve annotation information from the database
+# Some subroutines to retrieve annotation information from the database (write
+# as the get_trans_info_sub)
 sub get_gene_info_sub {
     my $dbh=shift;
     my $table=shift;
@@ -1670,13 +1671,17 @@ sub get_gene_info_sub {
 }
 
 sub get_trans_info_sub {
-    my $dbh=shift;
-    my $table=shift;
+    my %options=%{read_config_file()};
+    my $dbh=get_dbh(1);
+    my $table=$options{'TRANSCLASSTABLE'};
+    my @fields=@_;
+
+    my $fields=@fields;
 
     my %cache;
 
     my ($query,$sth);
-    $query ='SELECT type, status ';
+    $query ='SELECT '.join(',',@fields).' ';
     $query.="FROM $table ";
     $query.='WHERE transcript_id = ?';
     $sth=$dbh->prepare($query);
@@ -1689,8 +1694,8 @@ sub get_trans_info_sub {
 	    unless ($count== 1) {
 		die "Incorrect number of types for $trans_id";
 	    }
-	    my ($type,$status)=$sth->fetchrow_array();
-	    $cache{$trans_id}=[$type,$status];
+	    my @results=$sth->fetchrow_array();
+	    $cache{$trans_id}=[@results];
 	}
 	return($cache{$trans_id});
     };
@@ -1698,6 +1703,7 @@ sub get_trans_info_sub {
     return($get_trans_info)
 }
 
+### TO DO compact these subroutines into one that takes the column as argument
 sub get_type_from_gene_sub {
     my %options=%{read_config_file()};
     my $dbh=get_dbh(1);
@@ -1732,8 +1738,6 @@ sub get_type_from_gene_sub {
     return($subroutine);
 }
 
-
-### TO DO compact these subroutines into one that takes the column as argument
 sub get_desc_from_gene_sub {
     my %options=%{read_config_file()};
     my $dbh=get_dbh(1);

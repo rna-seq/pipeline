@@ -23,7 +23,10 @@ BEGIN {
 
 
 use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
-use RNAseq_pipeline_settings3 qw(get_dbh read_config_file);
+use RNAseq_pipeline_settings3 ('get_dbh','read_config_file',
+			       'get_gene_RPKM_data','get_desc_from_gene_sub',
+			       'get_type_from_gene_sub',
+			       'get_chr_from_gene_sub');
 use RNAseq_pipeline_stats3 qw(log10);
 use RNAseq_pipeline_comp3 ('get_tables','check_tables','get_labels_sub',
 			   'get_samples');
@@ -65,6 +68,7 @@ $dbhcommon=get_dbh(1);
 *get_labels=get_labels_sub($dbhcommon);
 *gene2chr=get_chr_from_gene_sub();
 *gene2desc=get_desc_from_gene_sub();
+*gene2type=get_type_from_gene_sub();
 
 # Get the tables belonging to the project
 my %tables=%{get_tables($dbhcommon,
@@ -87,11 +91,11 @@ my %all_genes;
 foreach my $experiment (@experiments) {
     my ($table,$sample)=split('_sample_',$experiment);
     print $log_fh "Extracting $sample, data from $table\n";
-    my $data=get_RPKM_data($dbh,
-			   $table,
-			   \%all_genes,
-			   $sample,
-			   $breakdown);
+    my $data=get_gene_RPKM_data($dbh,
+				$table,
+				\%all_genes,
+				$sample,
+				$breakdown);
     if ($data) {
 	push @values, [$experiment,$data];
     } else {
@@ -131,9 +135,12 @@ foreach my $gene (keys %all_genes) {
 	push @row,$value;
     }
 
+    # Skip mitochondrial and ribosomal genes
     if (gene2chr($gene)=~/chrM/o) {
 	next;
     } elsif (gene2desc($gene)=~/ribosom(e|al)/io) {
+	next;
+    } elsif (gene2type($gene)=~/^rRNA/o) {
 	next;
     } else {
 	print $tmpfh join("\t",
@@ -153,113 +160,6 @@ if (@experiments > 2) {
 }
 
 exit;
-
-sub get_chr_from_gene_sub {
-    my %options=%{read_config_file()};
-    my $dbh=get_dbh(1);
-    my $table=$options{'GENECLASSTABLE'};
-
-    # For saving time
-    my %cache;
-
-    my ($query,$sth,$count);
-
-    $query ='SELECT chr ';
-    $query.="FROM $table ";
-    $query.='WHERE gene_id = ?';
-    $sth=$dbh->prepare($query);
-
-    my $subroutine=sub {
-	my $gene=shift;
-
-	unless ($cache{$gene}) {
-	    $count=$sth->execute($gene);
-
-	    if ($count != 1) {
-		warn "We do not have a single chr corresponding to $gene\n";
-		return();
-	    } else {
-		my ($chr)=$sth->fetchrow_array();
-		$cache{$gene}=$chr;
-	    }
-	}
-	return($cache{$gene});
-    };
-    return($subroutine);
-}
-
-sub get_desc_from_gene_sub {
-    my %options=%{read_config_file()};
-    my $dbh=get_dbh(1);
-    my $table=$options{'GENECLASSTABLE'};
-
-    # For saving time
-    my %cache;
-
-    my ($query,$sth,$count);
-
-    $query ='SELECT description ';
-    $query.="FROM $table ";
-    $query.='WHERE gene_id = ?';
-    $sth=$dbh->prepare($query);
-
-    my $subroutine=sub {
-	my $gene=shift;
-
-	unless ($cache{$gene}) {
-	    $count=$sth->execute($gene);
-
-	    if ($count != 1) {
-		warn "We do not have a single description corresponding to $gene\n";
-		return();
-	    } else {
-		my ($desc)=$sth->fetchrow_array();
-		$cache{$gene}=$desc;
-	    }
-	}
-	return($cache{$gene});
-    };
-    return($subroutine);
-}
-
-sub get_RPKM_data {
-    my $dbh=shift;
-    my $table=shift;
-    my $all=shift;
-    my $sample=shift;
-    my $breakdown=shift;
-
-    my %expression;
-
-    my ($query,$sth,$count);
-    $query ='SELECT gene_id, RPKM ';
-    $query.="FROM $table ";
-    if ($breakdown) {
-	$query.='WHERE LaneName = ?';
-    } else {
-	$query.='WHERE sample = ?';
-    }
-    $sth=$dbh->prepare($query);
-    $count=$sth->execute($sample);
-    
-    if ($count && ($count > 1)) {
-	print STDERR $count,"\tGenes are detected in $table\n";
-    } else {
-	die "No genes present in $table\n";
-    }
-
-    if ($count < 16000) {
-	print STDERR "Too few genes detected for $sample\n";
-    }
-    
-    # get all the necessary tables
-    while (my ($gene,$rpkm)=$sth->fetchrow_array()) {
-	$expression{$gene}=$rpkm;
-	$all->{$gene}=1;
-    }
-
-    return(\%expression);
-}
 
 # Build a postscript tree using the  canberra distance and the complete linkage
 # for clustering
