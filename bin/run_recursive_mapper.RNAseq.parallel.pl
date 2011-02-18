@@ -76,13 +76,6 @@ if ($index && check_index($index)) {
     die "I'm missing a valid index\n";
 }
 
-# Set the name of the final output, and exit if it is already present
-my $final_mapping=$outdir.'/'.$basename.".recursive.map";
-if (-r $final_mapping) {
-    print $log_fh "$final_mapping is already present. Skipping...\n";
-    exit;
-}
-
 # Check the input file
 my $input_ok=check_split_input($infile,
 			       \$filetype);
