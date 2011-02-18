@@ -96,8 +96,15 @@ foreach my $file (keys %locations) {
     # Make the outfile
     my $outdir=$recmapdir;
 
-    push @filepairs,[$infile,$outdir];
-
+    # Set the name of the final output, and exit if it is already present
+    my $basename=$infile;
+    $basename=~s/.*\///;
+    my $final_mapping=$outdir.'/'.$basename.".recursive.map";
+    if (-r $final_mapping) {
+	print STDERR "$final_mapping is already present. Skipping...\n";
+    } else {
+	push @filepairs,[$infile,$outdir];
+    }
 }
 
 unless (@filepairs) {

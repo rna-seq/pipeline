@@ -153,9 +153,10 @@ vi read.list.txt
 Paired
 001TR.r1.fastq	001TR	001TR.1 Tumor
 001TR.r2.fastq	001TR	001TR.2	Tumor
+
 Single (pair id = read_id)
-001TR.r1.fastq  001TR.1 001TR.1 Tumor
-001TR.r2.fastq  001TR.2	001TR.2 Tumor
+001TR.fastq  001TR	001TR Tumor
+002TR.fastq  002TR	002TR Tumor
 
 # Make sure the soft links to the flux.sh and overlap (if the binary is not there) are in the bin directory or the binaries are in the path (also in the cluster)
 http://big.crg.cat/services_and_software

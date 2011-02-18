@@ -236,7 +236,7 @@ _recursive_mapping: _split_mapping
 	build_mapping_stats.RNAseq.pl `ls $RECMAPDIR/* |grep '.map' |grep -v '.log'` > _recursive_mapping.txt
 	plot_mapping_graph.RNAseq.pl -graph _recursive_mapping -type 'Recursive-map'
 	mv _recursive_mapping.ps $GRAPHS
-	if [[ `ls run_recursive_mapper.log` ]]; the mv run_recursive_mapper.log $LOGS; fi
+	if [[ `ls run_recursive_mapper.log` ]]; then mv run_recursive_mapper.log $LOGS; fi
 	if [[ `ls $RECMAPDIR/*.log` ]]; then mv $RECMAPDIR/*.log $LOGS; fi
 	all_no_log_table
 
