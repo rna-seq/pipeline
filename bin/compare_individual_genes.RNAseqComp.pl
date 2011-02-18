@@ -20,8 +20,7 @@ BEGIN {
 
 use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
 use RNAseq_pipeline_settings3 ('get_dbh','read_config_file',
-			       'get_gene_RPKM_data','get_desc_from_gene_sub',
-			       'get_chr_from_gene_sub');
+			       'get_gene_RPKM_data','get_gene_info_sub');
 use RNAseq_pipeline_comp3 ('get_tables','check_tables','get_labels_sub',
 			   'get_samples');
 use Getopt::Long;
@@ -46,8 +45,8 @@ if ($breakdown) {
     $tabsuffix='gene_RPKM';
 }
 
-unless (@genes_needed == 2) {
-    die "I need exacly 2 genes to compare (provided with the -g option\n";
+unless (@genes_needed >= 2) {
+    die "I need at least 2 genes to compare (provided with the -g option\n";
 }
 
 # read the config file
@@ -55,7 +54,7 @@ my %options=%{read_config_file()};
 $project=$options{'PROJECTID'};
 
 # get a log file
-my $log_fh=get_log_fh('compare_gene_RPKM.RNAseqComp.log',
+my $log_fh=get_log_fh('compare_ind_genes.RNAseqComp.log',
 		      $debug);
 print $log_fh "Extracting expression info for the following genes: ",
     join(",",@genes_needed),"\n";
@@ -66,8 +65,8 @@ $dbhcommon=get_dbh(1);
 
 # Get subroutines
 *get_labels=get_labels_sub($dbhcommon);
-*gene2chr=get_chr_from_gene_sub();
-*gene2desc=get_desc_from_gene_sub();
+*gene2chr=get_gene_info_sub('chr');
+*gene2desc=get_gene_info_sub('description');
 
 # Get all experiment tables from the database
 my %tables=%{get_tables($dbhcommon,

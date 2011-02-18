@@ -1642,13 +1642,15 @@ sub get_trans_expression_data {
 # Some subroutines to retrieve annotation information from the database (write
 # as the get_trans_info_sub)
 sub get_gene_info_sub {
-    my $dbh=shift;
-    my $table=shift;
+    my %options=%{read_config_file()};
+    my $dbh=get_dbh(1);
+    my $table=$options{'GENECLASSTABLE'};
+    my @fields=@_ || die "No fields requested from $table\n";
 
     my %cache;
 
     my ($query,$sth);
-    $query ='SELECT type, status ';
+    $query ='SELECT '.join(',',@fields).' ';
     $query.="FROM $table ";
     $query.='WHERE gene_id = ?';
     $sth=$dbh->prepare($query);
@@ -1661,8 +1663,8 @@ sub get_gene_info_sub {
 	    unless ($count== 1) {
 		die "Incorrect number of types for $gene_id";
 	    }
-	    my ($type,$status)=$sth->fetchrow_array();
-	    $cache{$gene_id}=[$type,$status];
+	    my @results=$sth->fetchrow_array();
+	    $cache{$gene_id}=[@results];
 	}
 	return($cache{$gene_id});
     };
@@ -1674,7 +1676,7 @@ sub get_trans_info_sub {
     my %options=%{read_config_file()};
     my $dbh=get_dbh(1);
     my $table=$options{'TRANSCLASSTABLE'};
-    my @fields=@_;
+    my @fields=@_|| die "No fields requested from $table\n";
 
     my $fields=@fields;
 
@@ -1701,109 +1703,6 @@ sub get_trans_info_sub {
     };
 
     return($get_trans_info)
-}
-
-### TO DO compact these subroutines into one that takes the column as argument
-sub get_type_from_gene_sub {
-    my %options=%{read_config_file()};
-    my $dbh=get_dbh(1);
-    my $table=$options{'GENECLASSTABLE'};
-
-    # For saving time
-    my %cache;
-
-    my ($query,$sth,$count);
-
-    $query ='SELECT type ';
-    $query.="FROM $table ";
-    $query.='WHERE gene_id = ?';
-    $sth=$dbh->prepare($query);
-
-    my $subroutine=sub {
-	my $gene=shift;
-
-	unless ($cache{$gene}) {
-	    $count=$sth->execute($gene);
-
-	    if ($count != 1) {
-		warn "We do not have a single description corresponding to $gene\n";
-		return();
-	    } else {
-		my ($desc)=$sth->fetchrow_array();
-		$cache{$gene}=$desc || 'none';
-	    }
-	}
-	return($cache{$gene});
-    };
-    return($subroutine);
-}
-
-sub get_desc_from_gene_sub {
-    my %options=%{read_config_file()};
-    my $dbh=get_dbh(1);
-    my $table=$options{'GENECLASSTABLE'};
-
-    # For saving time
-    my %cache;
-
-    my ($query,$sth,$count);
-
-    $query ='SELECT description ';
-    $query.="FROM $table ";
-    $query.='WHERE gene_id = ?';
-    $sth=$dbh->prepare($query);
-
-    my $subroutine=sub {
-	my $gene=shift;
-
-	unless ($cache{$gene}) {
-	    $count=$sth->execute($gene);
-
-	    if ($count != 1) {
-		warn "We do not have a single description corresponding to $gene\n";
-		return();
-	    } else {
-		my ($desc)=$sth->fetchrow_array();
-		$cache{$gene}=$desc || 'none';
-	    }
-	}
-	return($cache{$gene});
-    };
-    return($subroutine);
-}
-
-sub get_chr_from_gene_sub {
-    my %options=%{read_config_file()};
-    my $dbh=get_dbh(1);
-    my $table=$options{'GENECLASSTABLE'};
-
-    # For saving time
-    my %cache;
-
-    my ($query,$sth,$count);
-
-    $query ='SELECT chr ';
-    $query.="FROM $table ";
-    $query.='WHERE gene_id = ?';
-    $sth=$dbh->prepare($query);
-
-    my $subroutine=sub {
-	my $gene=shift;
-
-	unless ($cache{$gene}) {
-	    $count=$sth->execute($gene);
-
-	    if ($count != 1) {
-		warn "We do not have a single chr corresponding to $gene\n";
-		return();
-	    } else {
-		my ($chr)=$sth->fetchrow_array();
-		$cache{$gene}=$chr;
-	    }
-	}
-	return($cache{$gene});
-    };
-    return($subroutine);
 }
 
 1;

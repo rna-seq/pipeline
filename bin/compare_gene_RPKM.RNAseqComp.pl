@@ -24,10 +24,7 @@ BEGIN {
 
 use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
 use RNAseq_pipeline_settings3 ('get_dbh','read_config_file',
-			       'get_gene_RPKM_data','get_desc_from_gene_sub',
-			       'get_type_from_gene_sub',
-			       'get_chr_from_gene_sub');
-use RNAseq_pipeline_stats3 qw(log10);
+			       'get_gene_RPKM_data','get_gene_info_sub');
 use RNAseq_pipeline_comp3 ('get_tables','check_tables','get_labels_sub',
 			   'get_samples');
 use Getopt::Long;
@@ -66,9 +63,9 @@ $dbhcommon=get_dbh(1);
 
 # Get subroutines
 *get_labels=get_labels_sub($dbhcommon);
-*gene2chr=get_chr_from_gene_sub();
-*gene2desc=get_desc_from_gene_sub();
-*gene2type=get_type_from_gene_sub();
+*gene2chr=get_gene_info_sub('chr');
+*gene2desc=get_gene_info_sub('description');
+*gene2type=get_gene_info_sub('type');
 
 # Get the tables belonging to the project
 my %tables=%{get_tables($dbhcommon,
@@ -129,8 +126,6 @@ foreach my $gene (keys %all_genes) {
 	if ($exp->[1] &&
 	    ($exp->[1]->{$gene})) {
 	    $value=$exp->[1]->{$gene};
-	} else {
-#	    $no_print=1;
 	}
 	push @row,$value;
     }

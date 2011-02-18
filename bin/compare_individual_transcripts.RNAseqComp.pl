@@ -132,7 +132,7 @@ foreach my $exp (@values) {
     }
 
     my $dataset=$exp->[0];
-    $dataset=~s/_gene_RPKM_pooled_sample//;
+    $dataset=~s/_transcript_expression_levels_pooled_sample//;
     my ($project,$group)=(split('_',$dataset))[0,-1];
     print $tmpfh join("\t",
 		      $dataset,
