@@ -22,7 +22,7 @@ use Exporter;
 	    'get_gene_RPKM_data',
 	    'get_trans_expression_data',
 	    'get_desc_from_gene_sub','get_chr_from_gene_sub',
-	    'get_type_from_gene_sub');
+	    'get_type_from_gene_sub','get_exp_info_sub');
 
 use strict;
 use warnings;
@@ -1645,7 +1645,11 @@ sub get_gene_info_sub {
     my %options=%{read_config_file()};
     my $dbh=get_dbh(1);
     my $table=$options{'GENECLASSTABLE'};
-    my @fields=@_ || die "No fields requested from $table\n";
+    my @fields=@_;
+
+    unless(@fields) {
+	die "No fields requested from $table\n";
+    }
 
     my %cache;
 
@@ -1676,7 +1680,11 @@ sub get_trans_info_sub {
     my %options=%{read_config_file()};
     my $dbh=get_dbh(1);
     my $table=$options{'TRANSCLASSTABLE'};
-    my @fields=@_|| die "No fields requested from $table\n";
+    my @fields=@_;
+
+    unless(@fields) {
+	die "No fields requested from $table\n";
+    }
 
     my $fields=@fields;
 
@@ -1703,6 +1711,66 @@ sub get_trans_info_sub {
     };
 
     return($get_trans_info)
+}
+
+# Get information from the experiments table
+sub get_exp_info_sub {
+    my %options=%{read_config_file()};
+    my $dbh=get_dbh(1);
+    my $table='experiments';
+    my @fields=@_;
+
+    unless(@fields) {
+	die "No fields requested from $table\n";
+    }
+
+    my $fields=@fields;
+
+    my %defaults=('experiment_id' => '-',
+		  'project_id' => '-',
+		  'species_id' => '-',
+		  'genome_id' => '-',
+		  'annotation_id' => '-',
+		  'template_file' =>  '?',
+		  'read_length' => 0,
+		  'mismatches' => '2?',
+		  'exp_description' => 'none',
+		  'expDate' => '?',
+		  'CellType'=> '?',
+		  'RNAType' => '?',
+		  'Compartment' => '?',
+		  'Bioreplicate' => 0,
+		  'partition' => 0);
+
+    my %cache;
+
+    my ($query,$sth);
+    $query ='SELECT '.join(',',@fields).' ';
+    $query.="FROM $table ";
+    $query.='WHERE project_id = ? AND experiment_id = ?';
+    $sth=$dbh->prepare($query);
+
+    my $get_exp_info= sub {
+	my $proj_id=shift;
+	my $exp_id=shift;
+	
+	my $key=$proj_id.'_'.$exp_id;
+	unless ($cache{$key}) {
+	    my $count=$sth->execute($proj_id,$exp_id);
+	    unless ($count== 1) {
+		die "Incorrect number of entries for $key";
+	    }
+	    my $results=$sth->fetchrow_hashref();
+	    my @results;
+	    foreach my $key (@fields) {
+		my $value=$results->{$key} || $defaults{$key};
+		push @results,$value;
+	    }
+	    $cache{$key}=[@results];
+	}
+	return($cache{$key});
+    };
+    return($get_exp_info)
 }
 
 1;
