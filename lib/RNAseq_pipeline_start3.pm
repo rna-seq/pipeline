@@ -2194,6 +2194,9 @@ sub clear_tables {
     }
 }
 
+# These are subs that will clear the directories in the project directory
+### TO DO make an additionla level of clean so the genome directory and maybe
+# some other ones are not completely wiped
 sub clear_dirs {
     my $options=shift;
 
@@ -2205,8 +2208,6 @@ sub clear_dirs {
     my $localdir=${$options->{'localdir'}};
     print STDERR "Setting localdir as: $localdir\n";
     my @directories=('mysql',
-		     'mysql/table_build',
-		     'mysql/table_data',
 		     'GEMIndices',
 		     'genome',
 		     'transcriptome',
