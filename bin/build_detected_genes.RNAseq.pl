@@ -45,8 +45,7 @@ my $dbh=get_dbh();
 my $common_dbh=get_dbh(1);
 
 # get some subs
-*get_gene_info=get_gene_info_sub($common_dbh,
-				 $geneclasstable);
+*get_gene_info=get_gene_info_sub('type','status');
 
 # Get the samples we will be looking at:
 my %tables=($exp_id => $generpkmtable);
