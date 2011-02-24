@@ -48,6 +48,7 @@ bin/compare_unique_maps_genome.RNAseqComp.pl -text
 bin/completed.RNAseq.pl -text
 bin/execute_RNAseq_pipeline3.0.pl -text
 bin/extract_mapping_info.RNAseqComp.pl -text
+bin/extract_read_stats_info.RNAseqComp.pl -text
 bin/extract_reads_info.RNAseqComp.pl -text
 bin/gem2bed_combined.RNAseq.pl -text
 bin/gem2bed_combined_cluster.RNAseq.pl -text

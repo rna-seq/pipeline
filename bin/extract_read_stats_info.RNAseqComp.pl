@@ -31,7 +31,7 @@ my $dbhcommon;
 my $project;
 my $debug=1;
 my $header;
-my @tabsuffixes=('genome_mapping','junctions_mapping','split_mapping','recursive_mapping','merged_mapping');
+my @tabsuffixes=('read_stats');
 my $fraction='';
 
 # Get command line options
@@ -45,7 +45,7 @@ my %options=%{read_config_file()};
 $project=$options{'PROJECTID'};
 
 # get a log file
-my $log_fh=get_log_fh('extract_reads_info.RNAseqComp.log',
+my $log_fh=get_log_fh('extract_read_stats_info.RNAseqComp.log',
 		      $debug);
 
 # First connect to the database
@@ -66,7 +66,7 @@ foreach my $tabsuffix (@tabsuffixes) {
     
     # For each of tables extract the RPKMs of interest and get for each of the
     # tables the different samples present in them
-    $samples{$tabsuffix}=get_mapping_info(\%tables,
+    $samples{$tabsuffix}=get_read_stats_info(\%tables,
 					     $dbh);
 
 }
@@ -151,7 +151,7 @@ sub get_read_list_info {
     return($pair);
 }
 
-sub get_mapping_info {
+sub get_read_stats_info {
     my $tables=shift;
     my $dbh=shift;
 
@@ -161,13 +161,14 @@ sub get_mapping_info {
 	my ($query,$sth);
 	my $table=$tables->{$exp};
 	
-	$query ='SELECT sum(totalReads),sum(mappedReads),sum(uniqueReads)';
+	$query ='SELECT sum(TotalReads),sum(NoAmbiguousBases),';
+	$query.='sum(AmbiguousBases),sum(UniqueReads) ';
 	$query.="FROM $table ";
 	
 	$sth = $dbh->prepare($query);
 	my $count=$sth->execute();
-	my ($total,$mapped,$unique)=$sth->fetchrow_array();
-	$samples{$table}=[$total,$mapped,$unique];
+	my ($total,$noamb,$amb,$unique)=$sth->fetchrow_array();
+	$samples{$table}=[$total,$noamb,$amb,$unique];
     }
     return(\%samples);
 }
