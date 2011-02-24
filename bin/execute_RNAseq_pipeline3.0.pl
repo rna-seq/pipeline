@@ -16,6 +16,7 @@ BEGIN {
 }
 
 use Getopt::Long;
+use Pod::Usage;
 use DBI;
 use Cwd;
 use RNAseq_pipeline3 qw(MySQL_DB_Connect);
@@ -39,7 +40,28 @@ my $silent;				#  -s   suppress log messages
 my $debug;				#  -d   print trace (debug mode)
 my $force;				#  -r   restart (force execution of stage)
 
-my @targets;				# command line args -- names of stages to "build"
+GetOptions(
+    "file:s"  => \$pipfile,
+    "n"       => \$nomake,
+    "help"    => \$help,
+    "silent"  => \$silent,
+    "debug"   => \$debug,
+    "restart" => \$force,
+    );
+# Check for option errors
+exit if $Getopt::Long::error;
+
+# Set some variables to override each other
+$silent = 0 if $debug;		# -debug overrides -silent
+$silent = 0 if $nomake;		# -nomake overrides silent
+
+# If silent, set STDOUT to /dev/null
+if ($silent) {
+    open(TRASH,"> /dev/null");
+    *STDOUT = *TRASH;
+}
+
+my @targets = @ARGV;			# command line args: rules to run
 
 # Set some other global variables:
 my $dbh;				# database handle
@@ -47,8 +69,41 @@ my %rulelist; # Hash structured list of rules
 my %phony;				# rule names that aren't database tables
 my %symbols;				# symbol table
 
-# Initialize the variables and set any command line options
-initialize();
+# If help option is used print the help
+pod2usage(1) if $help;
+
+# Set the defaults for the variables in the config file
+chomp(my $projdir = `pwd`);		   # main project directory
+my $bindir = "$projdir/bin";	           # script directory
+my $sqldir = "$projdir/mysql/table_build"; # project tables
+my $logsdir= "$projdir/logs";              # Logs from the scripts
+my $tabdatdir="$projdir/mysql/table_data"; # Compressed copy of the database tables
+my $graphsdir="$projdir/graphs";        # Any pictures or plots from the project
+my $database=(split(/\//,$projdir))[-1];
+
+# Fill in the symbols hash
+%symbols = (
+    "PROJECT" => $projdir,
+    "PATH"    => $bindir, # In case there is a problem 
+    "BIN"    => $bindir,
+    "TABLES"  => $sqldir,
+    "DB"      => $database,
+    'LOGS' => $logsdir,
+    'TAB_DAT' => $tabdatdir,
+    'GRAPHS' => $graphsdir,
+    'DEBUG' => 0
+    );
+
+# Set the debugging options
+if ($debug) {
+    $symbols{'DEBUG'}=1;
+    print "Config:\n";
+    foreach my $var (keys %symbols) {
+	print join("\t",
+		   $var,
+		   $symbols{$var}),"\n";
+    }
+}
 
 # Setup some environmental variables
 $ENV{'PATH'} = $symbols{'BIN'}. ':' . $ENV{'PATH'};
@@ -67,6 +122,7 @@ my @root_rules=@{get_root_rules(\%rulelist)};
 # Get the database handle
 $dbh=MySQL_DB_Connect($symbols{'DB'},
 		      $symbols{'HOST'});
+
 # Get table last modification dates
 Get_table_Dates(\%rulelist);
 
@@ -95,8 +151,8 @@ exit;
 # Rule processing
 #
 
-# Execute a stage of the pipeline.  The first param is the name of the
-# stage, the second is a call level used in pretty-printing status
+# Execute a rule of the pipeline.  The first param is the name of the
+# rule, the second is a call level used in pretty-printing status
 # messages.  The return value is the new timestamp for the table.
 sub execute_rule {
     my $rule=shift;
@@ -298,8 +354,8 @@ sub getDate {
 
     my $dh = {};
 
-    # Modified in order to be able to access the database after long queries that
-    # will kill the $dbh
+    # Modified in order to be able to access the database after long queries
+    # that will kill the $dbh
     my $sth;
 
     # Check if the database is still responding
@@ -489,83 +545,6 @@ sub processFile {
     }    
 }
 
-sub printHelp {
-    # This must be completed ad rewritten using the Pod module
-    print "Usage: execute_RNAseq_pipeline.pl [options] rulename\n";
-    print "\t-h: Print help and exit\n";
-    print "\t-f: Control file name. Defaults to RNAseq_pipeline.txt\n";
-    print "\t-n: Print commands but don't execute them\n";
-    print "\t-s: Silent\n";
-    print "\t-d: Debug\n";
-    print "\t-r: Restart (force execution of rule)\n";
-}
-
-# Initialize the variables
-sub initialize {
-    GetOptions(
-	"file:s"  => \$pipfile,
-	"n"       => \$nomake,
-	"help"    => \$help,
-	"silent"  => \$silent,
-	"debug"   => \$debug,
-	"restart" => \$force,
-    );
-    # Check for option errors
-    exit if $Getopt::Long::error;
-
-    # If help option is used print the help
-    if ($help) {
-	printHelp();
-	exit 1;
-    }
-
-    # Set some variables to override each other
-    $silent = 0 if $debug;		# -debug overrides -silent
-    $silent = 0 if $nomake;		# why be silent if testing the file?
-
-    # Throw away all output if silent:
-    if ($silent) {
-	open(TRASH,"> /dev/null");
-	*STDOUT = *TRASH;
-    }
-
-    # Get the rules to execute
-    @targets = @ARGV;
-
-    # Set the defaults for the variables in the pipfile
-    chomp(my $projdir = `pwd`);		# main project directory
-    my $bindir = "$projdir/bin";	# project applications
-    my $sqldir = "$projdir/mysql/table_build";	# project tables
-    my $logsdir= "$projdir/logs"; # Logs from the scripts
-#    my $libdir= "$projdir/lib"; # modules required by the project scripts
-    my $tabdatdir="$projdir/mysql/table_data"; # Compressed copy of the database tables
-    my $graphsdir="$projdir/graphs"; # Any pictures or plots from the project
-    my $database=(split(/\//,$projdir))[-1];
-
-    %symbols = (
-		"PROJECT" => $projdir,
-		"PATH"    => $bindir, # In case there is a problem 
-		"BIN"    => $bindir,
-		"TABLES"  => $sqldir,
-		"DB"      => $database,
-		'LOGS' => $logsdir,
-#		'LIB' => $libdir,
-		'TAB_DAT' => $tabdatdir,
-		'GRAPHS' => $graphsdir,
-		'DEBUG' => 0
-		);
-    if ($debug) {
-	$symbols{'DEBUG'}=1;
-	print "Vars:\n";
-	foreach my $var (keys %symbols) {
-	    print join("\t",
-		       $var,
-		       $symbols{$var}),"\n";
-	}
-    }
-
-}
-
 sub set_process_management {
     my @processes;
 
@@ -584,3 +563,49 @@ sub set_process_management {
 
     return($kill_all_sub,$add_proc_sub);
 }
+
+__END__
+
+=head1 NAME
+    
+    execute_RNAseq_pipeline.pl [options] rulename
+    
+=head1 SYNOPSIS
+    
+sample [options] 
+    
+  Options:
+    -help|h            brief help message
+    -man|m             full documentation
+    -file|f            Control file name. Defaults to RNAseq_pipeline.txt
+    -n                 Print commands but don't execute them
+    -silent|s          Silent
+    -debug|d           Debug
+    -restart|r         Restart at the specific rule (force execution of rule)
+        
+=head1 OPTIONS
+    
+=over 8
+    
+=item B<-help>
+    
+    Print a brief help message and exits.
+    
+=item B<-man>
+    
+    Prints the manual page and exits.
+
+=item B<-restart|r>
+    
+    Restart at the specific rule. As it is restarting it will force the
+    execution of the rule regardless of the presence of the prerequisites. As
+    it does not chech for these prerequisites make sure they are there, if not
+    the rule will fail
+    
+=back
+    
+=head1 DESCRIPTION
+    
+    This program is not documented yet, sorry
+
+=cut

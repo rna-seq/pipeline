@@ -547,7 +547,7 @@ sub get_annotation_from_gtf {
 		# This shouldn't happen, but does in the Drosophila annotation
 		# at least. I think the genes affected are some for which
 		# structure is not completely resolved
-		warn "Gene $gene_id is a repeated entry\n";
+		warn "Gene $gene_id may be a repeated entry (or perhaps the gtf file is unsorted and exons appear before their corresponding gene)\n";
 	    } else {
 		my $gene_feat = Bio::SeqFeature::Gene::GeneStructure->new(
 		    -start        => $start,

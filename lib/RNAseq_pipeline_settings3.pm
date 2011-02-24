@@ -19,7 +19,7 @@ use Exporter;
 	    'get_feature_overlap_sub','get_feature_overlap_split1',
 	    'get_pair_id','get_lane_id','get_dataset_id','get_mapping_fh',
 	    'get_gene_info_sub','get_trans_info_sub',
-	    'get_gene_RPKM_data',
+	    'get_gene_RPKM_data','get_gene_readcount_data',
 	    'get_trans_expression_data',
 	    'get_desc_from_gene_sub','get_chr_from_gene_sub',
 	    'get_type_from_gene_sub','get_exp_info_sub');
@@ -1600,6 +1600,46 @@ sub get_gene_RPKM_data {
 }
 
 # Some subroutines to retrieve analysis info from the database
+sub get_gene_readcount_data {
+    my $dbh=shift;
+    my $table=shift;
+    my $detected=shift;
+    my $sample=shift;
+    my $breakdown=shift;
+
+    my %expression;
+
+    my ($query,$sth,$count);
+    $query ='SELECT gene_id, readcount ';
+    $query.="FROM $table ";
+    if ($breakdown) {
+	$query.='WHERE LaneName = ?';
+    } else {
+	$query.='WHERE sample = ?';
+    }
+    $sth=$dbh->prepare($query);
+    $count=$sth->execute($sample);
+    
+    if ($count && ($count > 1)) {
+	print STDERR $count,"\tGenes are detected in $table\n";
+    } else {
+	die "No genes present in $table\n";
+    }
+
+    if ($count < 16000) {
+	print STDERR "Too few genes detected for $sample\n";
+    }
+    
+    # get all the necessary tables
+    while (my ($gene,$rpkm)=$sth->fetchrow_array()) {
+	$expression{$gene}=$rpkm;
+	$detected->{$gene}=1;
+    }
+
+    return(\%expression);
+}
+
+# Some subroutines to retrieve analysis info from the database
 sub get_trans_expression_data {
     my $dbh=shift;
     my $table=shift;
@@ -1667,8 +1707,13 @@ sub get_gene_info_sub {
 	    unless ($count== 1) {
 		die "Incorrect number of types for $gene_id";
 	    }
+
 	    my @results=$sth->fetchrow_array();
-	    $cache{$gene_id}=[@results];
+	    my ($results)=@results;
+	    if (@results > 1) {
+		$results=[@results];
+	    }
+	    $cache{$gene_id}=$results;
 	}
 	return($cache{$gene_id});
     };

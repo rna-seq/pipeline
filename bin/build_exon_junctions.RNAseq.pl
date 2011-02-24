@@ -178,6 +178,7 @@ sub build_all_junctions {
     # Print a list of those exons assigned to more than one gene
     my $exonerror_fh=get_fh('exon.strange.list',1);
     my $strange=0;
+    my %strange;
     foreach my $exon_id (keys %exon_list) {
 	my $genes=keys %{$exon_list{$exon_id}};
 	if ($genes !=1) {
@@ -186,6 +187,7 @@ sub build_all_junctions {
 					 $exon_id,
 					 $gene_id),"\n";
 	    }
+	    $strange{$exon_id}=1;
 	    $strange++;
 	}
     }
@@ -217,6 +219,12 @@ sub build_all_junctions {
 		# Skip exon combinations from different strands
 		unless ($exon1_strand eq $exon2_strand) {
 		    # This happens in the case of some unprocessed pseudogenes
+		    next;
+		}
+
+		# Skip exon combinations that include an exon present in more
+		# than one gene
+		if ($strange{$exon1_id} || $strange{$exon2_id}) {
 		    next;
 		}
 
