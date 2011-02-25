@@ -53,8 +53,8 @@ $stranded=$options{'STRANDED'};
 $file_list=$options{'FILELIST'};
 $paralleltmp=$options{'PROJECT'}.'/'.$options{'LOCALPARALLEL'};
 $bindir=$options{'BIN'};
-unless($options{'PROJECT'}=~/^\/users/) {
-    print STDERR "Running locally, cannot use parallel\n";
+unless($options{'CLUSTER'}) {
+    print STDERR "Running locally, as no cluster has been defined\n";
     $parallel='default';
 }
 

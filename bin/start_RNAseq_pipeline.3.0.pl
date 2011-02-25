@@ -299,8 +299,9 @@ if (keys %{$guessmaster}) {
 		 \%options);
 
     # This is specific to the CRG
-    if ($localdir!~/^\/users/) {
-	${$options{'cluster'}}='-';
+    if ($localdir=~/^\/users/) {
+	warn "CRG specific parameter being used, maybe I'm not doing what you want\n";
+	${$options{'cluster'}}='mem_6';
     }
 }
 

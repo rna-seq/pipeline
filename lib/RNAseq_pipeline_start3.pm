@@ -102,7 +102,7 @@ sub defaults {
 		  'mapper' => 'GEM',
 		  'threads' => 2,
 		  'localdir' => undef,
-		  'cluster' => 'mem_6', # Should be defined to the local cluster
+		  'cluster' => '', # Should be defined to the local cluster
 		  'qualities' => undef
 	);
     my $check_default=sub {

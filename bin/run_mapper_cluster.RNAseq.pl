@@ -65,12 +65,11 @@ unless ($outdir) {
 $outdir=~s/\/$//;
 my $usecluster=0;
 
-if ($projdir=~/^\/users/ &&
-    $index=~/^\/users/) {
+if ($options{'CLUSTER'}) {
     print STDERR "Mapping in the cluster with $threads threads\n";
     $usecluster=1;
 } else {
-    print STDERR "I can only use the cluster from /users. Mapping locally\n";
+    print STDERR "I can only use the cluster if I am introduced to it, and I have no idea of its name. Mapping locally\n";
 }
 
 # Make sure we have a valid index
