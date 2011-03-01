@@ -61,7 +61,22 @@ sub check_option_characters {
     print $log_fh "Checking options for unadvisable characters...\n";
     foreach my $option (keys %{$options}) {
 	my $value=${$options->{$option}} || '';
-	if ($value=~/([^\w_\/\. ])/) {
+	# Experiment id should only contain alphanumeric and undeerscore
+	if ($option eq 'EXPID') {
+	    if ($value=~/([^\w_])/o) {
+		my $char=$1;
+		$problems.="Value $value corresponding to $option contains an invalid character: '$char'\n";
+	    }
+	    next;
+	} elsif ($option eq 'PROJECTID') {
+	    # Project id should only be alphanumeric
+	    if ($value=~/([^\w])/o) {
+		my $char=$1;
+		$problems.="Value $value corresponding to $option contains an invalid character: '$char'\n";
+	    }
+	    next;
+	}
+	if ($value=~/([^\w_\/\. -])/o) {
 	    my $char=$1;
 	    $problems.="Value $value corresponding to $option contains an invalid character: '$char'\n";
 	}
