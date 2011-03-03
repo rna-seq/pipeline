@@ -115,24 +115,6 @@ foreach my $file (keys %locations) {
 	next;
     }
 
-    if (($filetype eq 'fastq') ||
-	$qualities) {
-	# The readfile has qualities
-	if ($qualities) {
-	    print STDERR "Qualities specified $qualities...";
-	    if ($qualities=~/phred/i) {
-		$qualities='phred';
-	    } else {
-		$qualities='solexa';
-	    }
-	    print STDERR "using $qualities setting for GEM\n";
-	} else {
-	    print STDERR 'Guessing quality format...';
-	    $qualities=determine_quality_type($infile);
-	    print STDERR "qualities set to $qualities\n";
-	}
-    }
-
     if ($ignore_quals) {
 	print STDERR "Ignoring qualities\n";
 	$qualities='ignore';

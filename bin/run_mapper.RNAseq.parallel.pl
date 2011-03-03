@@ -19,7 +19,7 @@ BEGIN {
 use Getopt::Long;
 use RNAseq_pipeline3 qw(get_fh);
 use RNAseq_pipeline_settings3 qw(read_config_file);
-use RNAseq_GEM3 ('check_index','determine_quality_type','get_mapper_routines',
+use RNAseq_GEM3 ('check_index','get_mapper_routines',
 		 'check_input');
 
 my $index;
@@ -44,6 +44,7 @@ GetOptions('index|I=s' => \$index,
 my %options=%{read_config_file()};
 $mapper=$options{'MAPPER'};
 $tempdir=$options{'LOCALPARALLEL'};
+$qualities=$options{'QUALITIES'};
 unless ($threads) {
     $threads=$options{'THREADS'};
 }
@@ -74,16 +75,6 @@ if (-r "$outfile.map" ||
     -r "$outfile.map.gz") {
     print STDERR "$outfile Exists.. Skipping\n";
     exit;
-}
-
-if (($filetype eq 'fastq') ||
-    $qualities) {
-    # The readfile has qualities
-    unless ($qualities) {
-	print STDERR 'Guessing quality format...';
-	$qualities=determine_quality_type($infile);
-	print STDERR "qualities set to $qualities\n";
-    }
 }
 
 if ($ignore_quals) {

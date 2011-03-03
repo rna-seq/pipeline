@@ -489,6 +489,7 @@ sub trim_ambiguous {
 sub determine_quality_type {
     my $infile=shift;
 
+    print STDERR "This step is obsolete\n";
     # The Sanger format encodes a Phred quality score from 0 to 93 using ASCII
     # 33 to 126. Solexa/Illumina 1.0 format encodes a Solexa/Illumina quality
     # score from -5 to 40 using ASCII 59 to 104. Illumina 1.3 format encodes a
@@ -504,6 +505,7 @@ sub determine_quality_type {
     my $quality_type='solexa';
     my $certainty=0;
     my $total=0;
+
     while (my $line=<$infh>) {
 	chomp($line);
 	if ($line=~/^\@/) {
@@ -535,7 +537,7 @@ sub determine_quality_type {
 		}
 	    }
 	} else {
-	    warn "I should not be here...\n";
+	    die "This does not look like fastq...\n";
 	}
     }
     close($infh);
