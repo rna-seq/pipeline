@@ -662,8 +662,8 @@ sub get_annotation_from_gtf {
     if ($subset eq 'exons') {
 	$count=keys %exons;
 	print STDERR $count, "\tExon entries obtained\n";
-	# Remove those exons that map to multiple genes and prin to a file
-	# in the file does not exist
+	# Remove those exons that map to multiple genes and print to a file
+	# if the file does not exist
 	my $repeated_exons=$file;
 	$repeated_exons=~s/.gtf$/.rep.exons.gtf/;
 	if (-r $repeated_exons) {
@@ -677,8 +677,9 @@ sub get_annotation_from_gtf {
 	    }
 	    close($repeatfh);
 	}
+	# Do not remove the exons
 	foreach my $exon (keys %remove_exons) {
-	    delete $exons{$exon};
+#	    delete $exons{$exon};
 	}
 	$count=keys %remove_exons;
 	print STDERR $count,"\tExons mapping to multiple genes removed\n";
