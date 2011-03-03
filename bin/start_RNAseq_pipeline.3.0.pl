@@ -106,6 +106,9 @@ my $exp_description;
 my $rnafraction;
 my $bioreplicate;
 
+# Preprocessing
+my $preprocess;
+
 # Get the command line for the log file
 my $program_name=$0;
 $program_name=~s/.*\///;
@@ -162,7 +165,8 @@ my %options=('species' => \$species,
 	     'expdesc' => \$exp_description,
 	     'projdesc' => \$proj_description,
 	     'rnafrac' => \$rnafraction,
-	     'bioreplicate' => \$bioreplicate
+	     'bioreplicate' => \$bioreplicate,
+	     'preprocess' => \$preprocess
     );
 GetOptions(\%options,
 	   'species|s=s',
@@ -203,7 +207,8 @@ GetOptions(\%options,
 	   'expdesc=s',
 	   'projdesc=s',
 	   'rnafrac=s',
-	   'bioreplicate=s'
+	   'bioreplicate=s',
+	   'preprocess=s'
     );
 
 # Print help and exit if required

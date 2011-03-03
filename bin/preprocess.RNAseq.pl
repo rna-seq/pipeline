@@ -35,13 +35,14 @@ my $debug=1;
 my $localdir;
 my $projdir;
 my $readdir;
-my $script=shift;
+my $script;
 my %options=%{read_config_file()};
 $project=$options{'PROJECTID'};
 $species=$options{'SPECIES'};
 $localdir=$options{'LOCALDIR'};
 $projdir=$options{'PROJECT'};
 $readdir=$projdir.'/'.$options{'READDIR'};
+$script=$options{'PREPROCESS'};
 
 # If mismatches is set, the reads will be filtered
 

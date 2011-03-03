@@ -62,23 +62,31 @@ sub check_option_characters {
     foreach my $option (keys %{$options}) {
 	my $value=${$options->{$option}} || '';
 	# Experiment id should only contain alphanumeric and undeerscore
-	if ($option eq 'EXPID') {
+	if ($option eq 'experiment') {
 	    if ($value=~/([^\w_])/o) {
 		my $char=$1;
 		$problems.="Value $value corresponding to $option contains an invalid character: '$char'\n";
 	    }
 	    next;
-	} elsif ($option eq 'PROJECTID') {
+	} elsif ($option eq 'project') {
 	    # Project id should only be alphanumeric
 	    if ($value=~/([^\w])/o) {
 		my $char=$1;
 		$problems.="Value $value corresponding to $option contains an invalid character: '$char'\n";
 	    }
 	    next;
-	}
-	if ($value=~/([^\w_\/\. -])/o) {
+	} elsif ($option eq 'qualities') {
+	    # Qualities can only be solexa, phred or ignore
+	    unless ($value=~/^(solexa|phred|ignore)$/o) {
+		my $char=$1;
+		$problems.="Value for qualities is set to $value, but the onnly valid options are 'solexa', 'phred' or 'ignore'\n";
+	    }
+	    next;
+	} elsif ($value=~/([^\w_\/\. -])/o) {
 	    my $char=$1;
 	    $problems.="Value $value corresponding to $option contains an invalid character: '$char'\n";
+	} else {
+	    print $log_fh "Option $option => $value OK\n";
 	}
     }
     print $log_fh "done\n";
@@ -118,7 +126,8 @@ sub defaults {
 		  'threads' => 2,
 		  'localdir' => undef,
 		  'cluster' => '', # Should be defined to the local cluster
-		  'qualities' => undef
+		  'qualities' => undef,
+		  'preprocess' => 'zcat'
 	);
     my $check_default=sub {
 	my $variable=shift;
@@ -1817,7 +1826,8 @@ sub create_directory_structure {
 	      'CLUSTER' => ${$options->{'cluster'}},
 	      'SAMDIR' => 'SAM',
 	      'LOCALPARALLEL' => 'work',
-	      'QUALITIES' =>${$options->{'qualities'}}
+	      'QUALITIES' =>${$options->{'qualities'}},
+	      'PREPROCESS' => ${$options->{'preprocess'}}
 );
 
     foreach my $dir (@directories) {

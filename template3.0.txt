@@ -52,6 +52,7 @@ MAPPER =
 LOCALPARALLEL = $PROJECT
 CLUSTER = 
 QUALITIES = 
+PREPROCESS =
 
 # PHONY rules always execute as they do not build a table if they are in the
 # prerequisites of another rule
@@ -69,7 +70,7 @@ _start:	@
 # and filtering if required however it cannot be standardized because there
 # are continually different cases appearing
 preprocess: _start
-	cd $LOCALDIR; $BIN/preprocess.RNAseq.pl -s "$SPECIES" -p "$PROJECTID" $SEQUENCEDIR/* -paired $PAIRED; gzip -9 lane*; mv lane* $READDIR;
+	$BIN/preprocess.RNAseq.pl
 
 # This rule will extract the initial raw sequences from the _seq.txt file
 # output by the solexa sequencing, it will also filter those sequences
