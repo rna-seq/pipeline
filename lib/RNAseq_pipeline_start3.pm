@@ -2057,14 +2057,26 @@ sub add_experiment {
     $sth=$dbh->prepare($query);
     $count=$sth->execute($exp_id,$project_id);
 
+    my $update=0;
     if ($count == 1) {
 	print $log_fh "$exp_id is already present in the database for $project_id\n";
+	print STDERR "$exp_id is already present as part of $project_id. Are you
+sure you want to continue?(y/N)";
+	my $yes=<STDIN>;
+	chomp($yes);
+	if ($yes=~/^y/i){
+	    $update=1;
+	    print $log_fh "Updating entry\n";
+	}
     } elsif ($count > 1) {
 	die "Project ID with experiment ID combination is present many times. This should not happen\n";
     } else {
 	print $log_fh "$exp_id is not present in the database for $project_id\n";
 	print $log_fh "Adding a new entry\n";
+	$update=1;
+    }
 
+    if ($update) {
 	# Insert the info into the database
 	$query ="INSERT INTO $table ";
 	$query.='SET experiment_id = ?, project_id = ?, species_id = ?,';

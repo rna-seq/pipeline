@@ -1,4 +1,5 @@
 * text=auto !eol
+/License.txt -text
 /Readme.txt -text
 /ToDo.txt -text
 /Version.txt -text
