@@ -118,6 +118,7 @@ bin/run_recursive_mapper.RNAseq.pl -text
 bin/run_recursive_mapper_cluster.RNAseq.pl -text
 bin/run_split_mapper.RNAseq.parallel.pl -text
 bin/run_split_mapper_cluster.RNAseq.pl -text
+bin/seqToFasta.RNAseq.pl -text
 bin/split_gtf_annotation.RNAseq.pl -text
 bin/start_RNAseq_pipeline.3.0.pl -text
 lib/RNAseq_GEM3.pm -text
