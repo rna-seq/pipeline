@@ -376,7 +376,7 @@ sub process_fastq_file {
 	    $quals_pos->{$laneid}->{$pos}+=$qual;
 
 	    # Set the nucleotides
-	    if ($nucleotides[$i]=~/N/) {
+	    if ($nucleotides[$i]=~/[^ACTG]/o) {
 		$amb_pos->{$laneid}->{$pos}++;
 	    } else {
 		# This should prevent the read_stats script from crashing
@@ -452,11 +452,11 @@ sub process_fasta_file {
 	    $good_reads++;
 	}
 
-	# Build the distribution of the N's
+	# Build the distribution of the N's Actually get the non standard bases
 	my @nucleotides=split('',$seq);
 	for (my $i=0;$i<@nucleotides;$i++) {
 	    my $pos=$i + 1;
-	    if ($nucleotides[$i]=~/N/) {
+	    if ($nucleotides[$i]=~/[^ACTG]/o) {
 		$amb_pos->{$laneid}->{$pos}++;
 	    } else {
 		# This should prevent the read_stats script from crashing
