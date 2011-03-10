@@ -11,7 +11,8 @@ push @EXPORT_OK,('get_tables_hash','build_table_files');
 push @EXPORT_OK,('create_directory_structure');
 push @EXPORT_OK,('print_config_file','print_pipeline_file','build_file_list');
 push @EXPORT_OK,('add_project','add_experiment','add_proj_info','add_exp_info');
-push @EXPORT_OK,('clear_tables','clear_dirs','clear_common_tables');
+push @EXPORT_OK,('clear_tables','clear_dirs','clear_common_tables',
+		 'clear_files');
 
 # Set strict and warnings
 use strict;
@@ -2226,8 +2227,7 @@ sub clear_tables {
     foreach my $table (keys %tables) {
 	my $value=$tables{$table};
 	my $command="mysql $commondb -e 'DROP TABLE IF EXISTS $value'";
-	print STDERR "Executing: $command\n";
-	system($command);
+	run_system_command($command);
     }
 }
 
@@ -2266,9 +2266,30 @@ sub clear_dirs {
 
     foreach my $dir (@directories) {
 	my $command="rm -r $dir";
-	print STDERR "Executing: $command\n";
-	system($command);
+	run_system_command($command);
     }
+}
+
+# Delete some files that may be left in the directory
+sub clear_files {
+    my $opts=shift;
+    my $proj_id=${$opts->{'project'}};
+    my $exp_id=${$opts->{'experiment'}};
+
+    my $prefix=$proj_id.'_'.$exp_id;
+    my $command;
+
+    # Remove any table files that are left over
+    $command="rm $prefix*";
+    run_system_command($command);
+
+    # Remove leftover log files
+    $command='rm *.log';
+    run_system_command($command);
+
+    # remove the pipeline file
+    $command='rm RNAseq_pipeline.txt';
+    run_system_command($command);
 }
 
 # Delete the information from the projects and experiments tables

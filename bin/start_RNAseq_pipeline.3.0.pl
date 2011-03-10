@@ -59,7 +59,8 @@ use RNAseq_pipeline_start3 ('check_option_characters','defaults','check_base_tab
 			    'print_config_file','print_pipeline_file',
 			    'add_project','add_proj_info','add_exp_info',
 			    'add_experiment',
-			    'clear_tables','clear_dirs','clear_common_tables');
+			    'clear_tables','clear_dirs','clear_common_tables',
+			    'clear_files');
 use RNAseq_pipeline3 ('MySQL_DB_Connect','get_fh','get_log_fh');
 use Cwd;
 
@@ -271,6 +272,9 @@ if ($clean) {
 
     # Clear the entries from the projects and experiments tables in the commondb
     clear_common_tables(\%options);
+
+    # Clear some riles that may be left in the running dir
+    clear_files(\%options);
 
     exit;
 } else {
