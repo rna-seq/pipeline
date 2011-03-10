@@ -2079,7 +2079,7 @@ sure you want to continue?(y/N)";
 
     if ($update) {
 	# Insert the info into the database
-	$query ="INSERT INTO $table ";
+	$query ="UPDATE $table ";
 	$query.='SET experiment_id = ?, project_id = ?, species_id = ?,';
 	$query.='genome_id = ?, annotation_id = ?, template_file = ?,';
 	$query.='read_length = ?, mismatches = ?';
