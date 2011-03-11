@@ -2068,6 +2068,11 @@ sure you want to continue?(y/N)";
 	if ($yes=~/^y/i){
 	    $update=1;
 	    print $log_fh "Updating entry\n";
+	    $query ="UPDATE $table ";
+	    $query.='SET species_id = ?,';
+	    $query.='genome_id = ?, annotation_id = ?, template_file = ?,';
+	    $query.='read_length = ?, mismatches = ? ';
+	    $query.='WHERE experiment_id = ? AND project_id = ?';
 	}
     } elsif ($count > 1) {
 	die "Project ID with experiment ID combination is present many times. This should not happen\n";
@@ -2075,19 +2080,20 @@ sure you want to continue?(y/N)";
 	print $log_fh "$exp_id is not present in the database for $project_id\n";
 	print $log_fh "Adding a new entry\n";
 	$update=1;
+	$query ="INSERT INTO $table ";
+	$query.='SET species_id = ?,';
+	$query.='genome_id = ?, annotation_id = ?, template_file = ?,';
+	$query.='read_length = ?, mismatches = ?, experiment_id = ?,';
+	$query.='project_id = ?';
     }
 
     if ($update) {
 	# Insert the info into the database
-	$query ="UPDATE $table ";
-	$query.='SET experiment_id = ?, project_id = ?, species_id = ?,';
-	$query.='genome_id = ?, annotation_id = ?, template_file = ?,';
-	$query.='read_length = ?, mismatches = ?';
 	print $log_fh "Executing: $query\n";
 	$sth=$dbh->prepare($query);
-	$sth->execute($exp_id,$project_id,$species_id,
+	$sth->execute($species_id,
 		      $genome_id,$annotation_id,$template,
-		      $read_length,$mismatches);
+		      $read_length,$mismatches,$exp_id,$project_id);
     }
 }
 
@@ -2126,20 +2132,23 @@ sub add_proj_info {
 	chomp($reply);
 	if ($reply=~/^y/i) {
 	    $overwrite=1;
+	    $query ="UPDATE $table ";
+	    $query.='SET proj_description = ? ';
+	    $query.='WHERE project_id = ?';
 	}
     } elsif ($count > 1) {
 	die "Project ID with experiment ID combination is present many times. This should not happen\n";
     } else {
 	$overwrite=1;
+	$query ="INSERT INTO $table ";
+	$query.='SET proj_description = ?,';
+	$query.='project_id = ?';
     }
 
     if ($overwrite) {
 	print $log_fh "Adding project description\n";
 
 	# Insert the info into the database
-	$query ="UPDATE $table ";
-	$query.='SET proj_description = ? ';
-	$query.='WHERE project_id = ?';
 	print $log_fh "Executing: $query\n";
 	$sth=$dbh->prepare($query);
 	$sth->execute($project_desc,$proj_id);
@@ -2192,20 +2201,22 @@ sub add_exp_info {
 	    chomp($reply);
 	    if ($reply=~/^y/i) {
 		$overwrite=1;
+		$query ="UPDATE $table ";
+		$query.="SET $key = ? ";
+		$query.='WHERE project_id = ? and experiment_id = ?';
 	    }
 	} elsif ($count > 1) {
 	    die "Project $proj_id with experiment $exp_id combination is present many times. This should not happen\n";
 	} else {
 	    $overwrite=1;
+	    $query ="INSERT INTO $table ";
+	    $query.="SET $key = ?,";
+	    $query.='project_id = ? and experiment_id = ?';
 	}
 
 	if ($overwrite) {
 	    print $log_fh "Adding $key\n";
-
 	    # Insert the info into the database
-	    $query ="UPDATE $table ";
-	    $query.="SET $key = ? ";
-	    $query.='WHERE project_id = ? and experiment_id = ?';
 	    print $log_fh "Executing: $query\n";
 	    $sth=$dbh->prepare($query);
 	    $sth->execute($value,$proj_id,$exp_id);
