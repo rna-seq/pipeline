@@ -503,6 +503,7 @@ __END__
     -projdesc:      Project description
     -rnafrac:       RNA fraction on whihc the experiment was performed
     -bioreplicate:  Bioreplicate (if the experiment is a bioreplicate)
+    -preprocess:    Preprocessing script to be run on each of the read files before anything else
         
 =head1 OPTIONS
     
@@ -525,6 +526,11 @@ __END__
     In order to work it needs to know the project Id, experiment id and database
     names
     
+=item B<-preprocess>
+
+    The script or command line supplied her must take as an input a fasta/fastq
+    file and output fasta/fastq format
+
 =back
     
 =head1 DESCRIPTION
