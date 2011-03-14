@@ -77,35 +77,50 @@ RNAseqPipelineCommon
 bin/start_RNAseq_pipeline.3.0.pl --help
 $ bin/start_RNAseq_pipeline.3.0.pl --help
 Usage:
-        start_pair_pipeline.3.0.pl -species ... -genome ... -annotation ... -project ... -experiment ... -template ... -readlength...
+
+    start_pair_pipeline.3.0.pl -species ... -genome ... -annotation ... -project ... -experiment ... -template ... -readlength...-qualities
+        
+  Help options:
+    -help:           brief help message
+    -man:            full documentation
+    -debug:
+
+  Behavior options
+    -clean:          Remove all the tables corresponding to the project and
+                     experiment as well as all directories
+
+  Mandatory options:
+    -species:        Species for which the pipeline is run.
+    -genome:         File with the genomic sequence.
+    -annotation:     File with the annotation to use.
+    -project:        The project to which the experiment will be added.
+    -experiment:     The set of reads to be added.
+    -template:       File containing the commands that will be executed.
+    -readlength:     Nucleotide length of the reads.
+    -qualities:      Encoding of the qualities in fastq format (solexa|phred|none). The none option will perform the mapping ignoring the quality information
+
+  Mapping Options:
+    -mapper:         Mapper to be used.
+                      Defaults to GEM which is the only one supported currently
+    -mismatches:     Number of mismatches with which the mapping will be done.
+                      Default 2.
+    -stranded:       Reads are stranded.
+    -threads:        Number of threads to use for mapping.
+                      (if mapper allows multiple threads)
     
-      Help options:
-        -help:           brief help message
-        -man:            full documentation
-        -debug:
-      Mandatory options:
-        -species:        Species for which the pipeline is run.
-        -genome:         File with the genomic sequence.
-        -annotation:     File with the annotation to use.
-        -project:        The project to which the experiment will be added.
-        -experiment:     The set of reads to be added.
-        -template:       File containing the commands that will be executed.
-        -readlength:     Nucleotide length of the reads.
-        -qualities:      Type of qualities given by the sequencer
-      Mapping Options:
-        -mapper:         Mapper to be used.
-                          Defaults to GEM which is the only one supported currently
-        -mismatches:     Number of mismatches with which the mapping will be done.
-                          Default 2.
-        -stranded:       Reads are stranded.
-        -threads:        Number of threads to use for mapping.
-                          (if mapper allows multiple threads)
-    
-      Advanced Options:
-        -database:       Sets the database to use for the experiment tables.
-        -commondb:       Sets the database to use for the common tables.
-        -host:           Sets the host where the databases are located.
-        -localdir:       Directory in which to store the temporary files generated during the pipeline execution. It is recommandable to set it to a local drive.
+  Advanced Options:
+    -database:       Sets the database to use for the experiment tables.
+    -commondb:       Sets the database to use for the common tables.
+    -host:           Sets the host where the databases are located.
+    -localdir:       Directory in which to store the temporary files generated during the pipeline execution. It is advisable to set it to a local drive.
+
+  Optional
+    -cellline:      Sets the cell line on which the experiment was performed
+    -compartment:   Sets the compartment on which the experiment was performed
+    -expdesc:       Experiment description
+    -projdesc:      Project description
+    -rnafrac:       RNA fraction on whihc the experiment was performed
+    -bioreplicate:  Bioreplicate (if the experiment is a bioreplicate)
 
 Options:
     -help
