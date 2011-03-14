@@ -37,7 +37,7 @@ my $stranded;
 my $readlength;
 my $junctiondir;
 my $junctionsfasta;
-my $min_read_length=76;
+my $debug=1;
 
 # Read the configuration file
 my %options=%{read_config_file()};
@@ -81,6 +81,14 @@ my %unique_maps=%{get_unique_maps($dbh,
 foreach my $group (keys %groups) {
     my %gene_juncs_coverage;
     my %gene_coverage;
+
+    # Check if the file is already present and skip it if so
+    my $outfile=$genomedir.'/'.$group.'.gene.readcount.pooled.txt.gz';
+    if ($debug && (-r $outfile)) {
+	print STDERR $outfile,"\tIs present. Skipping...\n";
+	next;
+    }
+
     foreach my $lane (@{$groups{$group}}) {
 	my $type;
 	if (keys %{$lanes{$lane}} == 1) {
@@ -131,7 +139,6 @@ foreach my $group (keys %groups) {
     }
     # For each of the genes in the exon list print the RPKM by normalizing the
     # reads per 1000 bases by the number of uniquely mapped reads
-    my $outfile=$genomedir.'/'.$group.'.gene.readcount.pooled.txt.gz';
     process_exons(\%genes,
 		  \%gene_coverage,
 		  \%gene_juncs_coverage,
@@ -161,36 +168,6 @@ sub get_feature_coverage_junctions {
     }
 
     print STDERR "done\n";
-}
-
-
-# This will get all the exons from the annotation file and also take a gene
-# file where it will add the exon for each of the genes
-sub get_exon_list_from_gtf2 {
-    my $exonfile=shift;
-    my $genes=shift;
-    my $repeated_exons='rep.exons.txt';
-
-    my %exons;
-    my %remove;
-
-    %exons=%{get_annotation_from_gtf($exonfile,
-				     '',
-				     'exons')};
-
-    foreach my $exon (keys %exons) {
-	    my $gene_id=$exons{$exon};
-	    $genes->{$gene_id}->{$exon}=1;
-    }
-
-    print STDERR "done\n";
-
-    my $count=keys %exons;
-    print STDERR $count,"\tExons obtained\n";
-    $count=keys %{$genes};
-    print STDERR $count,"\tGenes\n";
-
-    return(\%exons);
 }
 
 sub get_projected_length {
