@@ -263,8 +263,13 @@ sub get_mergers {
 		# print
 		my @lastsplit=split("\t",$lastsplit);
 		my $length=length($lastsplit[1]);
-		my $quals=substr($linegenome{'qual'},0,$length);
-		splice(@lastsplit,2,0,$quals);
+
+		# Include the qualities only if present
+		if ($linegenome{'qual'}) {
+		    my $quals=substr($linegenome{'qual'},0,$length);
+		    splice(@lastsplit,2,0,$quals);
+		}
+		    
 		$lastsplit=join("\t",@lastsplit);
 		print $outfh $lastsplit;
 	    } else {
