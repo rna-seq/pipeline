@@ -43,7 +43,7 @@ mv ../CLL.PE40/readData/009TR.r1.fastq.gz readData/
 mv ../CLL.PE40/readData/009TR.r2.fastq.gz readData/
 
 # Get the scripts form the repository 
-svn co svn://mroder@svn.crg.es/big/pipeline/trunk .
+svn co svn://guest@svn.crg.es/big/pipeline/trunk .
 A    lib
 A    lib/RNAseq_GEM3.pm
 ...
@@ -77,57 +77,70 @@ RNAseqPipelineCommon
 bin/start_RNAseq_pipeline.3.0.pl --help
 $ bin/start_RNAseq_pipeline.3.0.pl --help
 Usage:
-
-    start_pair_pipeline.3.0.pl -species ... -genome ... -annotation ... -project ... -experiment ... -template ... -readlength...-qualities
-        
-  Help options:
-    -help:           brief help message
-    -man:            full documentation
-    -debug:
-
-  Behavior options
-    -clean:          Remove all the tables corresponding to the project and
-                     experiment as well as all directories
-
-  Mandatory options:
-    -species:        Species for which the pipeline is run.
-    -genome:         File with the genomic sequence.
-    -annotation:     File with the annotation to use.
-    -project:        The project to which the experiment will be added.
-    -experiment:     The set of reads to be added.
-    -template:       File containing the commands that will be executed.
-    -readlength:     Nucleotide length of the reads.
-    -qualities:      Encoding of the qualities in fastq format (solexa|phred|none). The none option will perform the mapping ignoring the quality information
-
-  Mapping Options:
-    -mapper:         Mapper to be used.
-                      Defaults to GEM which is the only one supported currently
-    -mismatches:     Number of mismatches with which the mapping will be done.
-                      Default 2.
-    -stranded:       Reads are stranded.
-    -threads:        Number of threads to use for mapping.
-                      (if mapper allows multiple threads)
+        start_pair_pipeline.3.0.pl -species ... -genome ... -annotation ... -project ... -experiment ... -template ... -readlength...-qualities
     
-  Advanced Options:
-    -database:       Sets the database to use for the experiment tables.
-    -commondb:       Sets the database to use for the common tables.
-    -host:           Sets the host where the databases are located.
-    -localdir:       Directory in which to store the temporary files generated during the pipeline execution. It is advisable to set it to a local drive.
+      Help options:
+        -help:           brief help message
+        -man:            full documentation
+        -debug:
 
-  Optional
-    -cellline:      Sets the cell line on which the experiment was performed
-    -compartment:   Sets the compartment on which the experiment was performed
-    -expdesc:       Experiment description
-    -projdesc:      Project description
-    -rnafrac:       RNA fraction on whihc the experiment was performed
-    -bioreplicate:  Bioreplicate (if the experiment is a bioreplicate)
+      Behavior options
+        -clean:          Remove all the tables corresponding to the project and
+                         experiment as well as all directories
+
+      Mandatory options:
+        -species:        Species for which the pipeline is run.
+        -genome:         File with the genomic sequence.
+        -annotation:     File with the annotation to use.
+        -project:        The project to which the experiment will be added.
+        -experiment:     The set of reads to be added.
+        -template:       File containing the commands that will be executed.
+        -readlength:     Nucleotide length of the reads.
+        -qualities:      Encoding of the qualities in fastq format (solexa|phred|none). The none option will perform the mapping ignoring the quality information
+
+      Mapping Options:
+        -mapper:         Mapper to be used.
+                          Defaults to GEM which is the only one supported currently
+        -mismatches:     Number of mismatches with which the mapping will be done.
+                          Default 2.
+        -stranded:       Reads are stranded.
+        -threads:        Number of threads to use for mapping.
+                          (if mapper allows multiple threads)
+    
+      Advanced Options:
+        -database:       Sets the database to use for the experiment tables.
+        -commondb:       Sets the database to use for the common tables.
+        -host:           Sets the host where the databases are located.
+        -localdir:       Directory in which to store the temporary files generated during the pipeline execution. It is advisable to set it to a local drive.
+
+      Optional
+        -cellline:      Sets the cell line on which the experiment was performed
+        -compartment:   Sets the compartment on which the experiment was performed
+        -expdesc:       Experiment description
+        -projdesc:      Project description
+        -rnafrac:       RNA fraction on whihc the experiment was performed
+        -bioreplicate:  Bioreplicate (if the experiment is a bioreplicate)
+        -preprocess:    Preprocessing script to be run on each of the read files before anything else
 
 Options:
     -help
                 Print a brief help message and exits.
-    
+
     -man
                 Prints the manual page and exits.
+
+    -clean
+                This option will remove all the tables from the database as well as removing
+                all the directories in the project directory with the exception of the bin
+                and readData directories.
+
+                In order to work it needs to know the project Id, experiment id and database
+                names
+
+    -preprocess
+                The script or command line supplied her must take as an input a fasta/fastq
+                file and output fasta/fastq format
+
 }}}
 
 = Starting on a demo server =
@@ -172,6 +185,8 @@ Paired
 Single (pair id = read_id)
 001TR.fastq  001TR	001TR Tumor
 002TR.fastq  002TR	002TR Tumor
+
+# Make sure the file names are ending in fa or fastq, as this is the string used to "guess" the file format
 
 # Make sure the soft links to the flux.sh and overlap (if the binary is not there) are in the bin directory or the binaries are in the path (also in the cluster)
 http://big.crg.cat/services_and_software
