@@ -13,14 +13,17 @@ BEGIN {
 }
 
 # Objective
-# This script should take a pair of gene ids and it will calculate the
-# correlation between thes two genes accross all the datasetes in the database.
+# This script should take a pair of gene ids and it will extract for each of
+# Them the expression values of each of the corresponding transcripts
+# Also correlation between these two genes across all the datasets in the
+# database will be calculated.
 # The value used for calulating the correlation will be provided by using the
 # suffix of the table containing it
 
 use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
-use RNAseq_pipeline_settings3 ('get_dbh','read_config_file',
-			       'get_trans_expression_data');
+use RNAseq_pipeline_settings3 ('get_dbh','read_config_file','get_dbh',
+			       'get_trans_expression_data',
+			       'get_gene_from_trans_sub');
 use RNAseq_pipeline_comp3 ('get_tables','check_tables','get_labels_sub',
 			   'get_samples');
 use Getopt::Long;
@@ -32,6 +35,7 @@ my $dbhcommon;
 my $project;
 my $debug=1;
 my $breakdown;
+my $transfile;
 my $tabsuffix='transcript_expression_levels_pooled';
 my @trans_needed;
 
@@ -39,10 +43,33 @@ my @trans_needed;
 GetOptions('nolabels|n' => \$nolabels,
 	   'debug|d' => \$debug,
 	   'breakdown|b' => \$breakdown,
+	   'transcriptfile|f=s' => \$transfile,
 	   'trans|t=s' => \@trans_needed);
 
 if ($breakdown) {
     $tabsuffix='transcript_expression_levels';
+}
+
+# Get subs
+*gene2trans=gene2trans_sub();
+*trans2gene=get_gene_from_trans_sub();
+
+my %trans2gene;
+if ($transfile) {
+    my $transfh=get_fh($transfile);
+    while (my $line=<$transfh>) {
+	chomp($line);
+	my ($id,$type)=split("\t",$line);
+	if ($type &&
+	    $type eq 'gene') {
+	    # Get all the transcripts from the gene of interest
+	    my @transcripts=@{gene2trans($id)};
+	    push @trans_needed,@transcripts;
+	} else {
+	    push @trans_needed, $id;
+	}
+    }
+    close($transfh);
 }
 
 unless (@trans_needed >= 2) {
@@ -115,31 +142,56 @@ foreach my $experiment (@experiments) {
 # Print the expression values for each gene of interest
 my $tmpfn="Trans.Expression.subset.txt";
 my $tmpfh=get_fh($tmpfn,1);
-print $tmpfh join("\t",
-		  'Dataset',
-		  'Project',
-		  'Group',
-		  @trans_needed),"\n";
 foreach my $exp (@values) {
     my @row;
+    my $dataset=$exp->[0];
+    $dataset=~s/_transcript_expression_levels_pooled_sample//;
+    my ($project,$group)=(split('_',$dataset))[0,-1];
     foreach my $trans (@trans_needed) {
 	my $value=0;
 	if ($exp->[1] &&
 	    ($exp->[1]->{$trans})) {
 	    $value=$exp->[1]->{$trans};
 	}
-	push @row,$value;
-    }
+	my $gene_id=trans2gene($trans);
 
-    my $dataset=$exp->[0];
-    $dataset=~s/_transcript_expression_levels_pooled_sample//;
-    my ($project,$group)=(split('_',$dataset))[0,-1];
-    print $tmpfh join("\t",
-		      $dataset,
-		      $project,
-		      $group,
-		      @row),"\n";
+	print $tmpfh join("\t",
+			  $dataset,
+			  $project,
+			  $group,
+			  $gene_id,
+			  $trans,
+			  $value),"\n";
+    }
 }
 close($tmpfh);
 
 exit;
+
+sub gene2trans_sub {
+    my %options=%{read_config_file()};
+    my $table=$options{'EXONSCLASSTABLE'} || die "No exons table defined\n";
+
+    my $dbh=get_dbh(1);
+    my %cache;
+
+    my ($query,$sth);
+    $query ='SELECT distinct transcript_id ';
+    $query.="FROM $table ";
+    $query.='WHERE gene_id = ?';
+    $sth=$dbh->prepare($query);
+    
+    my $gene2trans=sub {
+	my $gene=shift;
+
+	unless ($cache{$gene}) {
+	    $sth->execute($gene);
+	    while (my ($trans_id)=$sth->fetchrow_array()) {
+		push @{$cache{$gene}},$trans_id;
+	    }
+	}
+	return($cache{$gene});
+    };
+
+    return($gene2trans);
+}

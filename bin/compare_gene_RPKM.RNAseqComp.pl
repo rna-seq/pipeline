@@ -131,11 +131,14 @@ foreach my $gene (keys %all_genes) {
     }
 
     # Skip mitochondrial and ribosomal genes
-    if (gene2chr($gene)=~/chrM/o) {
+    my $chr=gene2chr($gene);
+    my ($desc)=gene2desc($gene) || '';
+    my ($type)=gene2type($gene);
+    if ($chr=~/chrM/o) {
 	next;
-    } elsif (gene2desc($gene)=~/ribosom(e|al)/io) {
+    } elsif ($desc=~/ribosom(e|al)/io) {
 	next;
-    } elsif (gene2type($gene)=~/^rRNA/o) {
+    } elsif ($type=~/^rRNA/o) {
 	next;
     } else {
 	print $tmpfh join("\t",
