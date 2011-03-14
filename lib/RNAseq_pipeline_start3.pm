@@ -1958,10 +1958,15 @@ sub build_file_list {
 	    if (@line < 3) {
 		$not_ok=1;
 		print $log_fh "Incorrect line in $file_list: $line\n";
+	    } elsif ($line[0]!~/fa(stq)*$/) {
+		$not_ok=1;
+		print $log_fh "Incorrect file name in $file_list: $line\n";
+		print $log_fh "\tName should be the unzipped name of the input file";
 	    }
 	}
 	if ($not_ok) {
-	    print $log_fh "Please edit $file_list so it contains readfile, pair and short namein tab separated fields\n";
+	    print STDERR "Please edit $file_list so it contains readfile, pair and lane name in tab separated fields\n";
+	    print STDERR "Readfile should be the unzipped file name, pair and lane names should be single words\n";
 	}
     } else {
 	my $readdir=$vars->{'READDIR'};
