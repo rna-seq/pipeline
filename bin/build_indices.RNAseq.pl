@@ -103,6 +103,10 @@ sub build_index {
     $index=~s/(.*\/)//;
     my $indexdir=$1;
 
+    # Check if the headers in the fasta file are OK if not copy a "good" version
+    # of the file into the work directory and build the index with that.
+
+
     my $command="cd $indexdir; gem-do-index -i $file -o $index;";
     print STDERR "Executing $command\n";
     system($command);
