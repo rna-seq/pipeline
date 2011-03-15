@@ -117,7 +117,7 @@ foreach my $lane (keys %lanes) {
 	    print $log_fh "Processing transcript files $transfile1 and $transfile2\n";
 	    print $log_fh "Processing genome files $genfile1 and $genfile2\n";
 	} else {
-#	    warn $lane,"\tFiles missing. Skipping\n";
+	    warn $lane,"\tFiles missing. Skipping\n";
 #	    next;
 	    die "Can't find all necessary files\n";
 	}
