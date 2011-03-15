@@ -720,7 +720,7 @@ sub get_junction_coords {
     $strand1=pop(@coords1);
     $end1=pop(@coords1);
     $start1=pop(@coords1);
-    $chr2=join('_',@coords1);
+    $chr1=join('_',@coords1);
 
     $strand2=pop(@coords2);
     $end2=pop(@coords2);
