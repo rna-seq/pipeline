@@ -51,15 +51,19 @@ my $pipfile = 'RNAseq_pipeline.txt';	#  -f   control file name
 my $nomake;				#  -n   print commands, don't execute
 my $silent;				#  -s   suppress log messages
 my $debug;				#  -d   print trace (debug mode)
-my $force;				#  -r   restart (force execution of stage)
+my $force;				#  -r   restart (force execution of
+                                        #       stage)
+my $startpoint;                         #  -b   base Set the base rule from
+                                        #       which to start
 
 GetOptions(
     "file:s"  => \$pipfile,
-    "n"       => \$nomake,
+    'n'       => \$nomake,
     "help"    => \$help,
     "silent"  => \$silent,
     "debug"   => \$debug,
-    "restart" => \$force,
+    'restart' => \$force,
+    'startpoint|b=s' => \$startpoint
     );
 # Check for option errors
 exit if $Getopt::Long::error;
