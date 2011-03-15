@@ -709,8 +709,23 @@ sub coords2splitcoords {
 
 sub get_junction_coords {
     my $coords=shift;
-    my ($chr1,$start1,$end1,$strand1,$splice,
-	$chr2,$start2,$end2,$strand2)=split('_',$coords->{'chr'});
+
+    # To do rewrite in a more compact way
+    my ($exon1,$exon2)=split('_splice_',$coords->{'chr'});
+    my @coords1=split('_',$exon1);
+    my ($chr1,$start1,$end1,$strand1);
+    my @coords2=split('_',$exon2);
+    my ($chr2,$start2,$end2,$strand2);
+
+    $strand1=pop(@coords1);
+    $end1=pop(@coords1);
+    $start1=pop(@coords1);
+    $chr2=join('_',@coords1);
+
+    $strand2=pop(@coords2);
+    $end2=pop(@coords2);
+    $start2=pop(@coords2);
+    $chr2=join('_',@coords2);
 
     unless($strand1 eq $strand2) {
 	die "Conflicting strands: ".$coords->{'chr'}."\n";
