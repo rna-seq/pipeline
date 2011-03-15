@@ -22,10 +22,12 @@ use RNAseq_pipeline_settings3 qw(read_config_file);
 my $prefix;
 my $bindir;
 my $debug;
+my $cluster;
 
 my %options=%{read_config_file()};
 $prefix=$options{'PREFIX'};
 $bindir=$options{'BIN'};
+$cluster=$options{'CLUSTER'};
 
 $ENV{'PATH'}.=":$bindir";
 
@@ -41,7 +43,8 @@ my @prerequisites=('gem-mapper',
 print $log_fh "Checking prerequisites\n";
 foreach my $req (@prerequisites) {
     my $absent=check_prerequisite($req,
-				  $bindir);
+				  $bindir,
+				  $cluster);
 
     if ($absent) {
 	die "I cannot find required executable $req\n";
@@ -57,6 +60,7 @@ exit;
 sub check_prerequisite {
     my $program=shift;
     my $bindir=shift;
+    my $cluster=shift;
 
     my $absent;
 
@@ -70,9 +74,13 @@ sub check_prerequisite {
 
     # Check if the program is in the BIN directory
     my $best="Present in $bindir";
-    unless (-r $bindir.'/'.$program) {
-	$best="NOT present in $bindir";
-	print STDERR "WARNING: Although $program is present in the PATH it is not in $bindir, so I cannot guarantee I will find it if you run anything on a cluster\n";
+    if ($cluster) {
+	unless (-r $bindir.'/'.$program) {
+	    $best="NOT present in $bindir";
+	    print STDERR "WARNING: Although $program is present in the PATH it is not in $bindir, so I cannot guarantee I will find it if you run anything on a cluster\n";
+	}
+    } else {
+	$best="Skipping bindir check, as we are running locally";
     }
 
     print STDERR join("\t",

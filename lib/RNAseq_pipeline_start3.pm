@@ -126,7 +126,7 @@ sub defaults {
 		  'mapper' => 'GEM',
 		  'threads' => 2,
 		  'localdir' => undef,
-		  'cluster' => '', # Should be defined to the local cluster
+		  'cluster' => '-', # Should be defined to the local cluster
 		  'qualities' => undef,
 		  'preprocess' => 'zcat'
 	);

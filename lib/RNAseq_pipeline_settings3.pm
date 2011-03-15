@@ -70,6 +70,11 @@ sub read_config_file {
     }
     close($config_file);
 
+    # If the cluster is a '-' it has not been provided
+    if ($configuration{'CLUSTER'} eq '-') {
+	$configuration{'CLUSTER'}='';
+    }
+
     return(\%configuration);
 }
 
@@ -876,8 +881,14 @@ sub send2cluster {
     my $jobname=shift;
     my %options=%{read_config_file()};
 
-    unless ($queue) {
+    if ($queue && 
+	($queue ne '-')) {
+	print STDERR "Using $queue\n";
+    } elsif ($options{'CLUSTER'} ne '-') {
+	warn "CLUSTER had no value, there may be a problem\n";
 	$queue=$options{'CLUSTER'};
+    } else {
+	die "No valid queue is defined, so I can't submit to the cluster\n";
     }
 
     my $logs=$options{'LOGS'};
