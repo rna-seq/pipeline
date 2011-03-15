@@ -69,6 +69,10 @@ for (my $i=0;$i<@input;$i++) {
     my $unique100=0;
     
     while (my $line=<$infh>) {
+	if ($line=~/^\s*$/) {
+	    warn "Empty line in $infile, maybe something is wrong...\n";
+	    next;
+	}
 	my %line=%{parse_gem_line($line)};
 	$total++;
 	
