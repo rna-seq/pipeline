@@ -40,7 +40,8 @@ my @prerequisites=('gem-mapper',
 
 print $log_fh "Checking prerequisites\n";
 foreach my $req (@prerequisites) {
-    my $absent=check_prerequisite($req);
+    my $absent=check_prerequisite($req,
+				  $bindir);
 
     if ($absent) {
 	die "I cannot find required executable $req\n";
@@ -55,13 +56,29 @@ exit;
 
 sub check_prerequisite {
     my $program=shift;
+    my $bindir=shift;
 
+    my $absent;
+
+    # Check if the program is in the path
     my $command="which $program > /dev/null";
-    my $ok=system($command);
+    my $present="Present in PATH";
+    $absent=system($command);
+    if ($absent) {
+	$present="Does not seem to be present in the path";
+    }
+
+    # Check if the program is in the BIN directory
+    my $best="Present in $bindir";
+    unless (-r $bindir.'/'.$program) {
+	$best="NOT present in $bindir";
+	print STDERR "WARNING: Although $program is present in the PATH it is not in $bindir, so I cannot guarantee I will find it if you run anything on a cluster\n";
+    }
 
     print STDERR join("\t",
 		      $program,
-		      $ok),"\n";
+		      $present,
+		      $best),"\n";
 
-    return($ok);
+    return($absent);
 }
