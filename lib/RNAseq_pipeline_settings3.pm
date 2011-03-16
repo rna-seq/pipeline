@@ -294,7 +294,10 @@ sub get_gene_from_short_junc_sub {
     my $subroutine=sub {
 	my $junc=shift;
 	### TO DO fix for problematic chromosomes
-	my ($chr,$start,$splice,$end)=split('_',$junc);
+	my ($startfrac,$end)=split('_splice_',$junc);
+	my @startfrac=split('_',$startfrac);
+	my $start=pop(@startfrac);
+	my $chr=join('_',@startfrac);
 
 	unless ($cache{$junc}) {
 	    $count=$sth->execute($chr,$start,$end);
