@@ -2,7 +2,7 @@
 
 = Dependencies =
 
-==Perl Modules==
+== Perl Modules ==
 
 * DBI
 
@@ -12,24 +12,87 @@
 
 * Bundle::BioPerl
 
-==Programs==
+== R ==
 
-* R
-  Within R the following specific package(adapt) is needed
+Make sure to have R installed:
 
-* GEM (http://big.crg.cat/services_and_software)
+    * http://www.r-project.org/
 
-* Flux capacitor (http://big.crg.cat/services_and_software)
+== Overlap ==
 
-* overlap (http://big.crg.cat/services_and_software)
+Install the overlap tool that is part of the pipeline bundle:
 
-==Other==
+    svn://mroder@svn.crg.es/big/pipeline_bundle/tags/1.0
+
+Further info on overlap is available here:
+
+    * http://big.crg.cat/services_and_software
+
+Make sure the soft links to the overlap are in the bin directory.
+
+    * ln -s /users/rg/sdjebali/bin/overlap bin
+
+Check that the overlap binary is available both 
+
+    * to the computer running the pipeline and 
+    
+    * the cluster nodes where jobs will be run
+
+== Flux Capacitor ==
+
+Install the Flux Capacitor that is part of the pipeline bundle:
+
+    svn://mroder@svn.crg.es/big/pipeline_bundle/tags/1.0
+
+Further info on the Flux capacitor is available here:
+ 
+    * http://big.crg.cat/services_and_software
+
+Make sure the soft links to the flux.sh are in the bin directory.
+
+    * ln -s /users/rg/dgonzalez/bin/flux.sh bin
+
+This is an example of a flux.sh file. This file is created by the installer script when the Flux Capacitor is installed:
+
+-------------------------------------------------------------------------------
+export LD_LIBRARY_PATH=/users/rg/dgonzalez/local/FluxCapacitor/lib/native/lpsolve55/unix/x86/64
+
+java -Xms500m -Xmx12G -XX:MaxNewSize=1500m -XX:NewSize=120m -XX:+UseParNewGC -XX:+UseConcMarkSweepGC  -XX:+CMSParallelRemarkEnabled -XX:TargetSurvivorRatio=90 -Djava.library.path="/users/rg/dgonzal
+ez/local/FluxCapacitor/lib/native/lpsolve55/unix/x86/64" -jar "/users/rg/dgonzalez/local/FluxCapacitor/lib/FluxCapacitor.jar" $@
+-------------------------------------------------------------------------------
+
+Check that the flux.sh is available both 
+
+    * to the computer running the pipeline and 
+    
+    * the cluster nodes where jobs will be run
+
+== GEM == 
+
+Install GEM that is part of the pipeline bundle:
+
+    svn://mroder@svn.crg.es/big/pipeline_bundle/tags/1.0
+
+Further info on GEM is available here:
+
+    * http://big.crg.cat/services_and_software
+
+Check that the GEM tools are available both 
+
+    * to the computer running the pipeline and 
+    
+    * the cluster nodes where jobs will be run
+
+== Recommended Setup ==
 
 * SGI cluster
 
 * 64bit machines
 
-* 8Gb RAM in each of the machines/nodes that will be used. It can run with 4Gb in smaller datasets, but may have trouble with the bigger ones
+* 8Gb RAM in each of the machines/nodes that will be used. 
+
+* It can run with 4Gb memory in smaller datasets, but may have trouble with the bigger ones
+
 
 = Installation =
 
@@ -171,6 +234,8 @@ In the database, you should now have the following tables:
 
 * species_info
 
+
+
 = Starting on the production server =
 
 # Run the start script with whatever options are needed
@@ -185,25 +250,6 @@ Paired
 Single (pair id = read_id)
 001TR.fastq  001TR	001TR Tumor
 002TR.fastq  002TR	002TR Tumor
-
-# Make sure the file names are ending in fa or fastq, as this is the string used to "guess" the file format
-
-# Make sure the soft links to the flux.sh and overlap (if the binary is not there) are in the bin directory or the binaries are in the path (also in the cluster)
-http://big.crg.cat/services_and_software
-overlap: ln -s /users/rg/sdjebali/bin/overlap bin
-flux.sh: ln -s /users/rg/dgonzalez/bin/flux.sh bin
-
-This is an example of a flux.sh file. This file is created by the installer script when the Flux Capacitor is installed:
-
--------------------------------------------------------------------------------
-export LD_LIBRARY_PATH=/users/rg/dgonzalez/local/FluxCapacitor/lib/native/lpsolve55/unix/x86/64
-
-java -Xms500m -Xmx12G -XX:MaxNewSize=1500m -XX:NewSize=120m -XX:+UseParNewGC -XX:+UseConcMarkSweepGC  -XX:+CMSParallelRemarkEnabled -XX:TargetSurvivorRatio=90 -Djava.library.path="/users/rg/dgonzal
-ez/local/FluxCapacitor/lib/native/lpsolve55/unix/x86/64" -jar "/users/rg/dgonzalez/local/FluxCapacitor/lib/FluxCapacitor.jar" $@
--------------------------------------------------------------------------------
-_
-
-# Check that the GEM tools are available both to the computer running the pipeline and the cluster nodes where jobs will be run.
 
 # Run the execute script with the step up to which the pipeline needs to run
 bin/execute_RNAseq_pipeline3.0.pl all |tee -a pipeline.log
