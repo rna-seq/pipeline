@@ -27,7 +27,7 @@ BEGIN {
 # location after filtering
 
 use Getopt::Long;
-use RNAseq_pipeline3 qw(get_fh get_files_from_table_sub);
+use RNAseq_pipeline3 qw(get_fh get_files_from_table_sub run_system_command);
 use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list');
 use Bio::SeqIO;
 
@@ -67,22 +67,26 @@ foreach my $pair (keys %lane_files) {
     my $bamfn=$samdir.'/'.$pair.'.merged';
     print STDERR "Processing $pair\n";
 
-    # check if the bam file is already present
+    # check if the bam file is already present and skip if it is
     if (-r $bamfn.'.bam') {
 	print STDERR "$bamfn.bam exists already. Skipping...\n";
 	next;
     }
+
+    # Remove the pair info in the case of the paired end reads, this is done
+    # because the gem-2-sam does not recognize the p1 and p2 in the ids
+    # Also run the gem-2 sam to generate a sam file with no header
     process_files($lane_files{$pair},
 		  $pair,
 		  $samfn,
 		  $tmpdir);
     if (-r $genomefile.'.fai') {
-	print STDERR "genomefile.fai is present\n";
+	print STDERR "$genomefile.fai is present\n";
 	generate_merged_sorted_bam($samfn,
 				   $bamfn,
 				   $genomefile);
     } else {
-	print STDERR "genomefile.fai not present\n";
+	print STDERR "$genomefile.fai not present\n";
 	generate_sam_header($genomefile,
 			    $samfn);
 	generate_sorted_bam($samfn,
@@ -102,8 +106,7 @@ sub generate_bam_index {
 
     my $command='samtools index ';
     $command.="$bamfile.bam";
-    print STDERR "Executing: $command\n";
-    system($command);
+    run_system_command($command);
 }
 
 sub generate_sorted_bam {
@@ -119,8 +122,7 @@ sub generate_sorted_bam {
     my $command='samtools view ';
     $command.='-b -S ';
     $command.="$samfile |samtools sort - $bamfile";
-    print STDERR "Executing: $command\n";
-    system($command);
+    run_system_command($command);
 }
 
 sub generate_merged_sorted_bam {
@@ -138,8 +140,7 @@ sub generate_merged_sorted_bam {
     my $command='samtools import ';
     $command.="$indexfile.fai ";
     $command.="$samfile.$$ $tmpsam;samtools sort $tmpsam $bamfile; rm $tmpsam $samfile.$$";
-    print STDERR "Executing: $command\n";
-    system($command);
+    run_system_command($command);
 }
 
 sub process_files {
@@ -230,16 +231,9 @@ sub generate_sam_header {
 	    next;
 	}
 
-	# Filter invalid cigar lines
+	# Filter invalid cigar lines (the indels that samtools does not
+	# recognize
 	my @line=split("\t",$line);
-
-	# Make sure quality field is present
-#	if ($line[0]!~/^@/ &&
-#	    (!$line[10] ||
-#	     $line[10]=~/^\s*$/)) {
-#	    $line[10] ='*';
-#	    $incomplete++;
-#	}
 
 	if ($line[5] &&
 	    $line[5]=~/-/) {
@@ -262,7 +256,7 @@ sub generate_sam_header {
     }
 
     my $command="rm $outfn.$$";
-    system($command);
+    run_system_command($command);
 }
 
 # This subroutine should take a gem mapping file and remove from it the pair
@@ -270,6 +264,7 @@ sub generate_sam_header {
 sub remove_pair_info {
     my $filename=shift;
     my $tmpdir=shift;
+    my $order=shift;
 
     my $tmpfile=$filename.'.tmp';
     $tmpfile=~s/.*\///;
@@ -285,24 +280,44 @@ sub remove_pair_info {
     while (my $line=<$infh>) {
 	chomp($line);
 	my @line=split("\t",$line);
-#	$line[0]=~s/(\||\/)p?[12]//;
-	$line[0]=~s/\|p?1/\/1/;
-	$line[0]=~s/\|p?2/\/2/;
+	if ($line[0]=~s/\|p?1$/\/1/o) {
+	} elsif ($line[0]=~s/\|p?2$/\/2/o) {
+	}
 
+	# Check if the lines files are in the correct order
+	my $readnumber;
+	if ($line[0]=~/1$/o) {
+	    $readnumber=1;
+	} elsif ($line[0]=~/2$/o) {
+	    $readnumber=2;
+	} else {
+	    die "Unknown read mate (not 1 or 2)??? in line:\n$line\n";
+	}
+
+	if (${$order}) { 
+	    if (${$order} != $readnumber) {
+		die "Incorrect read ordering $line\n";
+	    }
+	} else {
+	    ${$order}=$readnumber;
+	}
+
+	# Check if we have enough fields
 	unless ($line[4]) {
 	    print STDERR $line,"\n";
 	    <STDIN>;
 	}
 
 	# Count cases with indels
-	if ($line[4]=~/<[+-][0-9]+>/) {
+	if ($line[4]=~/<[+-][0-9]+>/o) {
 	    $indels++;
+	    print STDERR $line,"\n";
 #	    next;
 	}
 
 	# Change any chrMT to chrM
-	if ($line[4]=~/chrMT/) {
-	    $line[4]=~s/chrMT:/chrM:/g;
+	if ($line[4]=~/chrMT/o) {
+	    $line[4]=~s/chrMT:/chrM:/og;
 	}
 
 	print $outfh join("\t",
@@ -314,7 +329,7 @@ sub remove_pair_info {
     close($outfh);
     print STDERR "done\n";
     print STDERR $count,"\tReads processed\n";
-    print STDERR $indels,"\tPresented indels\n";
+    print STDERR $indels,"\tPresented indels and were removed\n";
 
     return($tmpfile);
 }
@@ -324,28 +339,36 @@ sub process_paired_reads {
     my $infn2=shift;
     my $outfn=shift;
     my $tmpdir=shift;
+    my ($order1,$order2);
 
-    # First remove the paired information from the reads
+    # First remove the paired information from the reads and check which is the
+    # correct order of the files
     my $infn1tmp=remove_pair_info($infn1,
-				  $tmpdir);
+				  $tmpdir,
+				  \$order1);
     my $infn2tmp=remove_pair_info($infn2,
-				  $tmpdir);
+				  $tmpdir,
+				  \$order2);
 
     # Run the gem-2-sam command
     my $command;
 
     $command ='gem-2-sam ';
-    $command.="-i $infn1tmp ";
-    $command.="-ii $infn2tmp ";
+    if ($order2 > $order1) {
+	$command.="-i $infn1tmp ";
+	$command.="-ii $infn2tmp ";
+    } else {
+	print STDERR "Read 1 seems to be in $infn1 and read 2 in $infn1tmp.\nI'll invert the order of the files before running gem-2-sam\n";
+	$command.="-i $infn2tmp ";
+	$command.="-ii $infn1tmp ";
+    }
     $command.="-o $outfn > $outfn.log";
 
-    print STDERR "Executing: $command\n";
-    system($command);
+    run_system_command($command);
 
     # clean up
     $command="rm $infn1tmp $infn2tmp";
-    print STDERR "Executing: $command\n";
-    system($command);
+#    run_system_command($command);
 }
 
 sub process_single_reads {
@@ -357,12 +380,9 @@ sub process_single_reads {
     $command ='gem-2-sam ';
     $command.="-i $infn ";
     $command.="-o $outfn > $outfn.log";
-
-    print STDERR "Executing: $command\n";
-    system($command);
+    run_system_command($command);
 
     # clean up
     $command="rm $infn";
-    print STDERR "Executing: $command\n";
-    system($command);
+    run_system_command($command);
 }
