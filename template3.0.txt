@@ -83,7 +83,7 @@ preprocess: _start
 # read_stats (this can be done by just checking that the number is the same
 # for each of the two files in a paired end lane
 _read_stats: _start
-	prepare_files.RNAseq.pl	
+	cluster_run.RNAseq.pl prepare_files.RNAseq.pl	
 	cluster_run.RNAseq.pl build_read_stats.RNAseq.pl
 	mv prepare_files.RNAseq.log build_read_stats.RNAseq.log $LOGS
 	all_no_log_table
@@ -202,7 +202,7 @@ _transcriptome_mapping: _indices _dataset
 ### TO DO find a better way to remove the .fa with sed (or something else)
 _junctions_mapping: _indices _dataset
 	run_mapper_cluster.RNAseq.pl -index $JUNCTIONSINDEX -o $JUNCTIONSDIR
-	for file in `cat $FILELIST |gawk '{print $1}' |sed 's/\.fastq$//'| sed 's/\.fa$//'`; do gemjunc2gemsplit.RNAseq.pl -i $JUNCTIONSDIR/$file.gem.map* -o $JUNCTIONSDIR/$file.gem.map.gen.coords; done
+	for file in `cat $FILELIST |gawk '{print $1}' |sed 's/\.fastq$//'| sed 's/\.fa$//'`; do gemjunc2gemsplit.RNAseq.pl -i $JUNCTIONSDIR/$file.gem.map* -o $JUNCTIONSDIR/$file.gem.map.gen.coords.gz; done
 	build_mapping_stats.RNAseq.pl `ls $JUNCTIONSDIR/* | grep '.gem.map' |grep -v 'coords'` > _junctions_mapping.txt
 	plot_mapping_graph.RNAseq.pl -graph _junctions_mapping -type 'Junctions'
 	mv _junctions_mapping.ps $GRAPHS
@@ -243,7 +243,7 @@ _recursive_mapping: _split_mapping
 
 ### TO DO add the recursive mapping to the merged mappings
 _merged_mapping: _split_mapping
-	merge_mappings.RNAseq.pl
+	cluster_run.RNAseq.pl merge_mappings.RNAseq.pl
 	build_mapping_stats.RNAseq.pl `ls $SAMDIR/* | grep '.gem.map'` > _merged_mapping.txt
 	plot_mapping_graph.RNAseq.pl -graph _merged_mapping -type 'Total'
 	mv _merged_mapping.ps $GRAPHS
@@ -272,7 +272,7 @@ _merged_SAM: _merged_mapping
 # When mapping with closest $MISMATCHES and -unique_strict we can use the
 # mappability information
 _unique_maps_genome: _genome_mapping _junctions_mapping
-	gem2gff_genome.RNAseq.pl
+	cluster_run.RNAseq.pl gem2gff_genome.RNAseq.pl
 	plot_gff_genome_distribution.RNAseq.pl
 	mv _unique_maps_genome.ps $GRAPHS
 	cd $GENOMEDIR; gzip_files.RNAseq.pl gem.map
@@ -280,8 +280,8 @@ _unique_maps_genome: _genome_mapping _junctions_mapping
 
 # Removed the plotting of the transcript distribution
 _unique_maps_transcripts: _transcriptome_mapping _junction_classification
-	gem2gff_transcriptome.RNAseq.pl
-	get_transcript_lengths.RNAseq.pl
+	cluster_run.RNAseq.pl gem2gff_transcriptome.RNAseq.pl
+	cluster_run.RNAseq.pl get_transcript_lengths.RNAseq.pl
 	plot_gff_transcript_coverage.RNAseq.pl
         mysql $DB < $TABLES/$(echo $PREFIX)_read_dist_transcripts.sql
         mysqlimport -L $DB _read_dist_transcripts.txt
@@ -294,7 +294,7 @@ _unique_maps_transcripts: _transcriptome_mapping _junction_classification
 	all_no_log_table
 
 _unique_maps_junctions: _junctions_mapping
-	gem2gff_junctions.RNAseq.pl -multi
+	cluster_run.RNAseq.pl gem2gff_junctions.RNAseq.pl -multi
 	plot_gff_junctions_distribution.RNAseq.pl
         mysql $DB < $TABLES/$(echo $PREFIX)_junction_maps_class.sql
         mysqlimport -L $DB _junction_maps_class.txt
@@ -341,12 +341,12 @@ _split_mapping_breakdown: _initial_clusters
 # put them into one file counting the number of reads mapping to each
 # independently of the strand
 _all_junctions_class: _split_mapping_breakdown
-	get_junction_classification_all.RNAseq.pl
+	cluster_run.RNAseq.pl get_junction_classification_all.RNAseq.pl
 	cat $JUNCTIONSDIR/*.all.junc.class > _all_junctions_class.txt
 	all_no_log_table
 
 _all_junctions_class_pooled: _split_mapping_breakdown
-	get_junction_classification_all_pooled.RNAseq.pl
+	cluster_run.RNAseq.pl get_junction_classification_all_pooled.RNAseq.pl
 	cat $JUNCTIONSDIR/*.all.junc.class.pooled > _all_junctions_class_pooled.txt
 	all_no_log_table
 
@@ -398,34 +398,34 @@ _splicing_summary: _junction_coverage _split_mapping_breakdown
 ################
 # Exon RPKM info
 _exon_RPKM: _exon_coverage _junction_coverage
-	get_exon_rpkm.RNAseq.pl
+	cluster_run.RNAseq.pl get_exon_rpkm.RNAseq.pl
 	zcat $EXONDIR/*.exon.rpkm.txt.gz > _exon_RPKM.txt
 	all_no_log_table
 
-_exon_RPKM_pooled: _exon_RPKM
-	get_exon_rpkm_pooled.RNAseq.pl
+_exon_RPKM_pooled: _exon_coverage _junction_coverage
+	cluster_run.RNAseq.pl get_exon_rpkm_pooled.RNAseq.pl
 	zcat $EXONDIR/*.exon.rpkm.pooled.txt.gz > _exon_RPKM_pooled.txt
 	all_no_log_table
 
 ################
 # Gene RPKM info
 _gene_RPKM: _proj_coverage _junction_coverage
-	get_gene_rpkm.RNAseq.pl
+	cluster_run.RNAseq.pl get_gene_rpkm.RNAseq.pl
 	zcat $GENOMEDIR/*.gene.rpkm.txt.gz > _gene_RPKM.txt
 	all_no_log_table
 
-_gene_RPKM_pooled: _gene_RPKM
-	get_gene_rpkm_pooled.RNAseq.pl
+_gene_RPKM_pooled: _proj_coverage _junction_coverage
+	cluster_run.RNAseq.pl get_gene_rpkm_pooled.RNAseq.pl
 	zcat $GENOMEDIR/*.gene.rpkm.pooled.txt.gz > _gene_RPKM_pooled.txt
 	all_no_log_table
 
 _gene_readcount_pooled: _proj_coverage _junction_coverage
-	get_gene_readcount_pooled.RNAseq.pl
+	cluster_run.RNAseq.pl get_gene_readcount_pooled.RNAseq.pl
 	zcat $GENOMEDIR/*.gene.readcount.pooled.txt.gz > _gene_readcount_pooled.txt
 	all_no_log_table
 
 _detected_genes: _gene_RPKM_pooled _gene_readcount_pooled
-	build_detected_genes.RNAseq.pl
+	cluster_run.RNAseq.pl build_detected_genes.RNAseq.pl
 	mv build_detected_genes.RNAseq.log $LOGS
 	all_no_log_table
 
@@ -463,18 +463,18 @@ _read_classification: _unique_maps_genome
 # Get info on the exons exclusion
 # Calculate for each exon in the genome an inclusion and exclusion rate
 _exon_inclusion: _exon_coverage _junction_coverage
-	build_inclusion_exclusion_table.RNAseq.pl
-	get_exon_inclusion_exclusion_rates.RNAseq.pl
+	cluster_run.RNAseq.pl build_inclusion_exclusion_table.RNAseq.pl
+	cluster_run.RNAseq.pl get_exon_inclusion_exclusion_rates.RNAseq.pl
 	cat $EXONDIR/*.inclusion.exclusion.txt > _exon_inclusion.txt
 	all_no_log_table
 
-_exon_inclusion_pooled: _exon_inclusion
-	get_pooled_exon_inclusion_rates.RNAseq.pl
+_exon_inclusion_pooled: _exon_coverage _junction_coverage
+	cluster_run.RNAseq.pl get_pooled_exon_inclusion_rates.RNAseq.pl
 	cat $EXONDIR/*.inclusion.exclusion.pooled.txt > _exon_inclusion_pooled.txt
 	all_no_log_table
 
 _exon_inclusion_reads: _exon_inclusion_pooled
-	build_reads_supporting_inclusions.RNAseq.pl
+	cluster_run.RNAseq.pl build_reads_supporting_inclusions.RNAseq.pl
 	cat $EXONDIR/*.inc.exc.reads.txt > _exon_inclusion_reads.txt
 	all_no_log_table
 
@@ -519,14 +519,14 @@ _transcript_expression_levels_pooled: _bed_files _junction_classification _trans
 	all_no_log_table
 
 _detected_transcripts: _transcript_expression_levels_pooled
-	build_detected_transcripts.RNAseq.pl
+	cluster_run.RNAseq.pl build_detected_transcripts.RNAseq.pl
 	mv build_detected_transcripts.RNAseq.log $LOGS
 	all_no_log_table
 
 # #####################
 # Get fusion transcripts
 _fusion_transcripts: _transcriptome_mapping _gene_RPKM
-	get_fusion_transcripts.RNAseq.pl
+	cluster_run.RNAseq.pl get_fusion_transcripts.RNAseq.pl
 	zcat $TRANSDIR/*.trans.fusions.txt.gz > _fusion_transcripts.txt
 	mv get_fusion_transcripts.RNAseq.log $LOGS
 	all_no_log_table
