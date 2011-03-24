@@ -124,8 +124,7 @@ sub build_genome_file {
     while (my $line=<$genfh>) {
 	my %line=%{parse_gff_line($line)};
 	my $read_id=$line{'feature'}{'read_id'};
-	$read_id=~s/\|?p?[12]$//;
-	$read_id=~s/\/$//;
+	$read_id=~s/(\/|\|)?p?[12]$//o;
 	if ($reads->{$read_id}) {
 	    print $outfh $line;
 	}
@@ -149,7 +148,7 @@ sub get_reads_from_file {
 	    next;
 	}
 	my $read_id=$line[0];
-	$read_id=~s/\|$//;
+	$read_id=~s/\|$//o;
 	$reads{$read_id}++;
     }
     close($transfh);
