@@ -20,7 +20,7 @@ BEGIN {
 
 use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
 use RNAseq_pipeline_settings3 ('get_dbh','read_config_file',
-			       'get_gene_RPKM_data','get_gene_info_sub');
+			       'get_gene_RPKM_data');
 use RNAseq_pipeline_comp3 ('get_tables','check_tables','get_labels_sub',
 			   'get_samples');
 use Getopt::Long;
@@ -30,6 +30,7 @@ my $nolabels;
 my $dbh;
 my $dbhcommon;
 my $project;
+my $all=0;
 my $debug=1;
 my $breakdown;
 my $tabsuffix='gene_RPKM_pooled';
@@ -39,7 +40,9 @@ my @genes_needed;
 GetOptions('nolabels|n' => \$nolabels,
 	   'debug|d' => \$debug,
 	   'breakdown|b' => \$breakdown,
-	   'gene|g=s' => \@genes_needed);
+	   'gene|g=s' => \@genes_needed,
+	   'all' => \$all); # get info for all experiments regardless of the
+                            # project
 
 if ($breakdown) {
     $tabsuffix='gene_RPKM';
@@ -65,15 +68,13 @@ $dbhcommon=get_dbh(1);
 
 # Get subroutines
 *get_labels=get_labels_sub($dbhcommon);
-*gene2chr=get_gene_info_sub('chr');
-*gene2desc=get_gene_info_sub('description');
 
 # Get all experiment tables from the database
 my %tables=%{get_tables($dbhcommon,
 			$project,
 			$tabsuffix,
 			'',
-			1)};
+			$all)};
 
 # Remove any tables that do not exist
 check_tables($dbh,
