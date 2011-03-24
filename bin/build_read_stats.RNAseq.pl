@@ -50,6 +50,8 @@ my %files=%{read_file_list()};
 my %stats;
 my %ambiguous_pos;
 my %quality_stats;
+my %ntpos; # This will contain the number of each of the different nucleotides
+           # at a given position
 
 # Get a log file
 my $log_fh=get_log_fh('build_read_stats.RNAseq.log',
@@ -90,7 +92,8 @@ foreach my $infile (keys %files) {
 							       \%ambiguous_pos,
 							       $tmpdir,
 							       $log_fh,
-							       $lanename);
+							       $lanename,
+							       \%ntpos);
     } else {
 	die "How did I get here???\n";
     }
@@ -100,6 +103,21 @@ foreach my $infile (keys %files) {
 		     $good,$bad,$unique,$lanename];
 
 }
+
+
+# Print out Nucleotide distribution
+print $log_fh 'Building the nt distribution data...';
+my $ntposfh=get_fh("${prefix}_ntpos.txt",1);
+foreach my $lanename (sort keys %ntpos) {
+    foreach my $pos (sort {$a <=> $b} keys %{$ntpos{$lanename}}) {
+	print $ntposfh join("\t",
+			    $lanename,
+			    $pos,
+			    @{$ntpos{$lanename}{$pos}}),"\n";
+    }
+}
+close ($ntposfh);
+print $log_fh "done\n";
 
 # Print out quality pos data
 print $log_fh 'Building the quality pos data...';
@@ -288,6 +306,7 @@ sub process_fastq_file {
     my $tmpdir=shift;
     my $log_fh=shift;
     my $laneid=shift;
+    my $ntpos=shift;
 
     my $unique=0;
     my $read_length=0;
@@ -306,6 +325,11 @@ sub process_fastq_file {
 
     my $tmpfn=$$.'.tmp.sequences.txt';
     my $tmpfh=get_fh($tmpfn,1);
+
+    my %ntindex=('A' => 0,
+		 'C' => 1,
+		 'G' => 2,
+		 'T' => 3);
 
     # Process the fastq file
     while (my $line=<$infh>) {
@@ -338,7 +362,7 @@ sub process_fastq_file {
 		next;
 	    }
 	} else {
-	    warn "Shouldn't be here\n";
+	    warn "Problem with $infn. Shouldn't be here\n";
 	}
 
 	my $seq=$sequence{'seq'};
@@ -383,6 +407,7 @@ sub process_fastq_file {
 		# when there are no ambiguous nt (this can happen if the
 		# reads are prefiltered
 		$amb_pos->{$laneid}->{$pos}+=0;
+		$ntpos->{$laneid}->{$pos}->[$ntindex{$nucleotides[$i]}]++;
 	    }
 	}
     }
