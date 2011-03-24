@@ -16,7 +16,7 @@ BEGIN {
 # table to load in the database with this information
 
 use Getopt::Long;
-use RNAseq_pipeline3 qw(get_fh get_log_fh parse_gff_line);
+use RNAseq_pipeline3 qw(get_fh get_log_fh parse_gff_line run_system_command);
 use RNAseq_pipeline_settings3 qw(read_file_list get_gene_from_trans_sub);
 
 # declare some variables
@@ -42,8 +42,7 @@ foreach my $lane (keys %lanes) {
 		     $lane,
 		     $log_fh);
 	my $command="rm $filename";
-	print STDERR "Executing:\t$command\n";
-	system($command);
+	run_system_command($command);
     } else {
 	die "I can't find $filename\n";
     }
