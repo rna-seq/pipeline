@@ -68,6 +68,19 @@ foreach my $group (keys %groups) {
 	next;
     }
 
+    # Determine if paired
+    foreach my $lane (@{$groups{$group}}) {
+	if (@{$lanes{$lane}} == 1) {
+	    $type='single';
+	} elsif (@{$lanes{$lane}} == 2) {
+	    $type='paired';
+	} else {
+	    die "Unknown type\n";
+	}
+    }
+
+
+
     # Check if we have the combined bed file an if not create it
     my $infilename=$localdir.'/'.$group.'.combined.bed';
     if (-r $infilename) {
@@ -76,14 +89,6 @@ foreach my $group (keys %groups) {
 	print $log_fh "Building $infilename\n";
 	my %files;
 	foreach my $lane (@{$groups{$group}}) {
-	    if (@{$lanes{$lane}} == 1) {
-		$type='single';
-	    } elsif (@{$lanes{$lane}} == 2) {
-		$type='paired';
-	    } else {
-		die "Unknown type\n";
-	    }
-
 	    # Get the files corresponding to the both halves of the reads
 	    my $infilename=$localdir.'/'.$lane.'.combined.bed';
 	    if (-r $infilename) {
