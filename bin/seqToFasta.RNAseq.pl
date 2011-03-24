@@ -126,8 +126,8 @@ sub build_outfile_names {
     my $outfilename=$infile;
     $outfilename=~s/.+\///;
     # This si repeated because it can appear as fastq.txt or similar
-    $outfilename=~s/.(txt|fa(stq)*)//;
-    $outfilename=~s/.(txt|fa(stq)*)//;
+    $outfilename=~s/.(txt|fa(stq|sta)*)(.gz)*//;
+    $outfilename=~s/.(txt|fa(stq|sta)*)(.gz)*//;
     $outfilename=~s/^((lane(\d)*)(\.|_))*//;
     my $lane=$2;
     if ($lane) {
