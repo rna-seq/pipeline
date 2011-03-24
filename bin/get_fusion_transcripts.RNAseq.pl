@@ -144,8 +144,8 @@ foreach my $lane (keys %lanes) {
 	    my $readId;
 	    my $readid1=$trans1hit{'id'};
 	    my $readid2=$trans2hit{'id'};
-	    $readid1=~s/\/?p?[12]$//;
-	    $readid2=~s/\/?p?[12]$//;
+	    $readid1=~s/\/?p?[12]$//o;
+	    $readid2=~s/\/?p?[12]$//o;
 
 	    # Check the Ids are the same
 	    if ($readid1 eq $readid2) {
@@ -161,8 +161,8 @@ foreach my $lane (keys %lanes) {
 	    my $length=$trans1hit{'length'};
 
 	    # Check that the mappings to the transcript are uique in both cases
-	    if (($trans1hit{'matches'}=~/^(0:)*1(:0)*$/) &&
-		($trans2hit{'matches'}=~/^(0:)*1(:0)*$/)){
+	    if (($trans1hit{'matches'}=~/^(0:)*1(:0)*$/o) &&
+		($trans2hit{'matches'}=~/^(0:)*1(:0)*$/o)){
 	    } else {
 		$stats{'not_unique'}++;
 		next;
@@ -208,17 +208,17 @@ foreach my $lane (keys %lanes) {
 
 		# First check the mismatch string and get as a side effect the
 		# startting position and strand in the transcript
-		$mismatches1=~s/^([RF]\d+)//;
+		$mismatches1=~s/^([RF]\d+)//o;
 		$transstart1=$1;
-		$mismatches2=~s/^([RF]\d+)//;
+		$mismatches2=~s/^([RF]\d+)//o;
 		$transstart2=$1;
 
 		# Get the chromosome and location from the genomic hits
 		($chr1,$genmismatches1)=split(':',$gen1hit{'hits'});
 		($chr2,$genmismatches2)=split(':',$gen2hit{'hits'});
-		$genmismatches1=~s/^([RF]\d+)//;
+		$genmismatches1=~s/^([RF]\d+)//o;
 		$genestart1=$1;
-		$genmismatches2=~s/^([RF]\d+)//;
+		$genmismatches2=~s/^([RF]\d+)//o;
 		$genestart2=$1;
 
 		# Compare the mismatch strings
