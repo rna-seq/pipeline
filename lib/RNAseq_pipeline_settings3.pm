@@ -1366,6 +1366,7 @@ sub combine_overlap {
 
 	print $overlapfh $line,"\n";
     }
+    close($overlapfh);
     print STDERR "done\n";
     return (@overlap_files);
 }

@@ -807,7 +807,10 @@ sub print_gff {
     my $readfile=shift;
     my $read_id=shift;
     my $read=shift;
-    my $type=shift;
+    my $type=shift || '.';
+
+    # Remove preceding directories
+    $readfile=~s/.*\///o;
 
     my $string= join(' ',
 		     'read_id','"'.$read_id.'";',
@@ -819,7 +822,7 @@ sub print_gff {
     print $outfh join("\t",
 		      $read->[0],
 		      $readfile,
-		      $type.'_read',
+		      $type,
 		      $read->[1],
 		      $read->[2],
 		      '.',
