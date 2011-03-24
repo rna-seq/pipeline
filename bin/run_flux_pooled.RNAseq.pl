@@ -16,11 +16,9 @@ BEGIN {
 # within the framework of the opipeline
 # do flux.sh -s $file.bed -r fluxout/gencode_data.rel2b.exons_sorted.gtf --tmp tmp -n fluxoutpaired --pair; done
 
-### TO DO
-# Parallelize on the cluster
 
 use Getopt::Long;
-use RNAseq_pipeline3 qw(get_fh get_log_fh);
+use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
 use RNAseq_pipeline_settings3 qw(read_config_file read_file_list);
 
 my $localdir;
@@ -53,20 +51,7 @@ my %groups=%{get_groups(\%files)};
 
 # split the annotation
 my %annot;
-if (-r $exonfile) {
-    print STDERR "Processing $exonfile\n";
-    my $exonfh=get_fh($exonfile);
-    split_by_chrom($localdir,
-		   'annot',
-		   $exonfh,
-		   \%annot,
-		   $log_fh);
-    close($exonfh);
-    # close the file handles;
-    foreach my $file (keys %annot) {
-	close($annot{$file}->[0]);
-    }
-} else {
+unless (-r $exonfile) {
     die "Can't read $exonfile\n";
 }
 
@@ -75,105 +60,61 @@ if (-r $exonfile) {
 foreach my $group (keys %groups) {
     my %reads;
     my $type;
-    foreach my $lane (@{$groups{$group}}) {
-	if (@{$lanes{$lane}} == 1) {
-	    $type='single';
-	} elsif (@{$lanes{$lane}} == 2) {
-	    $type='paired';
-	} else {
-	    die "Unknown type\n";
-	}
 
-	# Check if the file corresponding to this lane exists already
-	my $fluxfile=$lane.'.flux.gtf';
-	if (-r $fluxfile) {
-	    print STDERR $fluxfile,"\tPresent. Skipping...\n";
-	    next;
-	}
-	
-	# Get the files corresponding to the both halves of the reads and
-	# split them by chromosome
-	my $infilename=$localdir.'/'.$lane.'.combined.bed';
-	if (-r $infilename) {
-	    print $log_fh "Processing $infilename\n";
-	} else {
-	    die "Can't read $infilename\n";
-	}
-	my $infh=get_fh($infilename);
-	split_by_chrom($localdir,
-		       'reads',
-		       $infh,
-		       \%reads,
-		       $log_fh);
-	close($infh);
+    # Check if the file corresponding to this group exists already
+    my $fluxfile=$group.'.flux.gtf';
+    if (-r $fluxfile) {
+	print STDERR $fluxfile,"\tPresent. Skipping...\n";
+	next;
     }
 
-    # close the file handles;
-    foreach my $file (keys %reads) {
-	close($reads{$file}->[0]);
+    # Check if we have the combined bed file an if not create it
+    my $infilename=$localdir.'/'.$group.'.combined.bed';
+    if (-r $infilename) {
+	print $log_fh "Processing $infilename\n";
+    } else {
+	print $log_fh "Building $infilename\n";
+	my %files;
+	foreach my $lane (@{$groups{$group}}) {
+	    if (@{$lanes{$lane}} == 1) {
+		$type='single';
+	    } elsif (@{$lanes{$lane}} == 2) {
+		$type='paired';
+	    } else {
+		die "Unknown type\n";
+	    }
+
+	    # Get the files corresponding to the both halves of the reads
+	    my $infilename=$localdir.'/'.$lane.'.combined.bed';
+	    if (-r $infilename) {
+		print $log_fh "Processing $infilename\n";
+		$files{$infilename}++;
+	    } else {
+		die "Can't read $infilename\n";
+	    }
+	}
+
+	# Concatenate the different files
+	my $command='cat '.join(' ',keys %files)." > $infilename";
+	run_system_command($command);
+	
     }
     
     my %results;
-    # Run the flux capacitor
-    # This is the parallel step
-    foreach my $chr (sort keys %annot) {
-	unless ($reads{$chr}) {
-	    print STDERR "No reads mapped to $chr\n";
-	    next;
-	}
+    my $outfile=run_flux($localdir,
+			 $type,
+			 $infilename,
+			 $exonfile,
+			 $bindir,
+			 $tmpdir,
+			 $sorted);
 	
-	my $outfile=run_flux($localdir,
-			     $type,
-			     $reads{$chr}->[1],
-			     $annot{$chr}->[1],
-			     $bindir,
-			     $tmpdir,
-			     $sorted);
-	
-	if ($outfile) {
-	    $results{$chr}=$outfile;
-	} else {
-	    die "Problem generating $outfile\n";
-	}
-	
-	if ($debug) {
-	    last;
-	}
+    if ($outfile) {
+	my $command="mv $outfile $fluxfile";
+	run_system_command($command);
+    } else {
+	die "Problem generating $outfile\n";
     }
-    
-    # merge the flux results
-    my @files;
-    foreach my $chr (keys %results) {
-	if (-r $results{$chr}) {
-	    push @files, $results{$chr};
-	}
-    }
-    my $command='cat ';
-    $command.=join(' ',@files);
-    $command.=" > $group.flux.gtf";
-    print $log_fh "Executing:\t$command\n";
-    system($command);
-    
-    # clean up files
-    my @clean;
-    foreach my $chr (keys %annot) {
-	if ($results{$chr} && -r $results{$chr}) {
-	    push @clean, $results{$chr};
-	}
-    }
-    $command='rm ';
-    $command.=join(' ',@clean);
-    print $log_fh "Executing:\t$command\n";
-    system($command);
-}
-
-# clean up the sorted annotation files
-foreach my $chr (keys %annot) {
-    # delete the files
-    my $file=$annot{$chr}->[1];
-    my $command="rm $file";
-    print $log_fh "Executing $command\n";
-    system($command);
 }
 
 exit;
@@ -322,38 +263,6 @@ sub get_lanes {
     }
 
     return(\%lanes);
-}
-
-### TO DO puet into a module
-sub split_by_chrom {
-    my $localdir=shift;
-    my $type=shift;
-    my $fh=shift;
-    my $hash=shift;
-    my $log_fh=shift;
-
-    unless($localdir) {
-	$localdir='/tmp';
-    }
-
-    while (my $line=<$fh>) {
-	chomp($line);
-	my @line=split("\t",$line);
-	my $chrom=$line[0];
-	unless (defined $hash->{$chrom}) {
-	    my $tmpfile=$localdir.'/'.$chrom.'.'.$$.$type;
-	    $hash->{$chrom}->[0]=get_fh($tmpfile,1);
-	    $hash->{$chrom}->[1]=$tmpfile;
-	    print $log_fh "Creating: ",$tmpfile,"\n";
-	}
-	    
-	my $outfh=$hash->{$chrom}->[0];
-	# Fix the read Id if paired bed
-	if ($line[3]=~s/\|p/\//) {
-	    $line=join("\t",@line);
-	}
-	print $outfh $line,"\n"; 
-    }
 }
 
 sub get_groups {
