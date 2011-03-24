@@ -42,7 +42,7 @@ $species=$options{'SPECIES'};
 $localdir=$options{'LOCALDIR'};
 $projdir=$options{'PROJECT'};
 $readdir=$projdir.'/'.$options{'READDIR'};
-$script=$options{'PREPROCESS'};
+$script=shift || $options{'PREPROCESS'};
 
 # If mismatches is set, the reads will be filtered
 
@@ -51,14 +51,18 @@ $script=$options{'PREPROCESS'};
 # second halves of the read.
 
 # Check the localdir
-if ($localdir) {
+if ($localdir &&
+    -e $localdir) {
     $localdir=~s/\/$//;
     print STDERR "Using $localdir for tmp files\n";
+} else {
+    die "Could not find $localdir\n";
 }
 
 # Process the input
-unless ($script) {
-    die "Missing input script\n";
+unless ($script &&
+	-e $script) {
+    die "Could not find input script $script\n";
 }
 
 # Get the files we are going to process
