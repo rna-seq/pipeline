@@ -222,7 +222,7 @@ _unmapped_reads: _genome_mapping _transcriptome_mapping _junctions_mapping
 _split_mapping: _unmapped_reads
 	cd $SPLITMAPDIR; if [[ `ls *.unmapped.fa.gz` ]]; then gunzip -f -v *.unmapped.fa.gz; fi
 	run_split_mapper_cluster.RNAseq.pl -index $GENOMEINDEX -o $SPLITMAPDIR
-	build_mapping_stats.RNAseq.pl `ls $SPLITMAPDIR/* | grep '.split-map'` > _split_mapping.txt
+	build_mapping_stats.RNAseq.pl `ls $SPLITMAPDIR/* | grep '.split-map' |grep -v '.log'` > _split_mapping.txt
 	plot_mapping_graph.RNAseq.pl -graph _split_mapping -type 'Split-mapper'
 	mv _split_mapping.ps $GRAPHS
 	if [[ `ls $SPLITMAPDIR/*.log` ]]; then mv $SPLITMAPDIR/*.log $LOGS; fi 
