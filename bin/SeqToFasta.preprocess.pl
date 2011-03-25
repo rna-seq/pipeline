@@ -177,8 +177,6 @@ sub get_parsing_subs {
 	my $infn=shift;
 	my $outfn=shift;
 
-	my %unique;
-	my $unique=0;
 	my $read_length=0;
 	my $ambiguous_reads=0;
 	my $good_reads=0;
@@ -192,7 +190,6 @@ sub get_parsing_subs {
 	    $total_reads++;
 	    
 	    my $seq=$seq_obj->seq;
-	    $unique{$seq}++;
 	    unless ($read_length) {
 		$read_length=length($seq);
 	    }
@@ -213,21 +210,17 @@ sub get_parsing_subs {
 	$infh->close();
 	$outfh->close();
 	
-	$unique=keys %unique;
 	$stats->{$infn}=[$species,
 			 $project,
 			 $read_length,
 			 $total_reads,
 			 $good_reads,
-			 $ambiguous_reads,
-			 $unique];
+			 $ambiguous_reads];
     };
     $parsing_subs{'single'}{'fastq'}=sub {
 	my $infn=shift;
 	my $outfn=shift;
 
-	my %unique;
-	my $unique=0;
 	my $read_length=0;
 	my $ambiguous_reads=0;
 	my $good_reads=0;
@@ -262,7 +255,6 @@ sub get_parsing_subs {
 	    }
 	    
 	    my $seq=$sequence{'seq'};
-	    $unique{$seq}++;
 	    unless ($read_length) {
 		$read_length=length($seq);
 	    }
@@ -286,22 +278,18 @@ sub get_parsing_subs {
 	close($infh);
 	close($outfh);
 
-	$unique=keys %unique;
 	$stats->{$infn}=[$species,
 			 $project,
 			 $read_length,
 			 $total_reads,
 			 $good_reads,
-			 $ambiguous_reads,
-			 $unique];
+			 $ambiguous_reads];
 	return();
     };
     $parsing_subs{'single'}{'solexaSeq'}=sub {
 	my $infn=shift;
 	my $outfn=shift;
 
-	my %unique;
-	my $unique=0;
 	my $read_length=0;
 	my $ambiguous_reads=0;
 	my $good_reads=0;
@@ -309,11 +297,7 @@ sub get_parsing_subs {
 
 	my $infh=get_fh($infn);
 	my $outfh=get_fh("$outfn.gz",1);
-	my $tmpsortfile=$localdir.'/'.$$.'_preproces.RNAseq.txt';
-	my $tmpfh;
-	if ($localdir) {
-	    $tmpfh=get_fh($tmpsortfile,1);
-	}
+
 	while (my $line=<$infh>) {
 	    $total_reads++;
 	    chomp($line);
@@ -324,12 +308,6 @@ sub get_parsing_subs {
 			$species,
 			@line[0..3]);
 	    my $seq=$line[4];
-
-	    if ($localdir) {
-		print $tmpfh $seq,"\n";
-	    } else {
-#		$unique{$seq}++;
-	    }
 
 	    unless ($read_length) {
 		$read_length=length($seq);
@@ -351,32 +329,20 @@ sub get_parsing_subs {
 	close($infh);
 	close($outfh);
 
-	if ($localdir) {
-	    close($tmpfh);
-	    $unique=`sort $tmpsortfile | uniq | wc -l`;
-	    my $command="rm $tmpsortfile";
-	    system($command);
-	} else {
-	    $unique=keys %unique;
-	    chomp($unique);
-	}
-
 	$stats->{$infn}=[$species,
 			 $project,
 			 $read_length,
 			 $total_reads,
 			 $good_reads,
-			 $ambiguous_reads,
-			 $unique];
+			 $ambiguous_reads];
 
 	return();
     };
+
     $parsing_subs{'single'}{'solexaQseq'}=sub {
 	my $infn=shift;
 	my $outfn=shift;
 
-	my %unique;
-	my $unique=0;
 	my $read_length=0;
 	my $ambiguous_reads=0;
 	my $good_reads=0;
@@ -384,11 +350,7 @@ sub get_parsing_subs {
 	
 	my $infh=get_fh($infn);
 	my $outfh=get_fh("$outfn.gz",1);
-	my $tmpsortfile=$localdir.'/'.$$.'_preproces.RNAseq.txt';
-	my $tmpfh;
-	if ($localdir) {
-	    $tmpfh=get_fh($tmpsortfile,1);
-	}
+
 	while (my $line=<$infh>) {
 	    $total_reads++;
 	    chomp($line);
@@ -401,12 +363,6 @@ sub get_parsing_subs {
 	    $id.='|p'.$line[7];
 	    my $seq=$line[8];
 	    my $qual=$line[9];
-
-	    if ($localdir) {
-		print $tmpfh $seq,"\n";
-	    } else {
-		$unique{$seq}++;
-	    }
 
 	    unless ($read_length) {
 		$read_length=length($seq);
@@ -430,35 +386,24 @@ sub get_parsing_subs {
 	close($infh);
 	close($outfh);
 
-	if ($localdir) {
-	    close($tmpfh);
-	    $unique=`sort $tmpsortfile | uniq | wc -l`;
-	    my $command="rm $tmpsortfile";
-	    system($command);
-	} else {
-	    $unique=keys %unique;
-	    chomp($unique);
-	}
-
 	$stats->{$infn}=[$species,
 			 $project,
 			 $read_length,
 			 $total_reads,
 			 $good_reads,
-			 $ambiguous_reads,
-			 $unique];
+			 $ambiguous_reads];
 
 	return();
     };
+
     $parsing_subs{'paired'}{'fasta'}=sub {die "No sub\n";};
+
     $parsing_subs{'paired'}{'fastq'}=sub {
 	my $infn=shift;
 	my $outfn1=shift;
 	my $outfn2=shift;
 	my $read_length=shift;
 
-	my %unique1;
-	my %unique2;
 	my $ambiguous_reads1=0;
 	my $ambiguous_reads2=0;
 	my $good_reads1=0;
@@ -502,8 +447,6 @@ sub get_parsing_subs {
 	    # Now parse independently the two halves
 	    my $seq1=substr($seq2,0,$read_length,'');
 	    my $qual1=substr($qual2,0,$read_length,'');
-	    $unique1{$seq1}++;
-	    $unique2{$seq2}++;
 
 	    my $ambiguous1=$seq1=~s/\./N/g;
 	    my $ambiguous2=$seq2=~s/\./N/g;
@@ -546,32 +489,27 @@ sub get_parsing_subs {
 	close($outfh1);
 	close($outfh2);
     
-	my $unique1=keys %unique1;
-	my $unique2=keys %unique2;
 	$stats->{$infn.'.1'}=[$species,
 			      $project,
 			      $read_length,
 			      $total_reads,
 			      $good_reads1,
-			      $ambiguous_reads1,
-			      $unique1];
+			      $ambiguous_reads1];
 	$stats->{$infn.'.2'}=[$species,
 			      $project,
 			      $read_length,
 			      $total_reads,
 			      $good_reads2,
-			      $ambiguous_reads2,
-			      $unique2];
+			      $ambiguous_reads2];
 	return();
     };
+
     $parsing_subs{'paired'}{'solexaSeq'}=sub {
 	my $infn=shift;
 	my $outfn1=shift;
 	my $outfn2=shift;
 	my $read_length=shift;
 
-	my %unique1;
-	my %unique2;
 	my $ambiguous_reads1=0;
 	my $ambiguous_reads2=0;
 	my $good_reads1=0;
@@ -596,8 +534,6 @@ sub get_parsing_subs {
 	
 	    # Now parse independently the two halves
 	    my $seq1=substr($seq2,0,$read_length,'');
-	    $unique1{$seq1}++;
-	    $unique2{$seq2}++;
 
 	    my $ambiguous1=$seq1=~s/\./N/g;
 	    my $ambiguous2=$seq2=~s/\./N/g;
@@ -636,22 +572,18 @@ sub get_parsing_subs {
 	close($outfh1);
 	close($outfh2);
     
-	my $unique1=keys %unique1;
-	my $unique2=keys %unique2;
 	$stats->{$infn.'.1'}=[$species,
 			      $project,
 			      $read_length,
 			      $total_reads,
 			      $good_reads1,
-			      $ambiguous_reads1,
-			      $unique1];
+			      $ambiguous_reads1];
 	$stats->{$infn.'.2'}=[$species,
 			      $project,
 			      $read_length,
 			      $total_reads,
 			      $good_reads2,
-			      $ambiguous_reads2,
-			      $unique2];
+			      $ambiguous_reads2];
 	return();
     };
     $parsing_subs{'paired'}{'solexaQseq'}=sub {die "No sub\n";};
