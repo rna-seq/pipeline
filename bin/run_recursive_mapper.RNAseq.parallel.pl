@@ -135,7 +135,8 @@ my $left=trim_ambiguous($infile,
 			$log_fh);
 
 unless($left) {
-    die "No unmapped reads found\n";
+    warn "I can't find ambiguous reads??\n"
+    print $log_fh "WARNING:No unmapped reads found\n";
 }
 
 my @mapping_files;
@@ -171,6 +172,10 @@ while ($mismatches < $maxmismatch) {
     my $left1=get_unmapped($mapped.".map",
 			   $unmapped,
 			   $log_fh);
+
+    if ($left1 == 0) {
+	last;
+    }
 
     $mapped=$tempdir.'/'.$basename.".split.$mismatches.$$";
     # split map the still unmapped reads
