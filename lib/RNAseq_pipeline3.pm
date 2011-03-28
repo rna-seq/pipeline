@@ -8,7 +8,7 @@ use Exporter;
 push @EXPORT_OK,('MySQL_DB_Connect','get_fh','get_log_fh');
 push @EXPORT_OK,('check_table_existence','check_file_existence');
 push @EXPORT_OK,('check_field_existence');
-push @EXPORT_OK,('check_gff_file','check_fasta_file');
+push @EXPORT_OK,('check_gff_file','check_fasta_file','get_md5sum');
 push @EXPORT_OK,('run_system_command');
 push @EXPORT_OK,('print_gff','get_sorted_gff_fh','parse_gff_line');
 push @EXPORT_OK,('get_files_from_table_sub');
@@ -144,6 +144,19 @@ sub run_system_command {
 	system($command);
     }
     sleep(1);
+}
+
+# Get the md5sum of a file from the absolute path and return the file name
+# without the initial path and the md5sum
+sub get_md5sum {
+    my $filepath=shift;
+    my $filename=$filepath;
+    $filename=~s/.+\///;
+
+    my $sum=`md5sum $filepath`;
+    my ($md5sum)=split(' ',$sum);
+    
+    return($filename,$md5sum);
 }
 
 # Read or write from a file (gzipped or not)
