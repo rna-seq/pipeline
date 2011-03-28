@@ -1380,7 +1380,8 @@ CREATE TABLE ${prefix}_store_reads (
     compressed int unsigned not null,
     md5comp char(32) not null,
     bamfile varchar(100) not null,
-    md5bam char(32) not null
+    md5bam char(32) not null,
+    md5global char(32) not null
     );",
 		'_gene_mappable_RPKM' => "DROP TABLE IF EXISTS ${prefix}_gene_mappable_RPKM;
 CREATE TABLE ${prefix}_gene_mappable_RPKM (
@@ -1773,6 +1774,7 @@ sub create_directory_structure {
 		     "$localdir",
 		     'clusters',
 		     'exclusion',
+		     'results',
 		     'SAM',
 		     'work');
     # The -L option is necessary to print the same path for all nodes
@@ -1828,7 +1830,8 @@ sub create_directory_structure {
 	      'SAMDIR' => 'SAM',
 	      'LOCALPARALLEL' => 'work',
 	      'QUALITIES' =>${$options->{'qualities'}},
-	      'PREPROCESS' => ${$options->{'preprocess'}}
+	      'PREPROCESS' => ${$options->{'preprocess'}},
+	      'RESULTS' => 'results'
 );
 
     foreach my $dir (@directories) {
@@ -1856,8 +1859,8 @@ sub check_dir {
 	my $targetdir='/users/rg/dgonzalez/Projects/RNAseq_analysis_pipe3.0/bin';
 	print $log_fh "Linking dir $dir to $targetdir\n";
 	my $command="ln -s $targetdir $dir";
-	print $log_fh "Executing: $command\n";
-	system($command);
+	run_system_command($command,
+			   $log_fh);
     } else {
 	mkdir($dir) &&
 	    print $log_fh "Creating dir $dir\n";
@@ -1972,9 +1975,9 @@ sub build_file_list {
 	my $readdir=$vars->{'READDIR'};
 	my $projdir=$vars->{'PROJECT'};
 	$command="ls $readdir ".'| sed \'s/.gz$//\' | sed \'s/.*\///\' > '."$projdir/read.list.txt";
-	print $log_fh "Creating read.list.txt; Make sure you add the paired and lane info\n";
 	if (`ls $readdir`) {
-	    system($command);
+	    run_system_command($command,
+			       $log_fh);
 	} else {
 	    die "No read files found\n";
 	}

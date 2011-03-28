@@ -29,6 +29,7 @@ bin/build_mapping_summary.RNAseq.pl -text
 bin/build_novel_junctions_summary.pl -text
 bin/build_read_stats.RNAseq.pl -text
 bin/build_reads_supporting_inclusions.RNAseq.pl -text
+bin/build_store_reads.RNAseq.pl -text
 bin/build_top_exons.RNAseq.pl -text
 bin/build_top_genes.RNAseq.pl -text
 bin/build_top_transcripts.RNAseq.pl -text

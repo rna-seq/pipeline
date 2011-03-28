@@ -22,7 +22,8 @@ use Exporter;
 	    'get_gene_RPKM_data','get_gene_readcount_data',
 	    'get_trans_expression_data',
 	    'get_desc_from_gene_sub','get_chr_from_gene_sub',
-	    'get_type_from_gene_sub','get_exp_info_sub');
+	    'get_type_from_gene_sub','get_exp_info_sub',
+	    'set_exp_info_sub');
 
 use strict;
 use warnings;
@@ -43,7 +44,7 @@ BEGIN {
 
 # Load subs from other modules
 use RNAseq_pipeline3 ('MySQL_DB_Connect','get_fh','run_system_command',
-		      'parse_gff_line');
+		      'parse_gff_line','check_field_existence');
 use Cwd;
 
 # This sub will read the configuration settings from the file project_config.txt
@@ -1800,7 +1801,8 @@ sub get_exp_info_sub {
 		  'RNAType' => '?',
 		  'Compartment' => '?',
 		  'Bioreplicate' => 0,
-		  'partition' => 0);
+		  'partition' => 0,
+		  'md5sum' => '-');
 
     my %cache;
 
@@ -1831,6 +1833,72 @@ sub get_exp_info_sub {
 	return($cache{$key});
     };
     return($get_exp_info)
+}
+
+# set information in the experiments table
+sub set_exp_info_sub {
+    my %options=%{read_config_file()};
+    my $dbh=get_dbh(1);
+    my $table='experiments';
+    my $field=shift;
+
+    if (@_) {
+	die "I can only set one field at a time\n";
+    }
+
+    unless($field) {
+	die "No field provided to set in $table\n";
+    }
+
+    # Check if the column exists:
+    my  $present=check_field_existence($dbh,
+				       $table,
+				       $field);
+    # Add the column of not present already
+    unless ($present) {
+	my $query="ALTER TABLE $table ";
+	$query.="ADD COLUMN $field ";
+	$query.="char(32) NULL  AFTER partition";
+	print STDERR "Adding $field to $table\n";
+	my $sth=$dbh->prepare($query);
+	$sth->execute();
+    }
+
+    my %defaults=('experiment_id' => '-',
+		  'project_id' => '-',
+		  'species_id' => '-',
+		  'genome_id' => '-',
+		  'annotation_id' => '-',
+		  'template_file' =>  '?',
+		  'read_length' => 0,
+		  'mismatches' => '2?',
+		  'exp_description' => 'none',
+		  'expDate' => '?',
+		  'CellType'=> '?',
+		  'RNAType' => '?',
+		  'Compartment' => '?',
+		  'Bioreplicate' => 0,
+		  'partition' => 0,
+		  'md5sum' => '-');
+
+    my ($query,$sth);
+    $query ="UPDATE $table ";
+    $query.='SET '.$field.'= ? ';
+    $query.='WHERE project_id = ? AND experiment_id = ?';
+    $sth=$dbh->prepare($query);
+
+    my $set_exp_info= sub {
+	my $proj_id=shift;
+	my $exp_id=shift;
+	my $value=shift;
+
+	
+	my $key=$proj_id.'_'.$exp_id;
+	($sth->execute($value,$proj_id,$exp_id)) ||
+	    die "Unable to execute: $query";
+	print STDERR $query,"\n";
+    };
+    return($set_exp_info)
 }
 
 1;

@@ -49,7 +49,7 @@ sub get_tables {
     if ($count && ($count > 1)) {
 	print STDERR $count,"\tExperiments are present for $project\n";
     } else {
-	die "No experiments present for project\n";
+	die "No experiments present for project $project\n";
     }
 
     # get all the necessary tables

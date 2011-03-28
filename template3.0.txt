@@ -23,8 +23,9 @@ GEMINDICES = $PROJECT
 SEQUENCEDIR = $PROJECT
 CLUSTERDIR = $PROJECT
 SAMDIR = $PROJECT
-SPECIES=
-PROJECTID=
+SPECIES =
+PROJECTID =
+EXPID =
 PREFIX =
 ANNOTATION =
 GENOMESEQ =
@@ -53,6 +54,7 @@ LOCALPARALLEL = $PROJECT
 CLUSTER = 
 QUALITIES = 
 PREPROCESS =
+RESULTS = $PROJECT
 
 # PHONY rules always execute as they do not build a table if they are in the
 # prerequisites of another rule
@@ -561,13 +563,21 @@ _completion_status: @
 	completed.RNAseq.pl > _completion_status.txt
 	all_no_log_table
 
-# Store the reads
-# This rule will store the bam files in the ftp server when it is available
-# and it will also generate an md5sum for each of the read files which will be
-# stored in the database in order to identify the dataset
-#_store_reads: _merged_SAM
-#	build_store_reads.RNAseq.pl
-#	all_no_log_table
+# Get the md5sum form all the unzipped fastq or fasta files as well as a global
+# md5sum which will be provided as the md5sum of the sorted concatenation of the
+# individual md5sums
+_store_reads: _merged_SAM
+	build_store_reads.RNAseq.pl > _store_reads.txt
+	mv build_store_reads.RNAseq.log $LOGS
+	all_no_log_table
+
+# ENCODE info we should add the transcript expression from the flux
+encode: _summaries _all_junctions_class_pooled _merged_mapping _read_classification
+
+_register_results: encode _store_reads _fusion_transcripts
+
+# This rule should execute all the steps in the pipeline
+all: _register_results
 
 # Clean up
 # We need to remove the sequence files from the local directory
@@ -576,15 +586,6 @@ _completion_status: @
 # after a crash
 cleanup: @
 	rm -r $LOCALDIR
-
-# ENCODE info we should add the transcript expression from the flux
-encode: _summaries _all_junctions_class_pooled _merged_mapping _read_classification
-
-# Data for the browser
-browser:
-
-# This rule should execute all the steps in the pipeline
-all: encode _merged_SAM _fusion_transcripts
 
 
 # ####

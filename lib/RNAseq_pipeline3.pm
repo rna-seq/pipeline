@@ -7,6 +7,7 @@ use Exporter;
 @ISA=('Exporter');
 push @EXPORT_OK,('MySQL_DB_Connect','get_fh','get_log_fh');
 push @EXPORT_OK,('check_table_existence','check_file_existence');
+push @EXPORT_OK,('check_field_existence');
 push @EXPORT_OK,('check_gff_file','check_fasta_file');
 push @EXPORT_OK,('run_system_command');
 push @EXPORT_OK,('print_gff','get_sorted_gff_fh','parse_gff_line');
@@ -83,6 +84,37 @@ sub check_table_existence {
     $query.="FROM $table";
 
     $sth = $dbh->table_info(undef,undef,$table,"TABLE");
+
+    my $count=$sth->execute();
+    my $results=$sth->fetchall_arrayref();
+    my $present=0;
+    
+    if (@{$results}) {
+	# Print the table location for the junctions of this experiment
+	print STDERR "Present\n";
+	$present=1;
+    } else {
+	print STDERR "Absent\n";
+    }
+    return($present);
+}
+
+sub check_field_existence {
+    my $dbh=shift;
+    my $table=shift;
+    my $column=shift;
+
+    unless ($column) {
+	die "No column name provided\n";
+    }
+
+    print STDERR "Checking database for $column in $table...";
+
+    my ($query,$sth);
+    $query ='SELECT count(*) ';
+    $query.="FROM $table";
+
+    $sth = $dbh->column_info(undef,undef,$table,$column);
 
     my $count=$sth->execute();
     my $results=$sth->fetchall_arrayref();
