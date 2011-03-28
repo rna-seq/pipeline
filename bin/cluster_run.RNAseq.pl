@@ -39,7 +39,7 @@ unless($script) {
     die "No input script supplied\n";
 }
 
-if ($queue ne '-') {
+if ($queue) {
     my ($subfile,$jobname)=build_script_submission($script,
 						   $bindir);    
     send2cluster($subfile,

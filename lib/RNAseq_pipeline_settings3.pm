@@ -888,9 +888,10 @@ sub send2cluster {
     if ($queue && 
 	($queue ne '-')) {
 	print STDERR "Using $queue\n";
-    } elsif ($options{'CLUSTER'} ne '-') {
-	warn "CLUSTER had no value, there may be a problem\n";
+    } elsif ($options{'CLUSTER'}  &&
+	     ($options{'CLUSTER'} ne '-')) {
 	$queue=$options{'CLUSTER'};
+	warn "CLUSTER had no value, there may be a problem set to: $queue\n";
     } else {
 	die "No valid queue is defined, so I can't submit to the cluster\n";
     }
