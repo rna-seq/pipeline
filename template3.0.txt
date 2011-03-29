@@ -575,6 +575,8 @@ _store_reads: _merged_SAM
 encode: _summaries _all_junctions_class_pooled _merged_mapping _read_classification
 
 _register_results: encode _store_reads _fusion_transcripts
+	build_register_results.RNAseq.pl > _register_results.txt
+	all_no_log_table
 
 # This rule should execute all the steps in the pipeline
 all: _register_results

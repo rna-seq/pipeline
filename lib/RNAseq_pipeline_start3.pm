@@ -1195,7 +1195,8 @@ sub get_tables_hash {
 		'_merged_mapping' => '',
 		'_junction_maps_class' => '',
 		'_completion_status' => '',
-		'_summaries' => ''
+		'_summaries' => '',
+		'_register_results' => ''
 		);
 
     # Add the species prefix to the table
@@ -1721,7 +1722,15 @@ CREATE TABLE ${prefix}_read_stats (
        AmbiguousBases INT unsigned NOT NULL,
        UniqueReads INT unsigned NOT NULL,
        LaneName varchar(50) NOT NULL
-);"
+);",
+		'_register_results' => "DROP TABLE IF EXISTS ${prefix}_register_results;
+CREATE TABLE ${prefix}_register_results (
+    filetype varchar(100),
+    filename varchar(100),
+    filemd5sum char(32) not null,
+    registeredfile varchar(100),
+    runmd5sum char(32) not null
+    );",
 	);
 
     my $working_dir=getcwd();
