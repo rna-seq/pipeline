@@ -58,8 +58,8 @@ $junctable=$options{'JUNCTIONSCLASSTABLE'};
 $database=$options{'COMMONDB'};
 $paralleltmp=$options{'PROJECT'}.'/'.$options{'LOCALPARALLEL'};
 $bindir=$options{'BIN'};
-unless($options{'PROJECT'}=~/^\/users/) {
-    print STDERR "Running locally, cannot use parallel\n";
+unless($options{'CLUSTER'}) {
+    print STDERR "Running locally\n";
     $parallel='default';
 }
 
