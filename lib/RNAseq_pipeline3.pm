@@ -711,6 +711,7 @@ sub get_annotation_from_gtf {
 	# if the file does not exist
 	my $repeated_exons=$file;
 	$repeated_exons=~s/.gtf$/.rep.exons.gtf/;
+	$repeated_exons=~s/.*\///;
 	if (-r $repeated_exons) {
 	    print STDERR $repeated_exons," is already present. Skipping...\n";
 	} else {
