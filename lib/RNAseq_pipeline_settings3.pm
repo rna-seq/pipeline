@@ -905,9 +905,14 @@ sub send2cluster {
 
     # monitor the execution
     my ($job_id)=(split(/\s+/,$execute))[2];
-    $job_id=~s/\..+$//;
-    print STDERR "Running job $job_id on $queue\n";
-    
+    if ($job_id) {
+	print STDERR "Running job $job_id on $queue\n";
+    } else {
+	warn "WARNING: No job ID returned by cluster. Something when wrong\n";
+	die "Better luck next time...\n";
+    }
+
+    $job_id=~s/\..+$//;    
     $command="qstat -j $job_id 2>&1";
     print STDERR "Waiting for job $job_id";
     while (1) {
