@@ -195,7 +195,7 @@ sub get_parsing_subs {
 	    }
 
 	    # Count the number of Ns in the sequence (ambiguous bases)
-	    my $ambiguous=$seq=~s/N/N/g;
+	    my $ambiguous=$seq=~s/\./N/og;
 	    if ($ambiguous) {
 		$ambiguous_reads++;
 		if ($mismatches &&
@@ -235,12 +235,12 @@ sub get_parsing_subs {
 	    chomp($line);
 
 	    # Decide which line we are in
-	    if ($line=~s/^@//) {
+	    if ($line=~s/^@//o) {
 		%sequence=('id' => $line);
 		$line_type=1;
 		$total_reads++;
 		next;
-	    } elsif ($line=~/^\+/) {
+	    } elsif ($line=~/^\+/o) {
 		$line_type=2;
 		next;
 	    }
@@ -260,7 +260,7 @@ sub get_parsing_subs {
 	    }
 
 	    # Count the number of Ns in the sequence (ambiguous bases)
-	    my $ambiguous=$seq=~s/N/N/g;
+	    my $ambiguous=$seq=~s/\./N/og;
 	    if ($ambiguous) {
 		$ambiguous_reads++;
 		if ($mismatches &&
@@ -313,7 +313,7 @@ sub get_parsing_subs {
 		$read_length=length($seq);
 	    }
 	    
-	    my $ambiguous=$seq=~s/\./N/g;
+	    my $ambiguous=$seq=~s/\./N/og;
 	    if ($ambiguous) {
 		$ambiguous_reads++;
 		if ($mismatches &&
@@ -360,7 +360,7 @@ sub get_parsing_subs {
 	    my $id=join('_',
 			$species,
 			@line[2..5]);
-	    $id.='|p'.$line[7];
+	    $id.='/'.$line[7];
 	    my $seq=$line[8];
 	    my $qual=$line[9];
 
@@ -368,7 +368,7 @@ sub get_parsing_subs {
 		$read_length=length($seq);
 	    }
 	    
-	    my $ambiguous=$seq=~s/\./N/g;
+	    my $ambiguous=$seq=~s/\./N/og;
 	    if ($ambiguous) {
 		$ambiguous_reads++;
 		if ($mismatches &&
@@ -420,12 +420,12 @@ sub get_parsing_subs {
 	    chomp($line);
 
 	    # Decide which line we are in
-	    if ($line=~s/^@//) {
+	    if ($line=~s/^@//o) {
 		%sequence=('id' => $line);
 		$line_type=1;
 		$total_reads++;
 		next;
-	    } elsif ($line=~/^\+/) {
+	    } elsif ($line=~/^\+/o) {
 		$line_type=2;
 		next;
 	    }
@@ -448,8 +448,8 @@ sub get_parsing_subs {
 	    my $seq1=substr($seq2,0,$read_length,'');
 	    my $qual1=substr($qual2,0,$read_length,'');
 
-	    my $ambiguous1=$seq1=~s/\./N/g;
-	    my $ambiguous2=$seq2=~s/\./N/g;
+	    my $ambiguous1=$seq1=~s/\./N/og;
+	    my $ambiguous2=$seq2=~s/\./N/og;
 	    my $keep1=1;
 	    my $keep2=1;
 	    if ($ambiguous1) {
@@ -473,15 +473,15 @@ sub get_parsing_subs {
 	    }
 
 	    if ($keep1) {
-		print $outfh1 '@'."$id|1\n";
+		print $outfh1 '@'."$id/1\n";
 		print $outfh1 "$seq1\n";
-		print $outfh1 '+'."$id|1\n";
+		print $outfh1 '+'."$id/1\n";
 		print $outfh1 "$qual1\n";
 	    }
 	    if ($keep2) {
-		print $outfh2 '@'."$id|2\n";
+		print $outfh2 '@'."$id/2\n";
 		print $outfh2 "$seq2\n";
-		print $outfh2 '+'."$id|2\n";
+		print $outfh2 '+'."$id/2\n";
 		print $outfh2 "$qual2\n";
 	    }
 	}
@@ -535,8 +535,8 @@ sub get_parsing_subs {
 	    # Now parse independently the two halves
 	    my $seq1=substr($seq2,0,$read_length,'');
 
-	    my $ambiguous1=$seq1=~s/\./N/g;
-	    my $ambiguous2=$seq2=~s/\./N/g;
+	    my $ambiguous1=$seq1=~s/\./N/og;
+	    my $ambiguous2=$seq2=~s/\./N/og;
 	    my $keep1=1;
 	    my $keep2=1;
 	    if ($ambiguous1) {
