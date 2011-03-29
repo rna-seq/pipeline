@@ -13,14 +13,14 @@ use Exporter;
 	    'determine_quality_type','get_mapper_routines','get_best_hits',
 	    'process_gem_hit','get_unmapped','check_split_input',
 	    'get_junction_coords','trim_ambiguous','trim_reads','split_map',
-	    'parse_gem_hit','get_split_coord_parser',
+	    'parse_gem_hit','get_split_coord_parser','combine_mapping_files',
 	    'coords2splitcoords','get_split_mapper_routines');
 push @EXPORT_OK,('line_reader','get_closest_hit');
 
 use strict;
 use warnings;
 use Bio::Range;
-use RNAseq_pipeline3 qw(get_fh print_gff);
+use RNAseq_pipeline3 qw(get_fh print_gff run_system_command);
 use RNAseq_pipeline_settings3 qw(read_config_file);
 
 
@@ -86,7 +86,7 @@ sub process_gem_hit {
     my $length=shift;
     my $matchsum=shift;
 
-    if ($match =~/^-$/) {
+    if ($match =~/^-$/o) {
 	return();
     }
 
@@ -114,7 +114,7 @@ sub process_gem_hit {
     } else {
 	$coord=$start;
     }
-    $coord=~/(\d+)([^\d].+)*/;
+    $coord=~/(\d+)([^\d].+)*/o;
     $start=$1;
     my $mismatch_string = $2;
     my $end=$start + $length - 1;
@@ -123,7 +123,7 @@ sub process_gem_hit {
 	my $string=$mismatch_string;
 	# Deal with insertions
 	$string=~s/<.\d+>/I/g;
-	$mismatch_no=$string=~s/[^\d]\d+/-/g;
+	$mismatch_no=$string=~s/[^\d]\d+/-/og;
     }
 
     unless ($qualities) {
@@ -337,7 +337,7 @@ sub get_unmapped {
     while (my $line=<$mappedfh>) {
 	my %line=%{parse_gem_line($line)};
 	$total++;
-	if ($line{'matches'}=~/^0(:0)*$/) {
+	if ($line{'matches'}=~/^0(:0)*$/o) {
 	    if ($line{'qual'}) {
 		print $unmappedfh '@',$line{'id'},"\n";
 		print $unmappedfh $line{'seq'},"\n";
@@ -376,7 +376,7 @@ sub trim_reads {
     my $unmappedfh=get_fh($unmapped,1);
     while (my $line=<$mappedfh>) {
 	chomp($line);
-	if ($line=~/^@/) {
+	if ($line=~/^@/o) {
 	    # Entry is fastq
 	    my $id=$line;
 	    my $seq=<$mappedfh>;
@@ -389,7 +389,7 @@ sub trim_reads {
 	    my $length=length($seq) - $trim;
 	    $seq=substr($seq,0,$length);
 	    # Remove trailing Ns
-	    $seq=~s/[N.]+$//;
+	    $seq=~s/[N.]+$//o;
 	    $length=length($seq);
 	    $qual=substr($qual,0,$length);
 
@@ -400,7 +400,7 @@ sub trim_reads {
 		print $unmappedfh $qual,"\n";
 		$left++;
 	    } 
-	} elsif ($line=~/^>/) {
+	} elsif ($line=~/^>/o) {
 	    # Entry is fasta
 	    my $id=$line;
 	    my $seq=<$mappedfh>;
@@ -409,7 +409,7 @@ sub trim_reads {
 	    my $length=length($seq) - $trim;
 	    $seq=substr($seq,0,$length);
 	    # Remove trailing Ns
-	    $seq=~s/[N.]+$//;
+	    $seq=~s/[N.]+$//o;
 	    $length=length($seq);
 
 	    if ($length > $threshold) {
@@ -444,18 +444,18 @@ sub trim_ambiguous {
     while (my $line=<$infh>) {
 	my %line=%{parse_gem_line($line)};
 
-	if ($line{'matches'}=~/^0(:0)*$/) {
+	if ($line{'matches'}=~/^0(:0)*$/o) {
 	    $total++;
 
 	    # Trim the 3' end
-	    $line{'seq'}=~s/[N.]+$//;
+	    $line{'seq'}=~s/[N.]+$//o;
 	    if ($line{'qual'}) {
 		my $length3=length($line{'seq'});
 		$line{'qual'}=substr($line{'qual'},0,$length3);
 	    }
 
 	    # Trim the 5' end
-	    $line{'seq'}=~s/^[N.]+//;
+	    $line{'seq'}=~s/^[N.]+//o;
 	    if ($line{'qual'}) {
 		my $length5=length($line{'seq'});
 		$line{'qual'}=substr($line{'qual'},-$length5);
@@ -508,11 +508,11 @@ sub determine_quality_type {
 
     while (my $line=<$infh>) {
 	chomp($line);
-	if ($line=~/^\@/) {
+	if ($line=~/^\@/o) {
 	    $line_type=1;
 	    next;
 	} elsif ($line_type == 1) {
-	    if ($line=~/^\+/) {
+	    if ($line=~/^\+/o) {
 		$line_type = 2;
 		next;
 	    } else {
@@ -1525,6 +1525,93 @@ sub check_single_start {
     }
 
     return(\@ranges);
+}
+
+# Combine a set of mapping files
+sub combine_mapping_files{
+    my $files=shift;
+    my $outfile=shift;
+    my $tmpdir=shift;
+    my $log_fh=shift;
+
+    my $final_file="$$.recursive.map";
+
+    print $log_fh "combining the mapped files...\n";
+    $ENV{'LC_ALL'}='C';
+    my $command='cat ';
+    $command.=join(' ',@{$files});
+    $command.=" |sort -T $tmpdir| uniq";
+    $command.=" > $final_file";
+    
+    run_system_command($command,
+		       $log_fh);
+
+    # Go through the mapped file and select for each of the reads the longest
+    # hit. There should only be one hit in any case, so if there are more we
+    # will complain
+
+    my $mappedfh=get_fh($final_file);
+    my $outfh=get_fh($outfile,1);
+
+    my %oldread;
+    my $oldline='';
+    while (my $line=<$mappedfh>) {
+	chomp($line);
+	my %line=%{parse_gem_line($line)};
+	my $id=$line{'id'};
+	if (%oldread &&
+	    ($oldread{'id'} eq $id)) {
+	    # Check if we have matches in the old one
+	    if ($oldread{'matches'}=~/^0(:0)*$/o) {
+		if ($line{'matches'}!~/^0(:0)*$/o) {
+		    $oldline=$line;
+		    %oldread=%line;
+		} elsif ($oldread{'length'} < $line{'length'}) {
+		    $oldline=$line;
+		    %oldread=%line;
+		} else {
+		    next;
+		}
+	    } elsif ($line{'matches'}!~/^0(:0)*$/o) {
+		warn "ERROR multimaps for:\n";
+		warn $line,"\n";
+		warn $oldline,"\n";
+	    }
+
+	} elsif ($oldline) {
+	    print $outfh $oldline,"\n";
+	    $oldline=$line;
+	    %oldread=%line;
+	    next;
+	} else {
+	    $oldline=$line;
+	    %oldread=%line;
+	    next;
+	}
+    }
+    # Print the last read
+    print $outfh $oldline,"\n";
+
+    close($mappedfh);
+    close($outfh);
+
+    # clean up
+    $command ='rm ';
+    $command.=join(' ',@{$files});
+    run_system_command($command,
+		       $log_fh);
+
+    if (-r $final_file) {
+	$command = "rm $final_file";
+	run_system_command($command,
+			   $log_fh);
+    }
+
+    if (-r "$tmpdir/*.unmapped.gem.split-map.*.$$.log") {
+	$command = "rm $tmpdir/*.unmapped.gem.split-map.*.$$.log";
+	run_system_command($command,
+			   $log_fh);
+    }
 }
 
 1;

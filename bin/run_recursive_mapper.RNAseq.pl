@@ -25,11 +25,12 @@ BEGIN {
 
 
 use Getopt::Long;
-use RNAseq_pipeline3 qw(get_fh get_log_fh);
+use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
 use RNAseq_pipeline_settings3 qw(read_config_file);
 use RNAseq_GEM3 ('check_index','determine_quality_type','get_mapper_routines',
 		 'check_split_input','trim_ambiguous','get_unmapped',
-		 'split_map','trim_reads','parse_gem_line');
+		 'split_map','trim_reads','parse_gem_line',
+		 'combine_mapping_files');
 
 my $infile;
 my $index;
@@ -136,7 +137,8 @@ my $left=trim_ambiguous($infile,
 			$log_fh);
 
 unless($left) {
-    die "No unmapped reads found\n";
+    warn "I can't find ambiguous reads??\n";
+    print $log_fh "WARNING:No unmapped reads found\n";
 }
 
 my @mapping_files;
@@ -145,7 +147,8 @@ my @mapping_files;
 print $log_fh "Mapping with increased number of mismatches\n";
 my $unmapped=$trimmed;
 
-while ($mismatches < $maxmismatch) {    
+while ($mismatches < $maxmismatch) { 
+    unless($left) {last;}
     $mismatches++;
     print $log_fh "Mapping for $mismatches mismatches...\n";
     my $command;
@@ -161,8 +164,8 @@ while ($mismatches < $maxmismatch) {
 		       $mismatches);
 
     $command="rm $unmapped";
-    print $log_fh "Executing:\t$command\n";
-    system($command);
+    run_system_command($command,
+		       $log_fh);
 
     # collect the mapped file
     push @mapping_files, $mapped.".map";
@@ -184,8 +187,8 @@ while ($mismatches < $maxmismatch) {
 	      $mismatches);
 
     $command="rm $unmapped";
-    print $log_fh "Executing:\t$command\n";
-    system($command);
+    run_system_command($command,
+		       $log_fh);
 
     # collect the mapped file
     push @mapping_files, $mapped.".split-map";
@@ -210,11 +213,14 @@ while (1) {
 			   $trimthreshold);
 
     $command="rm $unmapped";
-    print $log_fh "Executing:\t$command\n";
-    system($command);
+    run_system_command($command,
+		       $log_fh);
 
-    # map the unmapped reads
+    # map the unmapped reads and collect the mapped files
     my $mapped=$tempdir.'/'.$basename.".mapped.$mismatches.$round.$$";
+    push @mapping_files, $mapped.".map";
+    unless($left) {last;}
+
     $mapper{$mapper}->($index,
 		       $trimmed,
 		       $mapped,
@@ -223,12 +229,8 @@ while (1) {
 		       $tempdir,
 		       $mismatches);
     $command="rm $trimmed";
-    print $log_fh "Executing:\t$command\n";
-    system($command);
-
-    # collect the mapped file
-    push @mapping_files, $mapped.".map";
-
+    run_system_command($command,
+		       $log_fh);
 
     $unmapped=$tempdir.'/'.$basename.".unmapped.$mismatches.$round.$$";
     my $left1=get_unmapped($mapped.".map",
@@ -250,8 +252,8 @@ while (1) {
 	      $mismatches);
 
     $command="rm $unmapped";
-    print $log_fh "Executing:\t$command\n";
-    system($command);
+    run_system_command($command,
+		       $log_fh);
 
     # collect the mapped file
     push @mapping_files, $split.".split-map";
@@ -275,8 +277,8 @@ while (1) {
 
 # Remove the final file
 my $command="rm $unmapped";
-print $log_fh "Executing:\t$command\n";
-system($command);
+run_system_command($command,
+		   $log_fh);
 
 my $final_mapping=$outdir.'/'.$basename.".recursive.map";
 combine_mapping_files(\@mapping_files,
@@ -287,81 +289,3 @@ close($log_fh);
 
 exit;
 
-sub combine_mapping_files{
-    my $files=shift;
-    my $outfile=shift;
-    my $tmpdir=shift;
-    my $log_fh=shift;
-
-    my $final_file="$$.recursive.map";
-
-    print $log_fh "combining the mapped files...\n";
-    my $command='cat ';
-    $command.=join(' ',@{$files});
-    $command.=" |sort -d -T $tmpdir| uniq";
-    $command.=" > $final_file";
-    
-    print $log_fh "Executing:\t$command\n";
-    system($command);
-
-    # Go through the mapped file and select for each of the reads the longest
-    # hit. There should only be one hit in any case, so if there are more we
-    # will complain
-
-    my $mappedfh=get_fh($final_file);
-    my $outfh=get_fh($outfile,1);
-
-    my %oldread;
-    my $oldline='';
-    while (my $line=<$mappedfh>) {
-	chomp($line);
-	my %line=%{parse_gem_line($line)};
-	my $id=$line{'id'};
-	if (%oldread &&
-	    ($oldread{'id'} eq $id)) {
-	    # Check if we have matches in the old one
-	    if ($oldread{'matches'}=~/^0(:0)*$/) {
-		if ($line{'matches'}!~/^0(:0)*$/) {
-		    $oldline=$line;
-		    %oldread=%line;
-		} elsif ($oldread{'length'} < $line{'length'}) {
-		    $oldline=$line;
-		    %oldread=%line;
-		} else {
-		    next;
-		}
-	    } elsif ($line{'matches'}!~/^0(:0)*$/) {
-		warn "ERROR multimaps for:\n";
-		warn $line,"\n";
-		warn $oldline,"\n";
-	    }
-
-	} elsif ($oldline) {
-	    print $outfh $oldline,"\n";
-	    $oldline=$line;
-	    %oldread=%line;
-	    next;
-	} else {
-	    $oldline=$line;
-	    %oldread=%line;
-	    next;
-	}
-    }
-    # Print the last read
-    print $outfh $oldline,"\n";
-
-    close($mappedfh);
-    close($outfh);
-
-    # clean up
-    $command ='rm ';
-    $command.=join(' ',@{$files});
-
-    print $log_fh "Executing:\t$command\n";
-    system($command);
-
-    $command = "rm $final_file";
-    print $log_fh "Executing:\t$command\n";
-    system($command);
-
-}

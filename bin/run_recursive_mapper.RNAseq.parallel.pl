@@ -29,7 +29,8 @@ use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
 use RNAseq_pipeline_settings3 qw(read_config_file);
 use RNAseq_GEM3 ('check_index','determine_quality_type','get_mapper_routines',
 		 'check_split_input','trim_ambiguous','get_unmapped',
-		 'split_map','trim_reads','parse_gem_line');
+		 'split_map','trim_reads','parse_gem_line',
+		 'combine_mapping_files');
 
 my $infile;
 my $index;
@@ -135,7 +136,7 @@ my $left=trim_ambiguous($infile,
 			$log_fh);
 
 unless($left) {
-    warn "I can't find ambiguous reads??\n"
+    warn "I can't find ambiguous reads??\n";
     print $log_fh "WARNING:No unmapped reads found\n";
 }
 
@@ -145,7 +146,8 @@ my @mapping_files;
 print $log_fh "Mapping with increased number of mismatches\n";
 my $unmapped=$trimmed;
 
-while ($mismatches < $maxmismatch) {    
+while ($mismatches < $maxmismatch) {
+    unless($left) {last;}
     $mismatches++;
     print $log_fh "Mapping for $mismatches mismatches...\n";
     my $command;
@@ -215,8 +217,10 @@ while (1) {
     $command="rm $unmapped";
     run_system_command($command);
 
-    # map the unmapped reads
+    # map the unmapped reads and collect the mapped files
     my $mapped=$tempdir.'/'.$basename.".mapped.$mismatches.$round.$$";
+    push @mapping_files, $mapped.".map";
+    unless($left) {last;}
     $mapper{$mapper}->($index,
 		       $trimmed,
 		       $mapped,
@@ -225,11 +229,8 @@ while (1) {
 		       $tempdir,
 		       $mismatches);
     $command="rm $trimmed";
-    run_system_command($command);
-
-    # collect the mapped file
-    push @mapping_files, $mapped.".map";
-
+    run_system_command($command,
+		       $log_fh);
 
     $unmapped=$tempdir.'/'.$basename.".unmapped.$mismatches.$round.$$";
     my $left1=get_unmapped($mapped.".map",
@@ -286,7 +287,7 @@ close($log_fh);
 
 exit;
 
-sub combine_mapping_files{
+sub combine_mapping_files_obsolete {
     my $files=shift;
     my $outfile=shift;
     my $tmpdir=shift;
@@ -319,8 +320,8 @@ sub combine_mapping_files{
 	if (%oldread &&
 	    ($oldread{'id'} eq $id)) {
 	    # Check if we have matches in the old one
-	    if ($oldread{'matches'}=~/^0(:0)*$/) {
-		if ($line{'matches'}!~/^0(:0)*$/) {
+	    if ($oldread{'matches'}=~/^0(:0)*$/o) {
+		if ($line{'matches'}!~/^0(:0)*$/o) {
 		    $oldline=$line;
 		    %oldread=%line;
 		} elsif ($oldread{'length'} < $line{'length'}) {
@@ -329,7 +330,7 @@ sub combine_mapping_files{
 		} else {
 		    next;
 		}
-	    } elsif ($line{'matches'}!~/^0(:0)*$/) {
+	    } elsif ($line{'matches'}!~/^0(:0)*$/o) {
 		warn "ERROR multimaps for:\n";
 		warn $line,"\n";
 		warn $oldline,"\n";
@@ -355,8 +356,14 @@ sub combine_mapping_files{
     # clean up
     $command ='rm ';
     $command.=join(' ',@{$files});
-    run_system_command($command);
+    run_system_command($command,
+		       $log_fh);
 
     $command = "rm $final_file";
-    run_system_command($command);
+    run_system_command($command,
+		       $log_fh);
+
+    $command = "rm $tmpdir/*.unmapped.gem.split-map.*.$$.log";
+    run_system_command($command,
+		       $log_fh);
 }
