@@ -1786,6 +1786,8 @@ sub get_exp_info_sub {
 	die "No fields requested from $table\n";
     }
 
+    # TO DO:Check for the existence of the table
+
     my $fields=@fields;
 
     my %defaults=('experiment_id' => '-',
@@ -1855,6 +1857,7 @@ sub set_exp_info_sub {
     my  $present=check_field_existence($dbh,
 				       $table,
 				       $field);
+
     # Add the column of not present already
     unless ($present) {
 	my $query="ALTER TABLE $table ";
