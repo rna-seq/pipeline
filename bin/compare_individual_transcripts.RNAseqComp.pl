@@ -38,13 +38,15 @@ my $breakdown;
 my $transfile;
 my $tabsuffix='transcript_expression_levels_pooled';
 my @trans_needed;
+my $all=0;
 
 # Get command line options
 GetOptions('nolabels|n' => \$nolabels,
 	   'debug|d' => \$debug,
 	   'breakdown|b' => \$breakdown,
 	   'transcriptfile|f=s' => \$transfile,
-	   'trans|t=s' => \@trans_needed);
+	   'trans|t=s' => \@trans_needed,
+	   'all|a' => \$all);
 
 if ($breakdown) {
     $tabsuffix='transcript_expression_levels';
@@ -98,7 +100,7 @@ my %tables=%{get_tables($dbhcommon,
 			$project,
 			$tabsuffix,
 			'',
-			1)};
+			$all)};
 
 # Remove any tables that do not exist
 check_tables($dbh,
