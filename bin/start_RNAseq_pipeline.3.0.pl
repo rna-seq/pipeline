@@ -324,7 +324,10 @@ if (keys %{$guessmaster}) {
 		 \%options);
 
     # This is specific to the CRG
-    if ($localdir=~/^\/users/) {
+    if (${$options{'cluster'}}) {
+       # Skip the custer setting if it is already set
+	print $log_fh "Cluster set ot '-'. Running locally\n";
+    } elsif($localdir=~/^\/users/) {
 	warn "CRG specific parameter being used, maybe I'm not doing what you want\n";
 	${$options{'cluster'}}='mem_6';
     }
