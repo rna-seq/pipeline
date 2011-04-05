@@ -17,6 +17,7 @@ BEGIN {
 # number of nucleotides
 
 use Bio::SeqIO;
+use Getopt::Long;
 use RNAseq_pipeline3 qw(get_fh);
 use RNAseq_pipeline_settings3 ('read_config_file');
 
@@ -26,6 +27,8 @@ my $infile;
 my $qualities=$options{'QUALITIES'};
 my $length=$options{'READLENGTH'};
 my $format='fastq';
+
+GetOptions('length|l=i' => \$length);
 
 if ($qualities eq 'ignore') {
     $format='fasta';
