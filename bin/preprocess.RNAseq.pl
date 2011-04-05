@@ -60,7 +60,7 @@ if ($localdir &&
 }
 
 # Process the input
-my ($scriptpath)=split(/\s+/,$script)
+my ($scriptpath)=split(/\s+/,$script);
 unless ($script &&
 	-e $scriptpath) {
     die "Could not find input script at $scriptpath\n";
