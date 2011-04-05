@@ -119,12 +119,13 @@ my $exclusionfile;
 my $cellline;
 my $compartment;
 my $proj_description;
-my $exp_description;
+my $run_description;
 my $rnafraction;
 my $bioreplicate;
 
 # Preprocessing
 my $preprocess;
+my $preprocess_trim_length=0;
 
 # Get the command line for the log file
 my $program_name=$0;
@@ -179,11 +180,12 @@ my %options=('species' => \$species,
 	     'qualities' => \$qualities,
 	     'cellline' => \$cellline,
 	     'compartment' => \$compartment,
-	     'expdesc' => \$exp_description,
+	     'run_description' => \$run_description,
 	     'projdesc' => \$proj_description,
 	     'rnafrac' => \$rnafraction,
 	     'bioreplicate' => \$bioreplicate,
-	     'preprocess' => \$preprocess
+	     'preprocess' => \$preprocess,
+	     'preprocess_trim_length' => \$preprocess_trim_length
     );
 my $success=GetOptions(\%options,
 		       'species|s=s',
@@ -221,11 +223,12 @@ my $success=GetOptions(\%options,
 		       'qualities=s',
 		       'cellline=s',
 		       'compartment=s',
-		       'expdesc=s',
+		       'run_description=s',
 		       'projdesc=s',
 		       'rnafrac=s',
 		       'bioreplicate=s',
-		       'preprocess=s'
+		       'preprocess=s',
+		       'preprocess_trim_length=s'
     );
 
 # Print help and exit if required
@@ -295,7 +298,7 @@ if ($clean) {
 }
 
 # Check the option actual values to see if we are missing any important
-# information for the executeion of the pipeline
+# information for the execution of the pipeline
 my ($missing,$guessmaster)=check_option_values(\%options);
 pod2usage("WARNING: $missing information is necessary but missing") if $missing;
 
@@ -503,11 +506,17 @@ __END__
   Optional
     -cellline:      Sets the cell line on which the experiment was performed
     -compartment:   Sets the compartment on which the experiment was performed
-    -expdesc:       Experiment description
+    -run_description: Experiment description
     -projdesc:      Project description
     -rnafrac:       RNA fraction on whihc the experiment was performed
     -bioreplicate:  Bioreplicate (if the experiment is a bioreplicate)
-    -preprocess:    Preprocessing script to be run on each of the read files before anything else
+    -preprocess:    Preprocessing script to be run on each of the read files
+                    before anything else
+    -preprocess_trim_length: Length by which the reads are trimmed. Must be an
+                             integer N or in the form <=N where N is the maximum
+                             number of nucleotides that could be trimmed (as
+                             when an addaptor is trimmed and the whole adaptor
+                             is found).
         
 =head1 OPTIONS
     

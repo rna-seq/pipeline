@@ -34,18 +34,30 @@ my $all=0;
 my $debug=1;
 my $breakdown;
 my $tabsuffix='gene_RPKM_pooled';
+my $genefile;
 my @genes_needed;
 
 # Get command line options
 GetOptions('nolabels|n' => \$nolabels,
 	   'debug|d' => \$debug,
 	   'breakdown|b' => \$breakdown,
+	   'genefile|f=s' => \$genefile,
 	   'gene|g=s' => \@genes_needed,
 	   'all' => \$all); # get info for all experiments regardless of the
                             # project
 
 if ($breakdown) {
     $tabsuffix='gene_RPKM';
+}
+
+if ($genefile) {
+    my $genefh=get_fh($genefile);
+    while (my $line=<$genefh>) {
+	chomp($line);
+	my $id=$line;
+	push @genes_needed, $id;
+    }
+    close($genefh);
 }
 
 unless (@genes_needed >= 2) {
