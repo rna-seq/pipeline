@@ -80,7 +80,13 @@ sub check_option_characters {
 	    # Qualities can only be solexa, phred or ignore
 	    unless ($value=~/^(solexa|phred|ignore)$/o) {
 		my $char=$1;
-		$problems.="Value for qualities is set to $value, but the onnly valid options are 'solexa', 'phred' or 'ignore'\n";
+		$problems.="Value for qualities is set to $value, but the only valid options are 'solexa', 'phred' or 'ignore'\n";
+	    }
+	    next;
+	} elsif ($option eq 'preprocess_trim_length') {
+	    unless ($value=~/^(<?=?(\d)+)$/o) {
+		my $char=$1;
+		$problems.="Value for preprocess_trim_length is set to $value, which is not a valid option\n";
 	    }
 	    next;
 	} elsif ($value=~/([^\w_\/\. -])/o) {
@@ -128,7 +134,8 @@ sub defaults {
 		  'localdir' => undef,
 		  'cluster' => '-', # Should be defined to the local cluster
 		  'qualities' => undef,
-		  'preprocess' => 'zcat'
+		  'preprocess' => 'zcat',
+		  'preprocess_trim_length' => 0
 	);
     my $check_default=sub {
 	my $variable=shift;
@@ -2042,8 +2049,18 @@ sub add_experiment {
     my $annotation=${$opts->{'annotation'}};
     my $genome=${$opts->{'genome'}};
     my $template=${$opts->{'template'}};
-    my $read_length=${$opts->{'readlength'}};
+    my $read_length=${$opts->{'readlength'}}; 
+    my $preprocess_trim_length=${$opts->{'preprocess_trim_length'}};
     my $mismatches=${$opts->{'mismatches'}};
+
+    # If the preprocess trim length is constant set the new read length
+    if ($preprocess_trim_length=~/^=?(\d)+$/o) {
+	my $trim=$preprocess_trim_length;
+	$trim=~s/^=//;
+	print STDERR "Adjusting read length by $trim\n";
+	print STDERR "$preprocess_trim_length\n";
+	$read_length -= $trim;
+    }
 
     my $log_fh=shift;
 
@@ -2178,14 +2195,19 @@ sub add_exp_info {
     my $host=${$opts->{'host'}};
     my $proj_id=${$opts->{'project'}};
     my $exp_id=${$opts->{'experiment'}};
+    my $preprocess_trim_length=${$opts->{'preprocess_trim_length'}};
     
     my %vals;
     $vals{'CellType'}=${$opts->{'cellline'}};
     $vals{'Compartment'}=${$opts->{'compartment'}};
-    $vals{'exp_description'}=${$opts->{'expdesc'}};
+    $vals{'exp_description'}=${$opts->{'run_description'}};
     $vals{'RNAType'}=${$opts->{'rnafrac'}};
     $vals{'Bioreplicate'}=${$opts->{'bioreplicate'}};
-   
+
+    # If the trimm length is not constant add the info to the description
+    if ($preprocess_trim_length) {
+	$vals{'exp_description'}.=" Original reads were trimmed by $preprocess_trim_length nucleotides";
+    }
     
     my $dbh=MySQL_DB_Connect($database,
 			     $host);
