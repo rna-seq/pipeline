@@ -62,7 +62,7 @@ sub check_option_characters {
     print $log_fh "Checking options for unadvisable characters...\n";
     foreach my $option (keys %{$options}) {
 	my $value=${$options->{$option}} || '';
-	# Experiment id should only contain alphanumeric and undeerscore
+	# Experiment id should only contain alphanumeric and underscore
 	if ($option eq 'experiment') {
 	    if ($value=~/([^\w_])/o) {
 		my $char=$1;
