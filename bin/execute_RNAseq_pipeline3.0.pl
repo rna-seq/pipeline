@@ -34,7 +34,7 @@ use DBI;
 use Cwd;
 use RNAseq_pipeline3 qw(MySQL_DB_Connect);
 
-# Set some general variables that will be used through the script:
+# Set some general variables that will be used through the script:
 
 # Set a signal handler to kill any process started by the script if it
 # receives the kill signal.
@@ -44,8 +44,8 @@ use RNAseq_pipeline3 qw(MySQL_DB_Connect);
 my ($kill_all_sub,$add_proc_sub)=\&set_process_management;
 $SIG{'INT'}=\&{$kill_all_sub};
 
-# Set the global options
-# Read any command line arguments
+# Set the global options
+# Read any command line arguments
 my $help;				#  -h   print help and exit
 my $pipfile = 'RNAseq_pipeline.txt';	#  -f   control file name
 my $nomake;				#  -n   print commands, don't execute
@@ -53,10 +53,11 @@ my $silent;				#  -s   suppress log messages
 my $debug;				#  -d   print trace (debug mode)
 my $force;				#  -r   restart (force execution of
                                         #       stage)
+### TO DO
 my $startpoint;                         #  -b   base Set the base rule from
                                         #       which to start
 
-GetOptions(
+my $success=GetOptions(
     "file:s"  => \$pipfile,
     'n'       => \$nomake,
     "help"    => \$help,
@@ -66,7 +67,7 @@ GetOptions(
     'startpoint|b=s' => \$startpoint
     );
 # Check for option errors
-exit if $Getopt::Long::error;
+pod2usage(1) unless $success;
 
 # Set some variables to override each other
 $silent = 0 if $debug;		# -debug overrides -silent
@@ -612,12 +613,17 @@ sample [options]
     
     Prints the manual page and exits.
 
+=item B<-n>
+    
+    Print the commands that would be executed to the command line without
+    actually doing anything.
+
 =item B<-restart|r>
     
     Restart at the specific rule. As it is restarting it will force the
     execution of the rule regardless of the presence of the prerequisites. As
     it does not chech for these prerequisites make sure they are there, if not
-    the rule will fail
+    the rule will fail.
     
 =back
     
