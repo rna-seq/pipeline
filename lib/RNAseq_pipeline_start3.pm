@@ -84,9 +84,11 @@ sub check_option_characters {
 	    }
 	    next;
 	} elsif ($option eq 'preprocess_trim_length') {
-	    unless ($value=~/^(<?=?(\d)+)$/o) {
-		my $char=$1;
-		$problems.="Value for preprocess_trim_length is set to $value, which is not a valid option\n";
+	    if ($value) {
+		unless ($value=~/^(<?=?(\d)+)$/o) {
+		    my $char=$1;
+		    $problems.="Value for preprocess_trim_length is set to $value, which is not a valid option\n";
+		}
 	    }
 	    next;
 	} elsif ($value=~/([^\w_\/\. -])/o) {

@@ -125,7 +125,7 @@ my $bioreplicate;
 
 # Preprocessing
 my $preprocess;
-my $preprocess_trim_length=0;
+my $preprocess_trim_length;
 
 # Get the command line for the log file
 my $program_name=$0;
