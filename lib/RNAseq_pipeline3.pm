@@ -518,9 +518,9 @@ sub get_annotation_from_gtf {
 	# We will not skip the random ones, as there are some species with
 	# annotated and expressed genes in these chromosomes, particularly
 	# those where the genome assembly is not very good
-#	if ($chr=~/random/io) {
-#	    next;
-#	}
+	if ($chr=~/random/io) {
+	    next;
+	}
 	if ($chr=~/hap/o) {
 	    next;
 	} elsif ($chr=~/^chrU/o) {
