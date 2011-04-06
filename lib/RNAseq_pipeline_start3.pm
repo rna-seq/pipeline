@@ -1205,7 +1205,8 @@ sub get_tables_hash {
 		'_junction_maps_class' => '',
 		'_completion_status' => '',
 		'_summaries' => '',
-		'_register_results' => ''
+		'_register_results' => '',
+		'_gene_RPKM_pooled_flux' => ''
 		);
 
     # Add the species prefix to the table
@@ -1417,6 +1418,14 @@ CREATE TABLE ${prefix}_gene_readcount_pooled (
     );",
 		'_gene_RPKM_pooled' => "DROP TABLE IF EXISTS ${prefix}_gene_RPKM_pooled;
 CREATE TABLE ${prefix}_gene_RPKM_pooled (
+    gene_id varchar(100) not null,
+    RPKM double unsigned not null,
+    sample varchar(50) not null,
+    INDEX idx_gene (gene_id),
+    INDEX idx_sample (sample)
+    );",
+		'_gene_RPKM_pooled_flux' => "DROP TABLE IF EXISTS ${prefix}_gene_RPKM_pooled_flux;
+CREATE TABLE ${prefix}_gene_RPKM_pooled_flux (
     gene_id varchar(100) not null,
     RPKM double unsigned not null,
     sample varchar(50) not null,

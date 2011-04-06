@@ -525,6 +525,12 @@ _detected_transcripts: _transcript_expression_levels_pooled
 	mv build_detected_transcripts.RNAseq.log $LOGS
 	all_no_log_table
 
+#######################
+# Calculate gene RPKM from the flux capacitor results
+_gene_RPKM_pooled_flux: _transcript_expression_levels_pooled
+	get_gene_rpkm_pooled_flux.RNAseq.pl > _gene_RPKM_pooled_flux.txt
+	all_no_log_table
+
 # #####################
 # Get fusion transcripts
 _fusion_transcripts: _transcriptome_mapping _gene_RPKM
