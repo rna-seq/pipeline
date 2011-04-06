@@ -515,9 +515,13 @@ sub get_annotation_from_gtf {
 	}
 
 	# Skip random and haplotype chromosomes
-	if ($chr=~/random/io) {
-	    next;
-	} elsif ($chr=~/hap/o) {
+	# We will not skip the random ones, as there are some species with
+	# annotated and expressed genes in these chromosomes, particularly
+	# those where the genome assembly is not very good
+#	if ($chr=~/random/io) {
+#	    next;
+#	}
+	if ($chr=~/hap/o) {
 	    next;
 	} elsif ($chr=~/^chrU/o) {
 	    next;
