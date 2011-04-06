@@ -28,11 +28,12 @@ BEGIN {
     unshift @INC, "$libdir";
 }
 
+use IO::Handle;
 use Getopt::Long;
 use Pod::Usage;
 use DBI;
 use Cwd;
-use RNAseq_pipeline3 qw(MySQL_DB_Connect);
+use RNAseq_pipeline3 qw(MySQL_DB_Connect get_log_fh);
 
 # Set some general variables that will be used through the script:
 
@@ -56,6 +57,11 @@ my $force;				#  -r   restart (force execution of
 ### TO DO
 my $startpoint;                         #  -b   base Set the base rule from
                                         #       which to start
+
+my $log_fh=get_log_fh('execute_pipeline.err');
+unless($debug) {
+    STDERR->fdopen( $log_fh,  'w' ) or die $!;
+}
 
 my $success=GetOptions(
     "file:s"  => \$pipfile,
@@ -159,8 +165,10 @@ foreach my $rule (@targets) {
     execute_rule($rule,0);				# 0 means top level call
 }
 
-# Print an ending message
+# Print an ending message
 print "\nRNAseq analysis workflow completed ", `date`;
+
+close($log_fh);
 
 exit;
 
