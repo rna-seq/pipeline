@@ -73,10 +73,16 @@ while (my $dir=<$dirfh>) {
 close($dirfh);
 my $dir_number=@dirs;
 
-# Count the number of sequences to blast
+# Count the number of jobs
 print STDERR $dir_number,"\n";
 
-# Determine the number of sequences per blast job
+# If we have more threads than jobs reduce the threads to the job number
+if ($threads > $dir_number) {
+    print STDERR "Reducing threads to $dir_number\n";
+    $threads=$dir_number;
+}
+
+# Determine the number of sequences per job
 my $dirs_per_thread=ceil($dir_number/$threads);
 print STDERR $dirs_per_thread, "\tJobs will be sent to each thread\n";
 
