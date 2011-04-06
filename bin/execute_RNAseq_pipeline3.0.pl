@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 #    execute_RNAseq_pipeline.pl
-#    Copyright (C) 2009-2011  DGK (Based on pip by John Conery)
+#    Copyright (C) 2009-2011  DGK (Based on pip by John Conery rewritten by DGK)
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by

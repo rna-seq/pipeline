@@ -240,10 +240,30 @@ sub get_overlap {
 	} else {
 	    warn "unknown strand $line{'strand'}\n";
 	}
-	my $chr=$line{'chr'};
-	if ($chr=~/chrMT/) {
-	    $chr=~s/chrMT/chrM/;
+
+	# Skip the same stuff we are skipping for the parsing of the annotation
+	if ($chr=~/random/io) {
+	    next;
 	}
+	if ($chr=~/hap/o) {
+	    next;
+	} elsif ($chr=~/^chrU/o) {
+	    next;
+	} elsif ($chr=~/^Un\./o) {
+	    # This is for EnsEMBL cow
+	    next;
+	} elsif ($chr=~/^(chr)?HSCHR/o) {
+	    next;
+	} elsif ($chr=~/^AAFC03011182/o) {
+	    # EnsEMBL cow
+	    next;
+	}
+
+
+	my $chr=$line{'chr'};
+#	if ($chr=~/chrMT/) {
+#	    $chr=~s/chrMT/chrM/;
+#	}
 	my $exon_id=join('_',
 			 $chr,
 			 $line{'start'},
