@@ -369,8 +369,6 @@ _proj_coverage: _extract_annotation _unique_maps_genome _junction_classification
 	get_proj_overlaps_cluster.RNAseq.pl
 	cd $GENOMEDIR; for file in `ls *proj.overlap.gz | sed 's/\/.*\///' | sed 's/.gz$//'`; do get_proj_total_inclusion.RNAseq.pl $file.gz > $file.total; done
 	plot_proj_detection.RNAseq.pl; mv $PREFIX.Proj.*.ps $PREFIX.Proj.*.jpeg $GRAPHS
-#	plot_gene_detection.RNAseq.pl; mv $PREFIX.Genes.*.ps $PREFIX.Genes.*.jpeg $GRAPHS
-#	plot_gene_saturation.RNAseq.pl; mv Gene.saturation.ps Gene.saturation.jpeg $GRAPHS
 	cd $GENOMEDIR; wc -l *.proj.overlap.total |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _proj_coverage.txt; mv _proj_coverage.txt $PROJECT
 	all_no_log_table
 
@@ -438,20 +436,7 @@ _gene_RPKM_dist: _gene_RPKM _detected_genes
 
 ### TO DO 
 # Add the mappable info
-#_exon_mappable_RPKM: _exon_coverage _junction_coverage
-#	get_exon_rpkm.RNAseq.pl
-#	zcat $EXONDIR/*.exon.rpkm.txt.gz > _exon_RPKM.txt
-#	all_no_log_table
-
-#_gene_projection_RPKM: _proj_coverage _junction_coverage
-#	get_gene_rpkm.RNAseq.pl
-#	zcat $EXONDIR/*.gene.rpkm.txt.gz > _gene_RPKM.txt
-#	all_no_log_table
-
-#_gene_mappable_RPKM: _proj_coverage _junction_coverage
-#	get_gene_rpmkm.RNAseq.pl
-#	zcat $GENOMEDIR/*.gene.rpmkm.txt.gz > _gene_mappable_RPKM.txt
-#	all_no_log_table
+# This is no longer necessary with the RPKMs calculaed by the flux
 
 ### TO DO
 # This should be calculated from the merged mappings (the SAM files)
@@ -529,6 +514,10 @@ _detected_transcripts: _transcript_expression_levels_pooled
 # Calculate gene RPKM from the flux capacitor results
 _gene_RPKM_pooled_flux: _transcript_expression_levels_pooled
 	get_gene_rpkm_pooled_flux.RNAseq.pl > _gene_RPKM_pooled_flux.txt
+	all_no_log_table
+
+_exon_RPKM_pooled_flux: _transcript_expression_levels_pooled
+	get_exon_rpkm_pooled_flux.RNAseq.pl > _exon_RPKM_pooled_flux.txt
 	all_no_log_table
 
 # #####################
