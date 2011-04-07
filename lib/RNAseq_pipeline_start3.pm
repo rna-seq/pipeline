@@ -1177,7 +1177,6 @@ sub get_tables_hash {
 		'_gene_readcount_pooled' => '',
 		'_gene_RPKM' => '',
 		'_gene_RPKM_pooled' => '',
-		'_gene_mappable_RPKM' => '',
 		'_gene_RPKM_dist' => '',
 		'_EJEI' => '',
 		'_store_reads' => '',
@@ -1391,14 +1390,6 @@ CREATE TABLE ${prefix}_store_reads (
     compressed varchar(100) not null,
     md5comp char(32) not null,
     md5global char(32) not null
-    );",
-		'_gene_mappable_RPKM' => "DROP TABLE IF EXISTS ${prefix}_gene_mappable_RPKM;
-CREATE TABLE ${prefix}_gene_mappable_RPKM (
-    gene_id varchar(100) not null,
-    mRPKM double unsigned not null,
-    LaneName varchar(50) not null,
-    INDEX idx_gene (gene_id),
-    INDEX idx_lane (LaneName)
     );",
 		'_gene_RPKM' => "DROP TABLE IF EXISTS ${prefix}_gene_RPKM;
 CREATE TABLE ${prefix}_gene_RPKM (
