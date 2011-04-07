@@ -33,8 +33,6 @@ $table=$prefix.'_transcript_expression_levels_pooled';
 # Connect to the database
 my $dbh=get_dbh();
 
-# Get some usefull subs
-
 # Get the gene expression levels;
 my %gene_exp=%{get_gene_expression($dbh,
 				   $table)};
