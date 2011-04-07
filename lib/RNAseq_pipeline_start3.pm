@@ -1958,8 +1958,12 @@ sub print_pipeline_file {
 	    } elsif ($line=~/(^|\s+)(_\w+)/) {
 		if (exists $tables->{$2}) {
 		    $line=~s/(^|\s+)(_\w+)/$1$tables->{$2}/g;
-		} else {
+		} elsif ($vars->{'PREFIX'}) {
 		    warn "WARNING: $2 Does not exist as a table\n";
+		    my $prefix=$vars->{'PREFIX'};
+		    $line=~s/(^|\s+)(_\w+)/$1$prefix$2/g;
+		} else {
+		    die "Something whent very wrong...\n";
 		}
 	    }
 	}
