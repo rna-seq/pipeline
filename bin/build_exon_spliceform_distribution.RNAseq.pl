@@ -242,9 +242,9 @@ sub get_overlap {
 	}
 
 	# Skip the same stuff we are skipping for the parsing of the annotation
-	if ($chr=~/random/io) {
-	    next;
-	}
+#	if ($chr=~/random/io) {
+#	    next;
+#	}
 	if ($chr=~/hap/o) {
 	    next;
 	} elsif ($chr=~/^chrU/o) {
