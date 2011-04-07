@@ -242,6 +242,7 @@ sub get_overlap {
 	}
 
 	# Skip the same stuff we are skipping for the parsing of the annotation
+	my $chr=$line{'chr'};
 #	if ($chr=~/random/io) {
 #	    next;
 #	}
@@ -260,7 +261,7 @@ sub get_overlap {
 	}
 
 
-	my $chr=$line{'chr'};
+
 #	if ($chr=~/chrMT/) {
 #	    $chr=~s/chrMT/chrM/;
 #	}
