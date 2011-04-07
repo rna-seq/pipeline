@@ -100,10 +100,17 @@ sub build_transcriptome {
 		my $exon_id=$exon->display_name();
 
 		my $exon_seq=$exons->{$exon_id};
-		push @exon_seqs,$exon_seq;
+		if ($exon_seq) {
+		    push @exon_seqs,$exon_seq;
+		}
 	    }
-	    $transcripts{$transcript_id}=join('',
-					      @exon_seqs);
+	    if (@exon_seqs) {
+		$transcripts{$transcript_id}=join('',
+						  @exon_seqs);
+	    } else {
+		warn "No sequence found from $transcript_id\n";
+		next;
+	    }
 	}
     }
     my $count=keys %transcripts;

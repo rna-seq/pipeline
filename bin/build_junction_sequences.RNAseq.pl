@@ -106,7 +106,8 @@ sub get_junction_sequences {
 	unless ($seq1 && $seq2) {
 	    print STDERR "exon1: $seq1\n";
 	    print STDERR "exon2: $seq2\n";
-	    die "Exon sequence missing $exon1_id $exon2_id\n";
+	    warn "Exon sequence missing $exon1_id $exon2_id. Skipping...\n";
+	    next;
 	}
 
 	# Depending on the strand we need to put one or the other exon first
