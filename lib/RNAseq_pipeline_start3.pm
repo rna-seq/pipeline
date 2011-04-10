@@ -1716,7 +1716,11 @@ CREATE TABLE ${prefix}_qualitiespos (
 CREATE TABLE ${prefix}_ambiguous (
        LaneName varchar(100) NOT NULL,
        position smallint UNSIGNED NOT NULL,
-       ambiguous int UNSIGNED NOT NULL
+       ambiguous int UNSIGNED NOT NULL,
+       A int UNSIGNED NOT NULL,
+       C int UNSIGNED NOT NULL,
+       G int UNSIGNED NOT NULL,
+       T int UNSIGNED NOT NULL
 );",
 		'_read_stats' => "DROP TABLE IF EXISTS ${prefix}_read_stats;
 CREATE TABLE ${prefix}_read_stats (
@@ -1872,11 +1876,6 @@ sub check_dir {
 	print $log_fh "Skipping\n";
     } elsif ($dir=~/^bin/) {
 	warn "THIS SHOULD NOT HAPPEN\n";
-	my $targetdir='/users/rg/dgonzalez/Projects/RNAseq_analysis_pipe3.0/bin';
-	print $log_fh "Linking dir $dir to $targetdir\n";
-	my $command="ln -s $targetdir $dir";
-	run_system_command($command,
-			   $log_fh);
     } else {
 	mkdir($dir) &&
 	    print $log_fh "Creating dir $dir\n";

@@ -48,7 +48,6 @@ $prefix=$options{'PREFIX'};
 my %files=%{read_file_list()};
 
 my %stats;
-my %ambiguous_pos;
 my %quality_stats;
 my %ntpos; # This will contain the number of each of the different nucleotides
            # at a given position
@@ -81,7 +80,6 @@ foreach my $infile (keys %files) {
 	($good,$bad,$total,$length,$unique)=process_fasta_file($infile,
 							       \%stats,
 							       \%quality_stats,
-							       \%ambiguous_pos,
 							       $tmpdir,
 							       $log_fh,
 							       $lanename);
@@ -89,7 +87,6 @@ foreach my $infile (keys %files) {
 	($good,$bad,$total,$length,$unique)=process_fastq_file($infile,
 							       \%stats,
 							       \%quality_stats,
-							       \%ambiguous_pos,
 							       $tmpdir,
 							       $log_fh,
 							       $lanename,
@@ -107,9 +104,17 @@ foreach my $infile (keys %files) {
 
 # Print out Nucleotide distribution
 print $log_fh 'Building the nt distribution data...';
-my $ntposfh=get_fh("${prefix}_ntpos.txt",1);
+my $ntposfh=get_fh("${prefix}_ambiguous.txt",1);
+my $max=0;
 foreach my $lanename (sort keys %ntpos) {
     foreach my $pos (sort {$a <=> $b} keys %{$ntpos{$lanename}}) {
+	if ($ntpos{$lanename}{$pos}[0] &&
+	    $ntpos{$lanename}{$pos}[0] > $max) {
+	    $max = $ntpos{$lanename}{$pos}[0];
+	} else {
+	    $ntpos{$lanename}{$pos}->[0]=0;
+	}
+
 	print $ntposfh join("\t",
 			    $lanename,
 			    $pos,
@@ -133,27 +138,28 @@ foreach my $lanename (sort keys %quality_stats) {
 close ($qualityposfh);
 print $log_fh "done\n";
 
+
 # Print out ambiguous pos data
-print $log_fh 'Building the ambiguous pos data...';
-my $ambposfh=get_fh("${prefix}_ambiguous.txt",1);
-my $max=0;
-foreach my $laneid (sort keys %ambiguous_pos) {
-    foreach my $pos (sort {$a <=> $b} keys %{$quality_stats{$laneid}}) {
-	my $value=0;
-	if ($ambiguous_pos{$laneid}{$pos}) {
-	    $value=$ambiguous_pos{$laneid}{$pos};
-	}
-	if ($value > $max) {
-	    $max = $value;
-	}
-	print $ambposfh join("\t",
-			     $laneid,
-			     $pos,
-			     $value),"\n";
-    }
-}
-close ($ambposfh);
-print $log_fh "done\n";
+#print $log_fh 'Building the ambiguous pos data...';
+#my $ambposfh=get_fh("${prefix}_ambiguous.txt",1);
+#my $max=0;
+#foreach my $laneid (sort keys %ambiguous_pos) {
+#    foreach my $pos (sort {$a <=> $b} keys %{$quality_stats{$laneid}}) {
+#	my $value=0;
+#	if ($ambiguous_pos{$laneid}{$pos}) {
+#	    $value=$ambiguous_pos{$laneid}{$pos};
+#	}
+#	if ($value > $max) {
+#	    $max = $value;
+#	}
+#	print $ambposfh join("\t",
+#			     $laneid,
+#			     $pos,
+#			     $value),"\n";
+#    }
+#}
+#close ($ambposfh);
+#print $log_fh "done\n";
 
 # Adjust the max a bit so there is some space under the legend
 $max*=1.2;
@@ -302,7 +308,6 @@ sub process_fastq_file {
     my $infn=shift;
     my $stats=shift;
     my $quals_pos=shift;
-    my $amb_pos=shift;
     my $tmpdir=shift;
     my $log_fh=shift;
     my $laneid=shift;
@@ -326,10 +331,10 @@ sub process_fastq_file {
     my $tmpfn=$$.'.tmp.sequences.txt';
     my $tmpfh=get_fh($tmpfn,1);
 
-    my %ntindex=('A' => 0,
-		 'C' => 1,
-		 'G' => 2,
-		 'T' => 3);
+    my %ntindex=('A' => 1,
+		 'C' => 2,
+		 'G' => 3,
+		 'T' => 4);
 
     # Process the fastq file
     while (my $line=<$infh>) {
@@ -401,12 +406,8 @@ sub process_fastq_file {
 
 	    # Set the nucleotides
 	    if ($nucleotides[$i]=~/[^ACTG]/o) {
-		$amb_pos->{$laneid}->{$pos}++;
+		$ntpos->{$laneid}->{$pos}->[0]++;
 	    } else {
-		# This should prevent the read_stats script from crashing
-		# when there are no ambiguous nt (this can happen if the
-		# reads are prefiltered
-		$amb_pos->{$laneid}->{$pos}+=0;
 		$ntpos->{$laneid}->{$pos}->[$ntindex{$nucleotides[$i]}]++;
 	    }
 	}
@@ -437,10 +438,10 @@ sub process_fasta_file {
     my $infn=shift;
     my $stats=shift;
     my $quals_pos=shift;
-    my $amb_pos=shift;
     my $tmpdir=shift;
     my $log_fh=shift;
     my $laneid=shift;
+    my $ntpos=shift;
 
     my $unique=0;
     my $read_length=0;
@@ -454,6 +455,11 @@ sub process_fasta_file {
 
     my $tmpfn=$$.'.tmp.sequences.txt';
     my $tmpfh=get_fh($tmpfn,1);
+
+    my %ntindex=('A' => 1,
+		 'C' => 2,
+		 'G' => 3,
+		 'T' => 4);
 
     # Process the fasta file
     while (my $seq_obj=$infh->next_seq()) {
@@ -481,14 +487,16 @@ sub process_fasta_file {
 	my @nucleotides=split('',$seq);
 	for (my $i=0;$i<@nucleotides;$i++) {
 	    my $pos=$i + 1;
-	    if ($nucleotides[$i]=~/[^ACTG]/o) {
-		$amb_pos->{$laneid}->{$pos}++;
-	    } else {
-		# This should prevent the read_stats script from crashing
-		# when there are no ambiguous reads
-		$amb_pos->{$laneid}->{$pos}+=0;
-	    }
+
+	    # Set the qualities
 	    $quals_pos->{$laneid}->{$pos}=50;
+
+	    # Set the nucleotides
+	    if ($nucleotides[$i]=~/[^ACTG]/o) {
+		$ntpos->{$laneid}->{$pos}->[0]++;
+	    } else {
+		$ntpos->{$laneid}->{$pos}->[$ntindex{$nucleotides[$i]}]++;
+	    }
 	}
     }
     close($tmpfh);
