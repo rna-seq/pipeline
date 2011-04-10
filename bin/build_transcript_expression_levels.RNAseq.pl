@@ -70,7 +70,8 @@ sub process_file {
 	    my $trans_id=$line{'feature'}{'transcript_id'};
 	    my $rpkm=$line{'feature'}{'RPKM'};
 	    my $gene_id=trans2gene($trans_id);
-	    if ($rpkm > 0) {
+	    if ($gene_id && 
+		($rpkm > 0)) {
 		print join("\t",
 			   $gene_id,
 			   $trans_id,

@@ -195,7 +195,7 @@ sub get_gene_from_trans_sub {
 	    $count=$sth->execute($trans);
 
 	    if ($count != 1) {
-		die "No transcript in $table corresponds to $trans\n";
+		print STDERR  "WARNING: $count transcripts in $table correspond to $trans\n";
 	    } else {
 		my ($gene)=$sth->fetchrow_array();
 		$cache{$trans}=$gene;
