@@ -841,7 +841,7 @@ sub get_files_from_table_sub {
 	    $count=$sth->execute($lane);
 
 	    if ($count != 1) {
-		die "No file in $table corresponds to $lane\n";
+		die "No file in $table corresponds to $lane. Check pairing\n";
 	    } else {
 		my ($filename)=$sth->fetchrow_array();
 		$cache{$lane}=$filename;
