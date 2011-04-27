@@ -114,11 +114,18 @@ sub check_multi_start {
     my @coords=split(/[-;]/,$coord_string);
     my @coords_sort=sort {$a <=> $b} @coords;
     my ($hit_start,$hit_end)=($coords_sort[0],$coords_sort[-1]);
+    # account for negative coordinates. If this happens one of the numbers
+    # will be undefined
+    unless ($coords_sort[0]) {
+	warn "WARNING: Possible problem parsing $pos\n";
+	warn "I think there is a negative coordinate...\n";
+	$hit_start=$hit_end;
+    }
     my @starts=($hit_start .. $hit_end);
 
     if ($coords[1] &&
 	($coords[0] > $coords[1])) {
-	# This means we are in the munus strand, so we invert the array
+	# This means we are in the minus strand, so we invert the array
 	@starts=reverse(@starts);
     }
 

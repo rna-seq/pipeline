@@ -1737,7 +1737,11 @@ sub get_gene_info_sub {
 	    }
 	    $cache{$gene_id}=$results;
 	}
-	return($cache{$gene_id});
+	if ($cache{$gene_id}) {
+	    return($cache{$gene_id});
+	} else {
+	    return('');
+	}
     };
 
     return($get_gene_info)

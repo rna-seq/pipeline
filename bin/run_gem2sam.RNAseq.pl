@@ -114,7 +114,7 @@ sub generate_sorted_bam {
     my $bamfile=shift;
 
     my $tmpbam=$bamfile;
-    $tmpbam=~s/.*\///;
+    $tmpbam=~s/.*\///o;
     $tmpbam=$$.'.'.$tmpbam;
 
     print STDERR "Building sorted BAM file from $samfile\n";
@@ -131,7 +131,7 @@ sub generate_merged_sorted_bam {
     my $indexfile=shift;
 
     my $tmpbam=$bamfile;
-    $tmpbam=~s/.*\///;
+    $tmpbam=~s/.*\///o;
     $tmpbam=$$.'.'.$tmpbam;
     my $tmpsam=$$.'.tmpsam';
 
@@ -227,16 +227,23 @@ sub generate_sam_header {
     while (my $line=<$outfhtmp>) {
 	chomp($line);
 	# skip empty lines
-	if ($line=~/^\s*$/) {
+	if ($line=~/^\s*$/o) {
 	    next;
 	}
 
+
 	# Filter invalid cigar lines (the indels that samtools does not
-	# recognize
+	# recognize hard clippings, etc...)
 	my @line=split("\t",$line);
 
+	# Filter for negative insert lengths
 	if ($line[5] &&
-	    $line[5]=~/-/) {
+	    $line[5]=~/-/o) {
+	    $invalid++;
+	    print STDERR join("\t",
+			      @line),"\n";
+	} elsif ($line[5]=~/H/o) {
+	    # Remove hard clippings
 	    $invalid++;
 	    print STDERR join("\t",
 			      @line),"\n";
@@ -267,7 +274,7 @@ sub remove_pair_info {
     my $order=shift;
 
     my $tmpfile=$filename.'.tmp';
-    $tmpfile=~s/.*\///;
+    $tmpfile=~s/.*\///o;
     $tmpfile=$tmpdir.'/'.$tmpfile;
 
     my $infh=get_fh($filename);
@@ -311,14 +318,14 @@ sub remove_pair_info {
 	# Count cases with indels
 	if ($line[4]=~/<[+-][0-9]+>/o) {
 	    $indels++;
-	    print STDERR $line,"\n";
+#	    print STDERR $line,"\n";
 #	    next;
 	}
 
 	# Change any chrMT to chrM
-	if ($line[4]=~/chrMT/o) {
-	    $line[4]=~s/chrMT:/chrM:/og;
-	}
+#	if ($line[4]=~/chrMT/o) {
+#	    $line[4]=~s/chrMT:/chrM:/og;
+#	}
 
 	print $outfh join("\t",
 			  @line),"\n";
@@ -329,7 +336,7 @@ sub remove_pair_info {
     close($outfh);
     print STDERR "done\n";
     print STDERR $count,"\tReads processed\n";
-    print STDERR $indels,"\tPresented indels and were removed\n";
+    print STDERR $indels,"\tPresented indels\n";
 
     return($tmpfile);
 }
