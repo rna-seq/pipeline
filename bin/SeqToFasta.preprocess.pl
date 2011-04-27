@@ -43,7 +43,7 @@ use Bio::SeqIO;
 # Get some command line options and set their defaults
 my $species='Unknown species';
 my $project='';
-my $sizethreshold=2; # This is the maximum allowe filesize if it is higher
+my $sizethreshold=2; # This is the maximum allowed filesize if it is higher
                      # the script will use tmp space on the disk
 my $mismatches;
 my $paired;
