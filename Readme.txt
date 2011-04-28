@@ -100,7 +100,8 @@ Check that the GEM tools are available both
 mkdir 009TR.PE40
 cd 009TR.PE40/
 
-# Make a directory which will contain the read data and copy the read files in gzipped fasta or fastq format into this directory
+# Make a directory which will contain the read data and copy the read files in gzipped fasta or fastq format into this directory.
+# These files should should be named ending in .fastq if in fastq format or in .fa or .fasta when in fasta format.
 mkdir readData
 mv ../CLL.PE40/readData/009TR.r1.fastq.gz readData/
 mv ../CLL.PE40/readData/009TR.r2.fastq.gz readData/
