@@ -168,13 +168,21 @@ sub get_fh {
     chomp($filename);
     my $openstring;
     my $fh;
+    my $script='pigz';
     
+    # check if the compression tool is available
+    my $command="which $script > /dev/null";
+    my $absent=system($command);
+    if ($absent) {
+	$script='gzip';
+    }
+
     if ($write) {
 	if ($filename=~/.gz$/) {
 	    warn "Piping $filename through gzip\n";
 	    # Use gzip -7 as the increase in compression between 7 an 9 is quite
 	    # small and the extra time invested quite large
-	    $openstring="| gzip -7 -c > $filename";
+	    $openstring="| $script -7 -c > $filename";
 	} else {
 	    $openstring=">".$filename;
 	}
