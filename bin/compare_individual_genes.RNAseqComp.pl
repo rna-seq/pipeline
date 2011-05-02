@@ -132,8 +132,8 @@ my $tmpfn="Gene.Expression.subset.txt";
 my $tmpfh=get_fh($tmpfn,1);
 print $tmpfh join("\t",
 		  'Dataset',
-		  'Project',
-		  'Group',
+#		  'Project',
+#		  'Group',
 		  @genes_needed),"\n";
 foreach my $exp (@values) {
     my @row;
@@ -147,14 +147,36 @@ foreach my $exp (@values) {
     }
 
     my $dataset=$exp->[0];
-    $dataset=~s/_gene_RPKM_pooled_sample//;
+    $dataset=~s/_gene_[^_]+_pooled_sample//;
     my ($project,$group)=(split('_',$dataset))[0,-1];
     print $tmpfh join("\t",
 		      $dataset,
-		      $project,
-		      $group,
+#		      $project,
+#		      $group,
 		      @row),"\n";
 }
 close($tmpfh);
+
+my $outfile='Expression.csv';
+my $outfh=get_fh($outfile,1);
+foreach my $exp (@values) {
+    my $dataset=$exp->[0];
+    $dataset=~s/_gene_[^_]_pooled_sample//;
+    my ($project,$group)=(split('_',$dataset))[0,-1];
+    foreach my $gene (@genes_needed) {
+	my $value=0;
+	if ($exp->[1] &&
+	    ($exp->[1]->{$gene})) {
+	    $value=$exp->[1]->{$gene};
+	}
+	print $outfh join("\t",
+			  $dataset,
+			  $project,
+			  $group,
+			  $gene,
+			  $value),"\n";
+    }
+}
+close($outfh);
 
 exit;
