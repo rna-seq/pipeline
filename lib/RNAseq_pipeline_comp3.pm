@@ -144,7 +144,8 @@ sub get_samples {
 	my ($query,$sth);
 	my $table=$tables->{$exp};
 	
-	if ($breakdown) {
+	if ($breakdown ||
+	    ($table=~/readcount_pooled$/)) {
 	    $query ='SELECT distinct LaneName ';
 	} else {
 	    $query ='SELECT distinct sample ';
@@ -152,6 +153,7 @@ sub get_samples {
 	$query.="FROM $table";
 	
 	$sth = $dbh->prepare($query);
+	print STDERR "$table\n";
 	my $count=$sth->execute();
 	while (my ($sample)=$sth->fetchrow_array()) {
 	    my $sample_id=join('_sample_',

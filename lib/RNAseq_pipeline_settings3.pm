@@ -1634,11 +1634,7 @@ sub get_gene_readcount_data {
     my ($query,$sth,$count);
     $query ='SELECT gene_id, readcount ';
     $query.="FROM $table ";
-    if ($breakdown) {
-	$query.='WHERE LaneName = ?';
-    } else {
-	$query.='WHERE sample = ?';
-    }
+    $query.='WHERE LaneName = ?';
     $sth=$dbh->prepare($query);
     $count=$sth->execute($sample);
     
@@ -1727,7 +1723,7 @@ sub get_gene_info_sub {
 	unless ($cache{$gene_id}) {
 	    my $count=$sth->execute($gene_id);
 	    unless ($count== 1) {
-		die "Incorrect number of types for $gene_id";
+		die "Incorrect number of types for $gene_id in $table\n";
 	    }
 
 	    my @results=$sth->fetchrow_array();
