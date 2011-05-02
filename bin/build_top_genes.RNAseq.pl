@@ -84,39 +84,54 @@ foreach my $gene (keys %genes) {
 }
 
 # Read the annotation and print out the table
+print STDERR "Reading $annotation...\n";
 my $annotfh=get_fh($annotation);
 my %features;
+my %geneinfo;
 while (my $line=<$annotfh>) {
-    if ($line=~/^#/) {
+    if ($line=~/^#/o) {
 	next;
     }
     my %line=%{parse_gff_line($line)};
 
-    # Skip those lines we are not interested in
-    unless  ($line{'type'}=~/gene/) {
-	next;
-    }
-
     my $gene_id=$line{'feature'}{'gene_id'};
+
     if (defined $expressed{$gene_id}) {
-	if ($features{$gene_id}) {
-	    warn $gene_id,"\tAppears more than once in the file\n";
+	if ($geneinfo{$gene_id}{'chr'}) {
+	    if ($geneinfo{$gene_id}{'start'} > $line{'start'}) {
+		$geneinfo{$gene_id}{'start'}=$line{'start'};
+	    }
+	    
+	    if ($geneinfo{$gene_id}{'end'} < $line{'end'}) {
+		$geneinfo{$gene_id}{'end'}=$line{'end'};
+	    }
+
+	    if ($geneinfo{$gene_id}{'strand'} ne $line{'strand'}) {
+		$geneinfo{$gene_id}{'strand'}='.';
+	    }
+	    if ($geneinfo{$gene_id}{'chr'} ne $line{'chr'}) {
+		die "$features{$gene_id}{'chr'} ne $line{'chr'}\n";
+	    }
 	} else {
-	    $features{$gene_id}->[0]=$line{'end'} - $line{'start'} + 1;
-	    $features{$gene_id}->[1]=$line{'strand'};
-	    $features{$gene_id}->[2]=$line{'chr'};
+	    $geneinfo{$gene_id}{'start'}=$line{'start'};
+	    $geneinfo{$gene_id}{'end'}=$line{'end'};
+	    $geneinfo{$gene_id}{'strand'}=$line{'strand'};
+	    $geneinfo{$gene_id}{'chr'}=$line{'chr'};
 	}
     }
 }
 close($annotfh);
 
-my $count=keys %features;
+my $count=keys %geneinfo;
 print STDERR $count,"\tFeatures expressed in total\n";
 
 # get for each of the features the number of exons and the number of transcripts
 # from the database
-foreach my $gene (keys %features) {
+foreach my $gene (keys %geneinfo) {
 #    print STDERR $gene,"\n";
+    $features{$gene}->[0]=$geneinfo{$gene}{'end'} - $geneinfo{$gene}{'start'} + 1;
+    $features{$gene}->[1]=$geneinfo{$gene}{'strand'};
+    $features{$gene}->[2]=$geneinfo{$gene}{'chr'};
     $features{$gene}->[3]=get_exon_number($gene);
     $features{$gene}->[4]=get_trans_number($gene);
 }
