@@ -237,20 +237,49 @@ sub generate_sam_header {
 	my @line=split("\t",$line);
 
 	# Filter for negative insert lengths
-	if ($line[5] &&
-	    $line[5]=~/-/o) {
-	    $invalid++;
-	    print STDERR join("\t",
-			      @line),"\n";
-	} elsif ($line[5]=~/H/o) {
-	    # Remove hard clippings
-	    $invalid++;
-	    print STDERR join("\t",
-			      @line),"\n";
+	if ($line[5]) {
+	    if ($line[5]=~/-/o) {
+		$invalid++;
+		print STDERR join("\t",
+				  "Negative insert:",
+				  @line),"\n";
+		next;
+	    } elsif ($line[5]=~/H/o) {
+		# Remove hard clippings
+		$invalid++;
+		print STDERR join("\t",
+				  "Hard clipping:",
+				  @line),"\n";
+		next;
+	    } elsif ($line[5]=~/^\d+M\d+N\d+M$/) {
+		my @coords=split(/N/,$line[5]);
+		my $gap=$line[0];
+		$gap=~s/.+[^\d]//;
+		$gap=~s/N//;
+		if ($gap > 10000) {
+		    $invalid++;
+		    print STDERR join("\t",
+				      "Gap Too large:",
+				      @line),"\n";
+		    next;
+		}
+	    } elsif ($line[8] > 10000) {
+		$line[1]=65;
+		$line[6]='*';
+		$line[7]=0;
+		$line[8]=0;
+		print $outfh join("\t",
+				  @line),"\n";
+	    } else {
+		print $outfh join("\t",
+				  @line),"\n";
+	    }
 	} else {
-	    print $outfh join("\t",
-			      @line),"\n";
+	    next;
 	}
+	# If the script gets here the lines are valid
+	print $outfh join("\t",
+			  @line),"\n";
     }
     close($outfh);
     close($outfhtmp);
@@ -369,6 +398,7 @@ sub process_paired_reads {
 	$command.="-i $infn2tmp ";
 	$command.="-ii $infn1tmp ";
     }
+    $command.="--max-pairing-distance 10000 ";
     $command.="-o $outfn > $outfn.log";
 
     run_system_command($command);
@@ -388,7 +418,7 @@ sub process_single_reads {
     $command.="-i $infn ";
     $command.="-o $outfn > $outfn.log";
     run_system_command($command);
-
+    
     # clean up
     $command="rm $infn";
     run_system_command($command);
