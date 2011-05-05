@@ -533,9 +533,9 @@ sub get_annotation_from_gtf {
 	    next;
 	} elsif ($chr=~/^chrU/o) {
 	    next;
-	} elsif ($chr=~/^Un\./o) {
-	    # This is for EnsEMBL cow
-	    next;
+#	} elsif ($chr=~/^Un\./o) {
+#	    # This is for EnsEMBL cow
+#	    next;
 	} elsif ($chr=~/^(chr)?HSCHR/o) {
 	    next;
 	} elsif ($chr=~/^AAFC03011182/o) {
