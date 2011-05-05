@@ -4,7 +4,7 @@ package RNAseq_pipeline_settings3;
 # Must be done before strict is used
 use Exporter;
 @ISA=('Exporter');
-@EXPORT_OK=('get_species_names_sub',
+@EXPORT_OK=('get_species_names_sub','print_table_file',
 	    'read_config_file','read_file_list','get_dbh','check_db',
 	    'get_numbers_from_annotation','get_saturation_curve',
 	    'get_gff_chrom_freq','get_junction_no','get_unique_exons',
@@ -20,6 +20,7 @@ use Exporter;
 	    'get_pair_id','get_lane_id','get_dataset_id','get_mapping_fh',
 	    'get_gene_info_sub','get_trans_info_sub',
 	    'get_gene_RPKM_data','get_gene_readcount_data',
+	    'get_exon_readcount_data',
 	    'get_trans_expression_data',
 	    'get_desc_from_gene_sub','get_chr_from_gene_sub',
 	    'get_type_from_gene_sub','get_exp_info_sub',
@@ -104,6 +105,20 @@ sub read_file_list {
     close($file_list);
 
     return(\%files);
+}
+
+# Print a table file in the correct directory
+sub print_table_file {
+    my $outtable=shift;
+    my $outtablesql=shift;
+
+    my $options=read_config_file();
+    my $outfile=$options->{'TABLES'}.'/'.$outtable.'.sql';
+
+    my $outfh=get_fh($outfile,1);
+    print $outfh "DROP TABLE IF EXISTS $outtable\n";
+    print $outfh "$outtablesql\n";
+    close($outfh);
 }
 
 # Get the information on the pair id and the lane id
@@ -209,7 +224,7 @@ sub get_gene_from_trans_sub {
 # This should get the gene id from an exon id
 sub get_gene_from_exon_sub {
     my %options=%{read_config_file()};
-    my $dbh=shift;
+    my $dbh=get_dbh(1);
     my $table=$options{'EXONSCLASSTABLE'};
 
     # For saving time
@@ -1652,6 +1667,40 @@ sub get_gene_readcount_data {
     while (my ($gene,$rpkm)=$sth->fetchrow_array()) {
 	$expression{$gene}=$rpkm;
 	$detected->{$gene}=1;
+    }
+
+    return(\%expression);
+}
+
+# Some subroutines to retrieve analysis info from the database
+sub get_exon_readcount_data {
+    my $dbh=shift;
+    my $table=shift;
+    my $detected=shift;
+
+    my %expression;
+
+    print STDERR "WARNING: This script is only extracting the information from internal exons\n";
+    my ($query,$sth,$count);
+    $query ='SELECT exon_id, ExIncl ';
+    $query.="FROM $table ";
+    $sth=$dbh->prepare($query);
+    $count=$sth->execute();
+    
+    if ($count && ($count > 1)) {
+	print STDERR $count,"\tExons are detected in $table\n";
+    } else {
+	die "No exons present in $table\n";
+    }
+
+    if ($count < 16000) {
+	print STDERR "Too few exons detected\n";
+    }
+    
+    # get all the necessary tables
+    while (my ($exon,$readcount)=$sth->fetchrow_array()) {
+	$expression{$exon}=$readcount;
+	$detected->{$exon}=1;
     }
 
     return(\%expression);
