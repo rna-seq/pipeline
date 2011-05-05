@@ -341,14 +341,16 @@ sub process_fastq_file {
 	chomp($line);
 
 	# Decide which line we are in
-	if ($line=~s/^@//) {
+	if (($line_type == 0) &&
+	    ($line=~s/^@//o)) {
 	    # Initialize the sequence hash
 	    %sequence=('id' => $line);
 	    $line_type=1;
 	    $total_reads++;
 	    $line=<$infh>;
 	    chomp($line);
-	} elsif ($line=~/^\+/ && ($line_type==1)) {
+	} elsif (($line_type==1) &&
+		 ($line=~/^\+/o)) {
 	    $line_type=2;
 	    $line=<$infh>;
 	    chomp($line);
@@ -366,6 +368,7 @@ sub process_fastq_file {
 		warn "Quality string longer than sequence,skipping???\n";
 		next;
 	    }
+	    $line_type=0;
 	} else {
 	    warn "Problem with $infn. Shouldn't be here\n";
 	}
