@@ -15,7 +15,7 @@ BEGIN {
 # Objective
 # This script should take a file resulting form running the overlap script and
 # extracting the total overlap reads and a file resulting from projecting all
-# the genes onto the genome. It will calculate the RPKM for each of
+# the genes onto the genome. It will extract the readcounts for each of
 # the genes in the file
 
 use Bio::Range;
@@ -143,7 +143,6 @@ foreach my $group (keys %groups) {
 		  \%gene_coverage,
 		  \%gene_juncs_coverage,
 		  $outfile,
-		  $unique_maps{$group},
 		  $group);
 }
 
@@ -293,7 +292,6 @@ sub get_gene_coverage {
 	chomp($line);
 	my ($gene,$coverage,$length)=split("\t",$line);
 
-	# Normalize reads per 1000 nt (the length will be divided later
 	if ($coverage) {
 	    $features->{$gene}+=$coverage;
 	} 
@@ -329,7 +327,6 @@ sub process_exons {
     my $exoncoverage=shift;
     my $junccoverage=shift;
     my $output=shift;
-    my $uniquemaps=shift;
     my $lane=shift;
 
     print STDERR "Collecting events...\n";
