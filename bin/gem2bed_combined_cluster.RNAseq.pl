@@ -32,7 +32,6 @@ my $localdir;
 
 my %options=%{read_config_file()};
 $file_list=$options{'FILELIST'};
-#$read_length=$options{'READLENGTH'};
 $localdir=$options{'LOCALDIR'};
 
 # Get some subroutines
