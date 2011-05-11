@@ -278,7 +278,7 @@ while (1) {
 my $command="rm $unmapped";
 run_system_command($command);
 
-my $final_mapping=$outdir.'/'.$basename.".recursive.map";
+my $final_mapping=$outdir.'/'.$basename.".recursive.map.gz";
 combine_mapping_files(\@mapping_files,
 		      $final_mapping,
 		      $tempdir,
