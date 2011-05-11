@@ -19,7 +19,7 @@ BEGIN {
 # the eon
 
 use RNAseq_pipeline3 qw(get_fh);
-use RNAseq_pipeline_settings3 ('read_config_file','get_dbh');
+use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','print_table_file');
 
 # Declare some variables
 my $prefix;
@@ -73,19 +73,6 @@ print_table_file($outtable,
 		 $outtablesql);
 
 exit;
-
-sub print_table_file {
-    my $outtable=shift;
-    my $outtablesql=shift;
-
-    my $options=read_config_file();
-    my $outfile=$options->{'TABLES'}.'/'.$outtable.'.sql';
-
-    my $outfh=get_fh($outfile,1);
-    print $outfh "DROP TABLE IF EXISTS $outtable\n";
-    print $outfh "$outtablesql\n";
-    close($outfh);
-}
 
 sub get_exon_expression {
     my $exons=shift;
