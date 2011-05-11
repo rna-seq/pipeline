@@ -59,7 +59,7 @@ my $startpoint;                         #  -b   base Set the base rule from
                                         #       which to start
 
 my $log_fh=get_log_fh('execute_pipeline.err');
-unless($debug) {
+if($debug) {
     STDERR->fdopen( $log_fh,  'w' ) or die $!;
 }
 
@@ -123,9 +123,9 @@ if ($debug) {
     $symbols{'DEBUG'}=1;
     print "Config:\n";
     foreach my $var (keys %symbols) {
-	print join("\t",
-		   $var,
-		   $symbols{$var}),"\n";
+	print STDERR join("\t",
+			  $var,
+			  $symbols{$var}),"\n";
     }
 }
 
@@ -156,9 +156,9 @@ if (@root_rules && (@targets==0)) {
 }
 
 # Print a message for the user
-print "RNAseq analysis workflow started ", `date`;
-print "cwd: ", `pwd`;
-print "Command file: $pipfile\n";
+print STDERR "RNAseq analysis workflow started ", `date`;
+print STDERR "cwd: ", `pwd`;
+print STDERR "Command file: $pipfile\n";
 
 # Execute the rules
 foreach my $rule (@targets) {
@@ -166,7 +166,7 @@ foreach my $rule (@targets) {
 }
 
 # Print an ending message
-print "\nRNAseq analysis workflow completed ", `date`;
+print STDERR "\nRNAseq analysis workflow completed ", `date`;
 
 close($log_fh);
 
@@ -184,7 +184,7 @@ sub execute_rule {
     my $rule=shift;
     my $level=shift;
 
-    print "\ncall: $rule\n" if $debug;
+    print STDERR "\ncall: $rule\n" if $debug;
 
     # Check if the rule actually exists
     unless ($rulelist{$rule}) {
@@ -227,16 +227,16 @@ sub execute_rule {
 	    if ($time_prec gt $time) {
 		$execute = 1;
 	    }
-	    print "$rule [$time] vs $prec [$time_prec]: $execute\n" if $debug;
+	    print STDERR "$rule [$time] vs $prec [$time_prec]: $execute\n" if $debug;
 	}
     }
 
     if ($execute) {
-	print "\nExecuting $rule\n";
+	print STDERR "\nExecuting $rule\n";
 	$ok = process_rule($rule,$body,$level+1);
 	$return_value = update_time_stamp($rule);
     }    else {
-	print "\n$rule is up to date\n" if ($level == 0 || $debug);
+	print STDERR "\n$rule is up to date\n" if ($level == 0 || $debug);
     }
 
     # Check if the execution has been correct
@@ -278,20 +278,20 @@ sub process_rule {
     my ($rule,$body,$level) = @_;
     my $ok = 1;
 
-    print "\n$rule:\n";
+    print STDERR "\n$rule:\n";
 
     foreach my $line (@$body) {
 	my $command = substitute_values($line);
- 	print "Executing $command\n" unless ($command =~ /^echo/ );
+ 	print STDERR "Executing $command\n" unless ($command =~ /^echo/ );
 	# Check if it is a key form the %common_subs hash
 	if (exists $common_subs->{$command}) {
-	    print "Substituting $command\n";
+	    print STDERR "Substituting $command\n";
 	    $common_subs->{$command}->(\$command,$rule);
 	} 
 	if (ref($command) eq 'ARRAY') {
 	    foreach my $comm (@$command) {
 		# bitwise adition, if both are 1 eq 1 if not 0I  think
-		print "\t",$comm,"\n";
+		print STDERR "\t",$comm,"\n";
 		next if $nomake;
 		$ok &= (system($comm) == 0);
 	    	last unless $ok;
@@ -429,7 +429,12 @@ sub Get_table_Dates {
     foreach my $rule (keys(%{$rules})) {
 	next if $phony{$rule};
 	$rules->{$rule}->{"timestamp"} = $dates->{$rule};
-	print "date($rule) = $$dates{$rule}\n" if $debug;
+	next unless $debug;
+	if ($dates->{$rule}) {
+	    print STDERR "date($rule) = $$dates{$rule}\n";
+	} else {
+	    print STDERR "date($rule) = Not available\n";
+	}
     }
 }
 
@@ -499,9 +504,9 @@ sub symbol {
     $symbols{$var}=$substituted;
 
     if ($debug) {
-	print join("\t",
-		   $var,
-		   $substituted),"\n";
+	print STDERR join("\t",
+			  $var,
+			  $substituted),"\n";
     }
 }
 
@@ -513,7 +518,7 @@ sub directive {
 	    $phony{$x} = 1;
 	}
     } else {
-	print "ERROR: syntax error:  unknown directive $line\n";
+	print STDERR "*** ERROR: syntax error:  unknown directive $line\n";
 	exit 1;
     }
 }
