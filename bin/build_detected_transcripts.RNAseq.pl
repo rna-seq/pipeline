@@ -77,10 +77,10 @@ foreach my $sample (sort keys %transcripts) {
     foreach my $status (sort keys %{$transcripts{$sample}}) {
 	foreach my $type (sort keys %{$transcripts{$sample}{$status}}) {
 	    print $outfh join("\t",
-				 $type,
-				 $status,
-				 $sample,
-				 $transcripts{$sample}{$status}{$type}),"\n";
+			      $type,
+			      $status,
+			      $sample,
+			      $transcripts{$sample}{$status}{$type}),"\n";
 	}
     }
 }
