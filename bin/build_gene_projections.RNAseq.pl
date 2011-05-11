@@ -17,7 +17,7 @@ BEGIN {
 # order to obtain a set of non-overlapping projections for each gene
 
 use Bio::Range;
-use RNAseq_pipeline3 qw(get_fh parse_gff_line);
+use RNAseq_pipeline3 qw(get_fh parse_gff_line get_log_fh);
 use RNAseq_pipeline_settings3 ('read_config_file');
 use Getopt::Long;
 
@@ -37,22 +37,26 @@ $genomedir=$options{'GENOMEDIR'};
 $exonfile=$exondir.'/'.$prefix.'.exon.gtf';
 $projectionfile=$genomedir.'/'.$prefix.'.proj.gtf';
 
+my $logfh=get_log_fh('build_gene_projections.log');
+
 # Do some checks to see we have all necessary information
 unless (-r $exonfile) {die "No exon file found at $exonfile\n";}
 
 # If the file exists already skip creation
 if (-r $projectionfile) {
-    print STDERR $projectionfile,"\tis present, Skipping creation...\n";
+    print $logfh $projectionfile,"\tis present, Skipping creation...\n";
 } else {
-    print STDERR "Building $projectionfile...\n";
+    print $logfh "Building $projectionfile...\n";
     # First read in the exon file and get the list of exons belonging to
     # each gene
     my %genes;
     my %exons=%{get_exons($exonfile,
-			  \%genes)};
+			  \%genes,
+			  $logfh)};
 
     # Calculate the projection for each gene
-    get_projections(\%genes);
+    get_projections(\%genes,
+		    $logfh);
 
     # Print out the results
     my $projfh=get_fh($projectionfile,1);
@@ -87,14 +91,16 @@ $total=(split(/\s+/,$total))[0];
 print join("\t",
 	   'Proj',
 	   $total),"\n";
+close($logfh);
 
 exit;
 
 # TO DO use a get_coords from exon name sub for getting the exon coordinates
 sub get_projections {
     my $genes=shift;
+    my $logfh=shift;
 
-    print STDERR 'Calculating gene projections...';
+    print $logfh 'Calculating gene projections...';
     foreach my $gene (keys %{$genes}) {
 	my $chr;
 	my @ranges;
@@ -119,19 +125,20 @@ sub get_projections {
 	my @disc_ranges = Bio::Range->disconnected_ranges(@ranges);
 	$genes->{$gene}=[$chr,@disc_ranges];
     }
-    print STDERR "done\n";
+    print $logfh "done\n";
 }
 
 sub get_exons {
     my $exonfile=shift;
     my $genes=shift;
+    my $logfh=shift;
     my $repeated_exons='rep.exons.txt';
 
     my %exons;
     my %genes;
     my %remove;
 
-    print STDERR "Extracting exon lists from $exonfile...";
+    print $logfh "Extracting exon lists from $exonfile...";
     my $exonfh=get_fh($exonfile);
     while (my $line=<$exonfh>) {
 	my %line=%{parse_gff_line($line)};
@@ -175,7 +182,7 @@ sub get_exons {
 	}
     }
     close($exonfh);
-    print STDERR "done\n";
+    print $logfh "done\n";
 
     my $repeatfh=get_fh($repeated_exons,1);
     # Remove those exons that map to multiple genes
@@ -186,12 +193,12 @@ sub get_exons {
     close($repeatfh);
 
     my $count=keys %remove;
-    print STDERR $count,"\tExons mapping to multiple genes removed\n";
+    print $logfh $count,"\tExons mapping to multiple genes removed\n";
 
     $count=keys %exons;
-    print STDERR $count,"\tExons obtained\n";
+    print $logfh $count,"\tExons obtained\n";
     $count=keys %{$genes};
-    print STDERR $count,"\tGenes\n";
+    print $logfh $count,"\tGenes\n";
 
     return(\%exons);
 }
