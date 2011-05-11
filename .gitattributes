@@ -59,7 +59,6 @@ bin/extract_reads_info.RNAseqComp.pl -text
 bin/gem2bed_combined.RNAseq.pl -text
 bin/gem2bed_combined_cluster.RNAseq.pl -text
 bin/gem2gff_genome.RNAseq.pl -text
-bin/gem2gff_junctions.RNAseq.old.pl -text
 bin/gem2gff_junctions.RNAseq.pl -text
 bin/gem2gff_split.RNAseq.pl -text
 bin/gem2gff_transcriptome.RNAseq.pl -text
