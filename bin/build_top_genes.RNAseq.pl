@@ -110,7 +110,7 @@ while (my $line=<$annotfh>) {
 		$geneinfo{$gene_id}{'strand'}='.';
 	    }
 	    if ($geneinfo{$gene_id}{'chr'} ne $line{'chr'}) {
-		die "$features{$gene_id}{'chr'} ne $line{'chr'}\n";
+		die "$geneinfo{$gene_id}{'chr'} ne $line{'chr'}\n";
 	    }
 	} else {
 	    $geneinfo{$gene_id}{'start'}=$line{'start'};

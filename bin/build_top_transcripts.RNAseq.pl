@@ -83,6 +83,7 @@ foreach my $trans (keys %trans) {
 # Read the annotation and print out the table
 my $annotfh=get_fh($annotation);
 my %features;
+my %transinfo;
 while (my $line=<$annotfh>) {
     if ($line=~/^#/) {
 	next;
@@ -90,17 +91,27 @@ while (my $line=<$annotfh>) {
     my %line=%{parse_gff_line($line)};
     my $trans_id=$line{'feature'}{'transcript_id'};
 
-    unless  ($line{'type'}=~/transcript/) {
-	next;
-    }
-
     if (defined $expressed{$trans_id}) {
-	if ($features{$trans_id}) {
-	    warn $trans_id,"\tAppears more than once in the file\n";
+	if ($transinfo{$trans_id}{'chr'}) {
+	    if ($transinfo{$trans_id}{'start'} > $line{'start'}) {
+		$transinfo{$trans_id}{'start'}=$line{'start'};
+	    }
+	    
+	    if ($transinfo{$trans_id}{'end'} < $line{'end'}) {
+		$transinfo{$trans_id}{'end'}=$line{'end'};
+	    }
+
+	    if ($transinfo{$trans_id}{'strand'} ne $line{'strand'}) {
+		$transinfo{$trans_id}{'strand'}='.';
+	    }
+	    if ($transinfo{$trans_id}{'chr'} ne $line{'chr'}) {
+		die "$transinfo{$trans_id}{'chr'} ne $line{'chr'}\n";
+	    }
 	} else {
-	    $features{$trans_id}->[0]=$line{'end'} - $line{'start'} + 1;
-	    $features{$trans_id}->[1]=$line{'strand'};
-	    $features{$trans_id}->[2]=$line{'chr'};
+	    $transinfo{$trans_id}{'start'}=$line{'start'};
+	    $transinfo{$trans_id}{'end'}=$line{'end'};
+	    $transinfo{$trans_id}{'strand'}=$line{'strand'};
+	    $transinfo{$trans_id}{'chr'}=$line{'chr'};
 	}
     }
 }
@@ -108,7 +119,11 @@ close($annotfh);
 
 # get for each of the features the number of exons and the number of transcripts
 # from the database
-foreach my $trans (keys %features) {
+foreach my $trans (keys %transinfo) {
+#    print STDERR $gene,"\n";
+    $features{$trans}->[0]=$transinfo{$trans}{'end'} - $transinfo{$trans}{'start'} + 1;
+    $features{$trans}->[1]=$transinfo{$trans}{'strand'};
+    $features{$trans}->[2]=$transinfo{$trans}{'chr'};
     $features{$trans}->[3]=get_exon_number($trans);
 }
 
@@ -123,7 +138,8 @@ foreach my $trans (keys %expressed) {
 			 $trans,
 			 @{$features{$trans}},
 			 $total,
-			 @{$expressed{$trans}}),"\n";
+			 @{$expressed{$trans}},
+			 ),"\n";
 }
 close($taboutfh);
 
