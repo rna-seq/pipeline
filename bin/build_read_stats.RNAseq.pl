@@ -35,6 +35,7 @@ my $project;
 my $tmpdir;
 my $file_list;
 my $prefix;
+my $qualities;
 my $debug=0;
 
 my %options=%{read_config_file()};
@@ -43,6 +44,7 @@ $project=$options{'PROJECT'};
 $tmpdir=$options{'LOCALDIR'};
 $file_list=$options{'FILELIST'};
 $prefix=$options{'PREFIX'};
+$qualities=$options{'QUALITIES'};
 
 # Get the files we are going to process
 my %files=%{read_file_list()};
@@ -90,7 +92,8 @@ foreach my $infile (keys %files) {
 							       $tmpdir,
 							       $log_fh,
 							       $lanename,
-							       \%ntpos);
+							       \%ntpos,
+							       $qualities);
     } else {
 	die "How did I get here???\n";
     }
@@ -137,29 +140,6 @@ foreach my $lanename (sort keys %quality_stats) {
 }
 close ($qualityposfh);
 print $log_fh "done\n";
-
-
-# Print out ambiguous pos data
-#print $log_fh 'Building the ambiguous pos data...';
-#my $ambposfh=get_fh("${prefix}_ambiguous.txt",1);
-#my $max=0;
-#foreach my $laneid (sort keys %ambiguous_pos) {
-#    foreach my $pos (sort {$a <=> $b} keys %{$quality_stats{$laneid}}) {
-#	my $value=0;
-#	if ($ambiguous_pos{$laneid}{$pos}) {
-#	    $value=$ambiguous_pos{$laneid}{$pos};
-#	}
-#	if ($value > $max) {
-#	    $max = $value;
-#	}
-#	print $ambposfh join("\t",
-#			     $laneid,
-#			     $pos,
-#			     $value),"\n";
-#    }
-#}
-#close ($ambposfh);
-#print $log_fh "done\n";
 
 # Adjust the max a bit so there is some space under the legend
 $max*=1.2;
@@ -304,7 +284,7 @@ sub plot_graphs_R {
 ### TO DO
 # Guess the settings and after rerun using the correct quality type if we 
 # guessed wrong
-sub process_fastq_file {
+sub process_fastq_file_old {
     my $infn=shift;
     my $stats=shift;
     my $quals_pos=shift;
@@ -312,21 +292,26 @@ sub process_fastq_file {
     my $log_fh=shift;
     my $laneid=shift;
     my $ntpos=shift;
+    my $qualities=shift;
 
     my $unique=0;
     my $read_length=0;
     my $ambiguous_reads=0;
     my $good_reads=0;
     my $total_reads=0;
-    my %sequence;
     my $line_type=0;
 
-    # Open the fastq file. Here we will use our own sub, because some of the
-    # files received do not comply whith the quality values they should actually
-    # have and this makes them unreadable by the Bio::SeqIO::fastq module which
-    # will always crash
-    my $infh;
-    $infh=get_fh($tmpdir.'/'.$infn);
+    # determine the quality variant
+    my $variant='illumina';
+    if ($qualities eq 'phred') {
+	$variant='sanger';
+    }
+
+
+    # Open the fasta file
+    my $infh=Bio::SeqIO->new(-file => $tmpdir.'/'.$infn,
+			     -format => 'fastq',
+			     -variant => $variant);
 
     my $tmpfn=$$.'.tmp.sequences.txt';
     my $tmpfh=get_fh($tmpfn,1);
@@ -337,43 +322,12 @@ sub process_fastq_file {
 		 'T' => 4);
 
     # Process the fastq file
-    while (my $line=<$infh>) {
-	chomp($line);
+    while (my $seq_obj=$infh->next_seq()) {
+	$total_reads++;
 
-	# Decide which line we are in
-	if (($line_type == 0) &&
-	    ($line=~s/^@//o)) {
-	    # Initialize the sequence hash
-	    %sequence=('id' => $line);
-	    $line_type=1;
-	    $total_reads++;
-	    $line=<$infh>;
-	    chomp($line);
-	} elsif (($line_type==1) &&
-		 ($line=~/^\+/o)) {
-	    $line_type=2;
-	    $line=<$infh>;
-	    chomp($line);
-	}
+	my $seq=$seq_obj->seq();
+	my $quals=$seq_obj->qual();
 
-	if ($line_type == 1) {
-	    $sequence{'seq'}.=$line;
-	    next;
-	} elsif ($line_type == 2) {
-	    $sequence{'qual'}.=$line;
-	    if (length($sequence{'qual'}) < length($sequence{'seq'})) {
-		warn "Quality string shorter than sequence,skipping???\n";
-		next;
-	    } elsif (length($sequence{'qual'}) > length($sequence{'seq'})) {
-		warn "Quality string longer than sequence,skipping???\n";
-		next;
-	    }
-	    $line_type=0;
-	} else {
-	    warn "Problem with $infn. Shouldn't be here\n";
-	}
-
-	my $seq=$sequence{'seq'};
 	# Count the number of unique reads
 	print $tmpfh $seq,"\n";
 
@@ -393,9 +347,10 @@ sub process_fastq_file {
 
 	# Build the distribution of the N's and qualities per position
 	my @nucleotides=split('',$seq);
-	my @qualities=split('',$sequence{'qual'});
+	my @qualities=@{$quals};
+
 	unless (scalar(@nucleotides) == scalar(@qualities)) {
-	    die "Quality and nucleotide lengths differe\n";
+	    die "Quality and nucleotide lengths differ\n";
 	}
 
 	# Using a single loop to go through both nt and qualities should save
@@ -404,7 +359,7 @@ sub process_fastq_file {
 	    my $pos=$i + 1;
 
 	    # Set the qualities
-	    my $qual=ord($qualities[$i]);
+	    my $qual=$qualities[$i];
 	    $quals_pos->{$laneid}->{$pos}+=$qual;
 
 	    # Set the nucleotides
@@ -506,6 +461,139 @@ sub process_fasta_file {
     $infh->close();
 
    # Get the unique reads without going out of the rood using RAM
+    my $command="sort -T $tmpdir $tmpfn | uniq| wc -l";
+    $unique=`$command`;
+    $command="rm $tmpfn";
+    system($command);
+
+    $unique=~s/[^\d]//g;
+    return($good_reads,$ambiguous_reads,$total_reads,$read_length,$unique);
+}
+
+sub process_fastq_file {
+    my $infn=shift;
+    my $stats=shift;
+    my $quals_pos=shift;
+    my $tmpdir=shift;
+    my $log_fh=shift;
+    my $laneid=shift;
+    my $ntpos=shift;
+
+    my $unique=0;
+    my $read_length=0;
+    my $ambiguous_reads=0;
+    my $good_reads=0;
+    my $total_reads=0;
+    my %sequence;
+    my $line_type=0;
+
+    # Open the fastq file. Here we will use our own sub, because some of the
+    # files received do not comply whith the quality values they should actually
+    # have and this makes them unreadable by the Bio::SeqIO::fastq module which
+    # will always crash
+    my $infh;
+    $infh=get_fh($tmpdir.'/'.$infn);
+
+    my $tmpfn=$$.'.tmp.sequences.txt';
+    my $tmpfh=get_fh($tmpfn,1);
+
+    my %ntindex=('A' => 1,
+		 'C' => 2,
+		 'G' => 3,
+		 'T' => 4);
+
+    # Process the fastq file
+    while (my $line=<$infh>) {
+	chomp($line);
+
+	# Decide which line we are in
+	if (($line_type == 0) &&
+	    ($line=~s/^@//o)) {
+	    # Initialize the sequence hash
+	    %sequence=('id' => $line);
+	    $line_type=1;
+	    $total_reads++;
+	    $line=<$infh>;
+	    chomp($line);
+	} elsif (($line_type==1) &&
+		 ($line=~/^\+/o)) {
+	    $line_type=2;
+	    $line=<$infh>;
+	    chomp($line);
+	}
+
+	if ($line_type == 1) {
+	    $sequence{'seq'}.=$line;
+	    next;
+	} elsif ($line_type == 2) {
+	    $sequence{'qual'}.=$line;
+	    $line_type=0;
+	    if (length($sequence{'qual'}) < length($sequence{'seq'})) {
+		warn "Quality string shorter than sequence,skipping???\n";
+		next;
+	    } elsif (length($sequence{'qual'}) > length($sequence{'seq'})) {
+		warn "Quality string longer than sequence,skipping???\n";
+		next;
+	    }
+	} else {
+	    warn "Problem with $infn. Shouldn't be here\n";
+	}
+
+	my $seq=$sequence{'seq'};
+	# Count the number of unique reads
+	print $tmpfh $seq,"\n";
+
+	# Get the minimum read length
+	my $seq_length=length($seq);
+	if (!$read_length ||
+	    ($read_length > $seq_length)) {
+	    $read_length=$seq_length;
+	}
+
+	# Count the number of sequences with N's (ambiguous bases)
+	if ($seq=~/N/) {
+	    $ambiguous_reads++;
+	} else {
+	    $good_reads++;
+	}
+
+	# Build the distribution of the N's and qualities per position
+	my @nucleotides=split('',$seq);
+	my @qualities=split('',$sequence{'qual'});
+	unless (scalar(@nucleotides) == scalar(@qualities)) {
+	    die "Quality and nucleotide lengths differe\n";
+	}
+
+	# Using a single loop to go through both nt and qualities should save
+	# processing time
+	for (my $i=0;$i<@nucleotides;$i++) {
+	    my $pos=$i + 1;
+
+	    # Set the qualities
+	    my $qual=ord($qualities[$i]);
+	    $quals_pos->{$laneid}->{$pos}+=$qual;
+
+	    # Set the nucleotides
+	    if ($nucleotides[$i]=~/[^ACTG]/o) {
+		$ntpos->{$laneid}->{$pos}->[0]++;
+	    } else {
+		$ntpos->{$laneid}->{$pos}->[$ntindex{$nucleotides[$i]}]++;
+	    }
+	}
+    }
+    close($tmpfh);
+    $infh->close();
+
+    ### TO DO
+    # Calculate the average qualities.
+    # This is only useful if we know the type
+    # of qualities We should guess the quality type here and after that print
+    # the actual meaning of the qualities
+    foreach my $pos (keys %{$quals_pos->{$laneid}}) {
+	$quals_pos->{$laneid}->{$pos}=sprintf "%.2f",($quals_pos->{$laneid}->{$pos} / $total_reads);
+    }
+
+    # Get the unique reads without going out of the roof using RAM
     my $command="sort -T $tmpdir $tmpfn | uniq| wc -l";
     $unique=`$command`;
     $command="rm $tmpfn";
