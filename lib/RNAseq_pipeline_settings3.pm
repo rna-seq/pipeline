@@ -450,7 +450,7 @@ sub get_junction_type_sub {
     my $junction_type=sub {
 	my $junction=shift;
 
-	# This should avoid probles with junctions that have or do not have the
+	# This should avoid problems with junctions that have or do not have the
 	# splice linker
 	my $junction_id=$junction;
 	$junction_id=~s/_splice//;
