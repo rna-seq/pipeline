@@ -1984,6 +1984,9 @@ sub build_file_list {
 		$not_ok=1;
 		print $log_fh "Incorrect file name in $file_list: $line\n";
 		print $log_fh "\tName should be the unzipped name of the input file";
+	    } elsif ($line=~/-/) {
+		$not_ok=1;
+		print $log_fh "Presence of '-' may cause problems to with the MySQL database, please change the naming\n";
 	    }
 	}
 	if ($not_ok) {
