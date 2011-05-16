@@ -14,7 +14,7 @@ BEGIN {
 
 # Objective
 # This scritp will take information from the tables containing the RNAseq data
-# and the RNAseq pooled data and it will build the distribution of teh RPKMs
+# and the RNAseq pooled data and it will build the distribution of the RPKMs
 
 use RNAseq_pipeline3 qw(get_fh);
 use RNAseq_pipeline_settings3 ('get_dbh','read_config_file');
@@ -28,7 +28,7 @@ $prefix=$options{'PREFIX'};
 
 # Get the table names we need
 my $rpkm=$prefix.'_gene_RPKM';
-my $rpkm_pooled=$prefix.'_gene_RPKM_pooled';
+#my $rpkm_pooled=$prefix.'_gene_RPKM_pooled';
 
 # Get the information for the histogram
 my %hist;
@@ -36,9 +36,12 @@ my $dbh=get_dbh();
 get_info_from_table($dbh,
 		    $rpkm,
 		    %hist);
-get_info_from_table($dbh,
-		    $rpkm_pooled,
-		    %hist);
+
+# We do not need the pooled RPKM any longer, as we are not grouping different
+# types of samples now
+#get_info_from_table($dbh,
+#		    $rpkm_pooled,
+#		    %hist);
 
 # Print out the result
 foreach my $value (keys %hist) {
