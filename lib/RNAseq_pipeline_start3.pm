@@ -2240,7 +2240,13 @@ sub add_exp_info {
 	
 	my $overwrite=0;
 	if ($count == 1) {
-	    print STDERR "$exp_id from $proj_id may already have a $key. Do you want to overwrite it?(y/n)\n";
+	    my ($existing)=$sth->fetchrow_array() || '';
+	    # If the keys are already the same or if the key is not provided
+	    # skip
+	    unless ($value) {next;}
+	    if ($existing eq $value) {next;}
+
+	    print STDERR "$exp_id from $proj_id may already have a $key. Do you want to overwrite $existing with $value?(y/n)\n";
 	    my $reply=<STDIN>;
 	    chomp($reply);
 	    if ($reply=~/^y/i) {
@@ -2321,7 +2327,9 @@ sub clear_dirs {
 
     foreach my $dir (@directories) {
 	my $command="rm -r $dir";
-	run_system_command($command);
+	if (-r $dir) {
+	    run_system_command($command);
+	}
     }
 }
 
@@ -2344,6 +2352,10 @@ sub clear_files {
 
     # remove the pipeline file
     $command='rm RNAseq_pipeline.txt';
+    run_system_command($command);
+
+    # remove possible temporary files left by the build sequences part
+    $command='rm *.tmp.sequences.txt';
     run_system_command($command);
 }
 
