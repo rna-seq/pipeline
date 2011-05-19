@@ -42,7 +42,7 @@ sub parse_gem_line {
 	die "Error in GEM format: $line\n";
     }
     my $type='F';
-    if ($line[3]=~/=/) {
+    if ($line[3]=~/=/o) {
 	# Set to split-map if the read is split
 	$type='S';
     }
