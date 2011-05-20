@@ -205,8 +205,7 @@ sub run_flux {
     $tmpdir.='/tmp';
     # create this second localdir if it doesn't exist
     my $command="mkdir -p $tmpdir";
-    print STDERR "Executing: $command\n";
-    system($command);
+    run_system_command($command);
 
     my $parameterfile=build_parameter_file($annot,
 					   $maps,
@@ -217,16 +216,14 @@ sub run_flux {
 
     # build the flux command
     $command="$bindir/flux.sh $parameterfile -u";
-    print STDERR $command,"\n";
-    system($command);
+    run_system_command($command);
 
     if (-r $outfile) {	
 	print STDERR $outfile,"\tBuilt\n";
 	# Clean up by removing the parameter file
 	# The read file seems to be cleared by the flux
 	$command="rm $parameterfile";
-	print STDERR "Executing: $command\n";
-	system($command);
+	run_system_command($command);
     } else {
 	die "Problem building $outfile\n";
     }
