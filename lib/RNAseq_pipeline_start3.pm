@@ -45,7 +45,8 @@ use Bio::SeqFeature::Gene::Exon;
 
 ## Pipeline specific modules
 use RNAseq_pipeline3 ('get_fh','MySQL_DB_Connect','check_file_existence',
-		      'check_gff_file','check_fasta_file','run_system_command');
+		      'check_gff_file','check_fasta_file','run_system_command',
+		      'check_table_existence');
 
 ### Subroutines
 
@@ -195,25 +196,18 @@ sub check_base_tables {
     print $log_fh "Checking the common tables...\n";
     
     foreach my $table (keys %tables) {
-	my ($query,$sth);
+	my $present=check_table_existence($dbh,
+					  $table);
 	
-	$query ='SELECT count(*) ';
-	$query.="FROM $table";
-	
-	$sth = $dbh->table_info(undef,undef,$table,"TABLE");
-	
-	my $count=$sth->execute();
-	my $results=$sth->fetchall_arrayref();
-	
-	if (@{$results}) {
+	if ($present) {
 	    # Print the table location for the junctions of this experiment
 	    print $log_fh join("\t",
 			      $table,
 			      "Present"),"\n";
 	    if ($clean) {
 		print STDERR "Deleting $table\n";
-		$query="drop table $table";
-		$sth=$dbh->prepare($query);
+		my $query="drop table $table";
+		my $sth=$dbh->prepare($query);
 		print STDERR "Executing: $query\n";
 		$sth->execute();
 	    }
@@ -226,13 +220,13 @@ sub check_base_tables {
 		print $table_fh $tables{$table},"\n";
 		close($table_fh);
 		my $command="mysql $database < $file_name";
-		system($command);
-		print $log_fh "Executing:\t$command\n";
+		run_system_command($command,
+				   $log_fh);
 		$command="rm $file_name";
-		system($command);
+		run_system_command($command);
 		print $log_fh join("\t",
-				  $table,
-				  "Generated"),"\n";
+				   $table,
+				   "Generated"),"\n";
 	    }
 	}
     }
@@ -258,10 +252,15 @@ sub base_table_build {
        exp_description mediumtext,
        expDate date NULL,
        CellType varchar(50) NULL,
-       RNAType varchar(50) NULL,
-       Compartment varchar(50) NULL,
-       Bioreplicate varchar(10) NULL,
+       RNAType varchar(50) "POLYA",
+       Compartment varchar(50) "CELL",
+       Bioreplicate varchar(10) 1,
        partition varchar(50) NULL,
+       md5sum varchar(45) NULL,
+       Preprocessing varchar(45) NULL,
+       annotation_version varchar(45) NULL,
+       genome_assembly varchar(45) NULL,
+       paired bit(1) YES 1,    
        PRIMARY KEY (project_id,experiment_id)
 );',
 		'annotation_files' => 'CREATE TABLE IF NOT EXISTS annotation_files (
