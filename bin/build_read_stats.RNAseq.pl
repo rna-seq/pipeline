@@ -478,6 +478,7 @@ sub process_fastq_file {
     my $log_fh=shift;
     my $laneid=shift;
     my $ntpos=shift;
+    my $qualities=shift;
 
     my $unique=0;
     my $read_length=0;
@@ -486,6 +487,12 @@ sub process_fastq_file {
     my $total_reads=0;
     my %sequence;
     my $line_type=0;
+
+    # determine the quality variant
+    my $variant='illumina';
+    if ($qualities eq 'phred') {
+	$variant='sanger';
+    }
 
     # Open the fastq file. Here we will use our own sub, because some of the
     # files received do not comply whith the quality values they should actually
@@ -571,6 +578,11 @@ sub process_fastq_file {
 
 	    # Set the qualities
 	    my $qual=ord($qualities[$i]);
+	    if ($variant eq 'sanger') {
+		$qual-=33;
+	    } else {
+		$qual-=64;
+	    }
 	    $quals_pos->{$laneid}->{$pos}+=$qual;
 
 	    # Set the nucleotides
