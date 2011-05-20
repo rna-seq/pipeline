@@ -393,9 +393,6 @@ print_config_file(\%vars,
 build_file_list(\%vars,
 		$log_fh);
 
-# execute the first step of the pipeline
-### THE FIRST STEP OF THE PIPELINE should be added here
-
 # Add the project and experiment entries to the respective tables
 add_project($host,
 	    $commondb,
