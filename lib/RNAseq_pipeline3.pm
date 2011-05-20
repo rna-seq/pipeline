@@ -168,18 +168,11 @@ sub get_fh {
     chomp($filename);
     my $openstring;
     my $fh;
-    my $script='pigz';
+    my $script='gzip';
     
-    # check if the compression tool is available
-    my $command="which $script > /dev/null";
-    my $absent=system($command);
-    if ($absent) {
-	$script='gzip';
-    }
-
     if ($write) {
 	if ($filename=~/.gz$/) {
-	    warn "Piping $filename through gzip\n";
+	    warn "Piping $filename through $script\n";
 	    # Use gzip -7 as the increase in compression between 7 an 9 is quite
 	    # small and the extra time invested quite large
 	    $openstring="| $script -7 -c > $filename";
@@ -215,8 +208,7 @@ sub get_log_fh {
 	# Create a bogus log file in order to avoid problems downstream if the
 	# file does not exist
 	my $command="touch $logfn";
-	print STDERR "Executing: $command\n";
-	system($command);
+	run_system_command($command);
     } else {
 	$log_fh=get_fh($logfn,1);
     }
@@ -239,7 +231,7 @@ sub check_file_existence {
     }
 }
 
-# Check if the fasta file identifiers contain any spaces and warn if thise is
+# Check if the fasta file identifiers contain any spaces and warn if this is
 # the case
 sub check_fasta_file {
     my $file=shift;
@@ -434,8 +426,6 @@ sub plot_heatmap {
     return(@roworder);
 }
 
-
-
 ### Process the annotation to extract the different parts of information we are
 # interested in
 # This will get all the exons from the annotation file and also take a gene
@@ -496,7 +486,7 @@ sub get_annotation_from_gtf {
     }
 
     print $log_fh "Reading $file\n";
-    print $log_fh "WARNING: Skipping entries located in chr random, chr U(nknown), haplotypes and EnsEMBL assembly exceptions\n";
+    print $log_fh "WARNING: Skipping entries located in haplotypes\n";
 
     while (my $line=<$fh>) {
 	$count++;
@@ -522,38 +512,15 @@ sub get_annotation_from_gtf {
 	    next;
 	}
 
-	# Skip random and haplotype chromosomes
+	# Skip haplotype chromosomes
 	# We will not skip the random ones, as there are some species with
 	# annotated and expressed genes in these chromosomes, particularly
 	# those where the genome assembly is not very good
-#	if ($chr=~/random/io) {
-#	    next;
-#	}
+
+	# Skip only the haplotypes
 	if ($chr=~/hap/o) {
 	    next;
-	} elsif ($chr=~/^chrU/o) {
-	    next;
-#	} elsif ($chr=~/^Un\./o) {
-#	    # This is for EnsEMBL cow
-#	    next;
-	} elsif ($chr=~/^(chr)?HSCHR/o) {
-	    next;
-	} elsif ($chr=~/^AAFC03011182/o) {
-	    # EnsEMBL cow
-	    next;
 	}
-
-	### TO DO Fix some naming issues that may occurr
-	# If the chromosomes are not named as chr in the file name them so this
-	# may cause some problems if we are looking at contigs etc... but
-	# it should only activate if the chromosomens are named as the humans
-	# but with no chr
-#	if ($chr!~/^(chr|contig|scaffold|supercontig)/) {
-#	    $chr=~s/^/chr/;
-#	}
-	# To prevent problems with the naming of the chromosomes we will change
-	# the chrMT to chrM
-#	$chr=~s/chrMT/chrM/;
 
 	# Check the strand
 	if ($line->{'strand'} eq '+') {
@@ -876,7 +843,6 @@ sub print_gff {
 		     'qualities','"'.$read->[5].'";',
 		     'matches','"'.$read->[6].'";');
 
-
     print $outfh join("\t",
 		      $read->[0],
 		      $readfile,
@@ -930,7 +896,6 @@ sub cluster_gff {
     my $incl=0;
     my $strand;
     my $type='cl';
-
 
     while (my $line=<$infh>) {
 	my %line=%{parse_gff_line($line)};
