@@ -63,7 +63,7 @@ if ($localdir &&
 my ($scriptpath)=split(/\s+/,$script);
 unless ($script &&
 	-e $scriptpath) {
-    die "Could not find input script at $scriptpath\n";
+    die "Could not find input script $script at $scriptpath\n";
 }
 
 # Get the files we are going to process
