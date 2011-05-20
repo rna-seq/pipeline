@@ -58,7 +58,7 @@ RESULTS = $PROJECT
 
 # PHONY rules always execute as they do not build a table if they are in the
 # prerequisites of another rule
-.PHONY: status preprocess mapping_summary exon_inclusion html_report encode all browser
+.PHONY: status preprocess QC annotation_info mapping mapping_summary exon_inclusion html_report encode all browser transcript_expression
 status: @
 	mysql $DB -e 'SHOW TABLE STATUS'
 
@@ -103,6 +103,9 @@ _dataset: _ambiguous
 	build_dataset.RNAseq.pl > _dataset.txt
 	all_no_log_table
 
+QC: _dataset
+
+######
 # Get the genome sequence location and the annotation files and extract all the
 # Transcripts, exons and junctions in multifasta format
 # After this build an index for each of these files
@@ -179,13 +182,15 @@ _exon_classification: _extract_annotation
 _junction_classification: _exon_classification
 	all_no_log_table
 
+annotation_info: _junction_classification
+
 ##############
 # Mapping info
 # After generating the indices we want to generate the mapping results for
 # each of them. The following steps will each perform the mapping to one of the
 # indices and extract a number of statistics from these mappings
 # The mapping to the exons could be useful, but is not at the moment implemented
-_genome_mapping: _indices _dataset
+_genome_mapping: QC _indices
 	run_mapper_cluster.RNAseq.pl -index $GENOMEINDEX -o $GENOMEDIR
 	build_mapping_stats.RNAseq.pl `ls $GENOMEDIR/* | grep '.gem.map'` > _genome_mapping.txt
 	plot_mapping_graph.RNAseq.pl -graph _genome_mapping -type 'Genome'
@@ -193,7 +198,7 @@ _genome_mapping: _indices _dataset
 	all_no_log_table
 	check_mappings.RNAseq.pl -type _genome_mapping
 
-_transcriptome_mapping: _indices _dataset
+_transcriptome_mapping: QC _indices
 	run_mapper_cluster.RNAseq.pl -index $TRANSCRIPTOMEINDEX -o $TRANSDIR
 	build_mapping_stats.RNAseq.pl `ls $TRANSDIR/* | grep '.gem.map'` > _transcriptome_mapping.txt
 	plot_mapping_graph.RNAseq.pl -graph _transcriptome_mapping -type 'Transcriptome'
@@ -202,7 +207,7 @@ _transcriptome_mapping: _indices _dataset
 	check_mappings.RNAseq.pl -type _transcriptome_mapping
 
 ### TO DO find a better way to remove the .fa with sed (or something else)
-_junctions_mapping: _indices _dataset
+_junctions_mapping: QC _indices
 	run_mapper_cluster.RNAseq.pl -index $JUNCTIONSINDEX -o $JUNCTIONSDIR
 	for file in `cat $FILELIST |gawk '{print $1}' |sed 's/\.fastq$//'| sed 's/\.fa$//'`; do gemjunc2gemsplit.RNAseq.pl -i $JUNCTIONSDIR/$file.gem.map* -o $JUNCTIONSDIR/$file.gem.map.gen.coords.gz; done
 	build_mapping_stats.RNAseq.pl `ls $JUNCTIONSDIR/* | grep '.gem.map' |grep -v 'coords'` > _junctions_mapping.txt
@@ -259,6 +264,8 @@ _merged_SAM: _merged_mapping
 	run_gem2sam.RNAseq.pl > _merged_SAM.txt
 	all_no_log_table
 
+mapping: _merged_mapping _recursive_mapping
+
 ### Extract some stats from the mappings as well as the unique reads to be used
 # in downstream analyses
 # Once the initial mapping is done we need to extract those reads we are
@@ -281,7 +288,7 @@ _unique_maps_genome: _genome_mapping _junctions_mapping
 	all_no_log_table
 
 # Removed the plotting of the transcript distribution
-_unique_maps_transcripts: _transcriptome_mapping _junction_classification
+_unique_maps_transcripts: _transcriptome_mapping annotation_info
 	cluster_run.RNAseq.pl gem2gff_transcriptome.RNAseq.pl
 	cluster_run.RNAseq.pl get_transcript_lengths.RNAseq.pl
 	plot_gff_transcript_coverage.RNAseq.pl
@@ -365,7 +372,7 @@ _all_junctions_class_pooled: _split_mapping_breakdown
 
 # TO DO we have to insert the number of detected genes here as well as the gene
 # saturation
-_proj_coverage: _extract_annotation _unique_maps_genome _junction_classification
+_proj_coverage: annotation_info _unique_maps_genome
 	get_proj_overlaps_cluster.RNAseq.pl
 	cd $GENOMEDIR; for file in `ls *proj.overlap.gz | sed 's/\/.*\///' | sed 's/.gz$//'`; do get_proj_total_inclusion.RNAseq.pl $file.gz > $file.total; done
 	plot_proj_detection.RNAseq.pl; mv $PREFIX.Proj.*.ps $PREFIX.Proj.*.jpeg $GRAPHS
@@ -374,7 +381,7 @@ _proj_coverage: _extract_annotation _unique_maps_genome _junction_classification
 
 # This has to be fixed so the get_exon_total_inclusion script does not take the
 # files from the command line
-_exon_coverage: _extract_annotation _unique_maps_genome _junction_classification
+_exon_coverage: annotation_info _unique_maps_genome
 	get_exon_overlaps_cluster.RNAseq.pl
 	cd $EXONDIR; for file in `ls *.gtf.overlap.gz | sed 's/\/.*\///' |sed 's/.gz//'`; do get_exon_total_inclusion.RNAseq.pl $file.gz > $file.total; done
 	plot_exon_detection.RNAseq.pl; mv $PREFIX.Exons.*.ps $PREFIX.Exons.*.jpeg $GRAPHS
@@ -382,7 +389,7 @@ _exon_coverage: _extract_annotation _unique_maps_genome _junction_classification
 	cd $EXONDIR; wc -l *.overlap.total |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _exon_coverage.txt; mv _exon_coverage.txt $PROJECT
 	all_no_log_table
 
-_junction_coverage: _unique_maps_junctions _junction_classification
+_junction_coverage: annotation_info _unique_maps_junctions
 	for file in `ls $JUNCTIONSDIR/*.unique.gtf.gz | sed 's/\/.*\///'| sed 's/.gtf.gz//'`; do get_junction_total_inclusion.RNAseq.pl $JUNCTIONSDIR/$file.gtf.gz > $file.overlap.total; done
 	wc -l *.overlap.total |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _junction_coverage.txt;
 	mv *.overlap.total $JUNCTIONSDIR
@@ -491,20 +498,20 @@ _EJEI: _junction_coverage
 # First build some bed files
 ### TO DO we need to add to these files the ones from the split mapping and
 # from the recursive mapping
-_bed_files: _genome_mapping _junctions_mapping _split_mapping _recursive_mapping
+_bed_files: mapping
 	cluster_run.RNAseq.pl gem2bed_combined_cluster.RNAseq.pl
 	wc -l $LOCALDIR/*.combined.bed |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _bed_files.txt;
 	all_no_log_table
 
 ### TO DO fix the flux to run on the cluster in parallel
 # Run the flux
-_transcript_expression_levels: _bed_files _junction_classification
+_transcript_expression_levels: annotation_info _bed_files
 	cluster_run.RNAseq.pl run_flux.RNAseq.pl
 	build_transcript_expression_levels.RNAseq.pl > _transcript_expression_levels.txt
 	mv run_flux.RNAseq.log $LOGS
 	all_no_log_table
 
-_transcript_expression_levels_pooled: _bed_files _junction_classification _transcript_expression_levels
+_transcript_expression_levels_pooled: annotation_info _bed_files _junction_classification
 	cluster_run.RNAseq.pl run_flux_pooled.RNAseq.pl
 	build_transcript_expression_levels_pooled.RNAseq.pl > _transcript_expression_levels_pooled.txt
 	mv run_flux_pooled.RNAseq.log $LOGS
@@ -514,6 +521,8 @@ _detected_transcripts: _transcript_expression_levels_pooled
 	cluster_run.RNAseq.pl build_detected_transcripts.RNAseq.pl
 	mv build_detected_transcripts.RNAseq.log $LOGS
 	all_no_log_table
+
+transcript_expression: detected_transcripts _transcript_expression_levels
 
 #######################
 # Calculate gene RPKM from the flux capacitor results
@@ -539,7 +548,7 @@ _fusion_transcripts: _transcriptome_mapping _gene_RPKM
 # a summary of the detected junctions. this table will contain the completion
 # status of these two steps (it is only here to run the two scripts as they
 # both generate their own tables ad load them
-_summaries: _exon_RPKM_pooled _gene_RPKM_dist _inclusion_dist _detected_transcripts _splicing_summary _novel_junctions_summary _exon_RPKM
+_summaries: _exon_RPKM_pooled _gene_RPKM_dist _inclusion_dist transcript_expression _splicing_summary _novel_junctions_summary _exon_RPKM
 	build_expression_summary.RNAseq.pl > _summaries.txt
 	build_top_genes.RNAseq.pl >> _summaries.txt
 	build_top_transcripts.RNAseq.pl >> _summaries.txt
@@ -572,7 +581,7 @@ _store_reads: _merged_SAM
 	all_no_log_table
 
 # ENCODE info we should add the transcript expression from the flux
-encode: _summaries _all_junctions_class_pooled _merged_mapping _read_classification
+encode: _summaries _all_junctions_class_pooled mapping _read_classification
 
 _register_results: encode _store_reads _fusion_transcripts
 	build_register_results.RNAseq.pl > _register_results.txt
