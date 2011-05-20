@@ -35,11 +35,13 @@ my $project;
 my $debug=1;
 my $breakdown=0;
 my $tabsuffix='all_junctions_class_pooled';
+my $limit;
 
 # Get command line options
 GetOptions('nolabels|n' => \$nolabels,
 	   'debug|d' => \$debug,
-	   'breakdown|b' => \$breakdown);
+	   'breakdown|b' => \$breakdown,
+	   'limit|l=s' => \$limit);
 
 if ($breakdown) {
     $tabsuffix='all_junctions_class';
@@ -64,7 +66,8 @@ $dbhcommon=get_dbh(1);
 # Get the tables belonging to the project
 my %tables=%{get_tables($dbhcommon,
 			$project,
-			$tabsuffix)};
+			$tabsuffix,
+			$limit)};
 
 # Remove any tables that do not exist
 check_tables($dbh,
@@ -133,15 +136,6 @@ foreach my $gene (keys %all_genes) {
 }
 close($tmpfh);
 
-# Plot the correlation graph if we have more than 2 samples
-if (@experiments > 2) {
-    my $outfn=$project.".clusters";
-    plot_graphs_R($tmpfn,
-		  $outfn);
-} else {
-    print STDERR "Not enough samples to cluster\n";
-}
-
 exit;
 
 sub get_splicing_data {
@@ -186,40 +180,6 @@ sub get_splicing_data {
     return(\%expression);
 }
 
-# Build a postscript tree using the  canberra distance and the complete linkage
-# for clustering
-sub plot_graphs_R {
-    my $statsfn=shift;
-    my $outfile=shift;
-
-    # Build the R command file
-    my $execution_file="execution.$$.r";
-    my $exec_fh=get_fh($execution_file,1);
-    my $r_string;
-
-    # Read the data
-    $r_string.="rpkms<-read.table(\"$statsfn\",sep=\"\t\",header=T)\n";
-
-    # Calculate the distance matrix
-    $r_string.="genesdist<-dist(t(rpkms),method='canberra')\n";
-
-    # Setup the figure
-    $r_string.="postscript(\"$outfile.ps\")\n";
-
-    # Build the tree
-    $r_string.="plot(hclust(genesdist))\n";
-    $r_string.="dev.off()\n";
-	
-    print $exec_fh $r_string;
-    close($exec_fh);
-
-    # execute the R file
-    my $command="R --vanilla --quiet < $execution_file";
-    run_system_command($command);
-
-    $command="rm $execution_file";
-    run_system_command($command);
-}
 
 # This sub should take a short junction_id and extract the gene it belongs to
 # exon junction belongs
