@@ -204,6 +204,7 @@ sub check_base_tables {
 	    print $log_fh join("\t",
 			      $table,
 			      "Present"),"\n";
+                print $log_fh $tables{$table},"\n";
 	    if ($clean) {
 		print STDERR "Deleting $table\n";
 		my $query="drop table $table";
@@ -252,15 +253,15 @@ sub base_table_build {
        exp_description mediumtext,
        expDate date NULL,
        CellType varchar(50) NULL,
-       RNAType varchar(50) "POLYA",
-       Compartment varchar(50) "CELL",
-       Bioreplicate varchar(10) 1,
+       RNAType varchar(50) NOT NULL DEFAULT "POLYA",
+       Compartment varchar(50) NOT NULL DEFAULT "CELL",
+       Bioreplicate varchar(10) DEFAULT 1,
        partition varchar(50) NULL,
        md5sum varchar(45) NULL,
        Preprocessing varchar(45) NULL,
        annotation_version varchar(45) NULL,
        genome_assembly varchar(45) NULL,
-       paired bit(1) YES 1,    
+       paired bit(1) DEFAULT 1,    
        PRIMARY KEY (project_id,experiment_id)
 );',
 		'annotation_files' => 'CREATE TABLE IF NOT EXISTS annotation_files (
