@@ -103,17 +103,19 @@ sub process_features {
     my $outfh=get_fh($output,1);
 
     foreach my $junc (keys %{$junclist}) {
-	my $gene=junc2gene($junc);
-	my $total=$gene_reads->{$gene};
-	my $ejei=sprintf "%.3f",($junclist->{$junc} / $total);
+	my @genes=@{junc2gene($junc)};
 
-	# Print results only if they are positive
-	print $outfh join("\t",
-			  $gene,
-			  $junc,
-			  $ejei,
-			  $total,
-			  $lane),"\n";
+	foreach my $gene (@genes) {
+	    my $total=$gene_reads->{$gene};
+	    my $ejei=sprintf "%.3f",($junclist->{$junc} / $total);
+	    # Print results only if they are positive
+	    print $outfh join("\t",
+			      $gene,
+			      $junc,
+			      $ejei,
+			      $total,
+			      $lane),"\n";
+	}
     }
     close($outfh);
 
