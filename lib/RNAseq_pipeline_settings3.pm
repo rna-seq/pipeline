@@ -21,7 +21,7 @@ use Exporter;
 	    'get_gene_info_sub','get_trans_info_sub',
 	    'get_gene_RPKM_data','get_gene_readcount_data',
 	    'get_exon_readcount_data',
-	    'get_trans_expression_data',
+	    'get_trans_expression_data','get_junc_expression_data',
 	    'get_desc_from_gene_sub','get_chr_from_gene_sub',
 	    'get_type_from_gene_sub','get_exp_info_sub',
 	    'set_exp_info_sub');
@@ -259,7 +259,7 @@ sub get_gene_from_exon_sub {
 # exon junction belongs
 sub get_gene_from_junc_sub {
     my %options=%{read_config_file()};
-    my $dbh=shift;
+    my $dbh=get_dbh(1);
     my $table=$options{'JUNCTIONSTABLE'};
 
     # For saving time, as the junctions table is huge
@@ -279,7 +279,7 @@ sub get_gene_from_junc_sub {
 	    $count=$sth->execute($junc);
 
 	    if ($count != 1) {
-		die "No gene in $table corresponds to $junc\n";
+		die "No junction in $table corresponds to $junc\n";
 	    } else {
 		my ($gene)=$sth->fetchrow_array();
 		$cache{$junc}=$gene;
@@ -294,7 +294,7 @@ sub get_gene_from_junc_sub {
 # exon junction belongs
 sub get_gene_from_short_junc_sub {
     my %options=%{read_config_file()};
-    my $dbh=shift;
+    my $dbh=get_dbh(1);
     my $table=$options{'JUNCTIONSTABLE'};
 
     # For saving time, as the junctions table is huge
@@ -310,15 +310,26 @@ sub get_gene_from_short_junc_sub {
     my $subroutine=sub {
 	my $junc=shift;
 	### TO DO fix for problematic chromosomes
-	my ($startfrac,$end)=split('_splice_',$junc);
-	my @startfrac=split('_',$startfrac);
-	my $start=pop(@startfrac);
-	my $chr=join('_',@startfrac);
+	my ($startfrac,$chr,$start,$end);
+	if ($junc=~/splice/) {
+	    ($startfrac,$end)=split('_splice_',$junc);
+	    my @startfrac=split('_',$startfrac);
+	    $start=pop(@startfrac);
+	    $chr=join('_',@startfrac);
+	} else {
+	    my @startfrac=split('_',$junc);
+	    $end=pop(@startfrac);
+	    $start=pop(@startfrac);
+	    $chr=join('_',@startfrac);
+	}
 
 	unless ($cache{$junc}) {
 	    $count=$sth->execute($chr,$start,$end);
 
 	    if ($count == 0) {
+		print STDERR $query,"\n";
+		print STDERR join("\t",
+				  $chr,$start,$end),"\n";
 		die "No gene in $table corresponds to $junc\n";
 	    } else {
 		while (my ($gene)=$sth->fetchrow_array()) {
@@ -1746,6 +1757,44 @@ sub get_trans_expression_data {
     return(\%expression);
 }
 
+# Some subroutines to retrieve analysis info from the database
+sub get_junc_expression_data {
+    my $dbh=shift;
+    my $table=shift;
+    my $detected=shift;
+    my $sample=shift;
+    my $breakdown=shift;
+
+    my %expression;
+
+    my ($query,$sth,$count);
+    $query ='SELECT chr1, start, end, support ';
+    $query.="FROM $table ";
+    if ($breakdown) {
+	$query.='WHERE LaneName = ?';
+    } else {
+	$query.='WHERE sample = ?';
+    }
+    $query.='AND junc_type="known"';
+    $sth=$dbh->prepare($query);
+    $count=$sth->execute($sample);
+    
+    if ($count && ($count > 1)) {
+	print STDERR $count,"\tJunctions are detected in $table\n";
+    } else {
+	die "No junctions present in $table\n";
+    }
+
+    # get all the necessary tables
+    while (my ($chr,$start,$end,$rpkm)=$sth->fetchrow_array()) {
+	my $junc_id=join("_",$chr,$start,$end);
+	$expression{$junc_id}=$rpkm;
+	$detected->{$junc_id}=1;
+    }
+
+    return(\%expression);
+}
+
 # Some subroutines to retrieve annotation information from the database (write
 # as the get_trans_info_sub)
 sub get_gene_info_sub {
@@ -1756,6 +1805,10 @@ sub get_gene_info_sub {
 
     unless(@fields) {
 	die "No fields requested from $table\n";
+    }
+
+    unless($table) {
+	die "No Gene class table. Make sure the pipeline us up to date\n";
     }
 
     my %cache;
