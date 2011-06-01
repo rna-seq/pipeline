@@ -39,10 +39,9 @@ $tmpdir=$options{'LOCALDIR'};
 
 # Connect to the database
 my $dbh=get_dbh();
-my $commondbh=get_dbh(1);
 
 # get some useful subroutines
-*junc2gene=get_gene_from_short_junc_sub($commondbh);
+*junc2gene=get_gene_from_short_junc_sub();
 
 # Get the lane names;
 my %files=%{read_file_list()};
@@ -107,6 +106,10 @@ sub process_features {
 
 	foreach my $gene (@genes) {
 	    my $total=$gene_reads->{$gene};
+
+	    unless($total) {
+		die "No gene expression form $gene in $junc\n";
+	    }
 	    my $ejei=sprintf "%.3f",($junclist->{$junc} / $total);
 	    # Print results only if they are positive
 	    print $outfh join("\t",
@@ -135,10 +138,12 @@ sub get_feature_coverage_junctions {
 	chomp($line);
 	my ($feature,$coverage)=split("\t",$line);
 
-	my $gene_id=junc2gene($feature);
-	$gene_reads->{$gene_id}+=$coverage;
+	my $genes=junc2gene($feature);
+	foreach my $gene_id( @{$genes}) {
+	    $gene_reads->{$gene_id}+=$coverage;
 
-	$features->{$feature}+=$coverage;
+	    $features->{$feature}+=$coverage;
+	}
     }
     print STDERR "done\n";
 }
