@@ -329,7 +329,7 @@ sub get_gene_from_short_junc_sub {
 	    if ($count == 0) {
 		print STDERR $query,"\n";
 		print STDERR join("\t",
-				  $chr,$start,$end),"\n";
+				  $junc,$chr,$start,$end),"\n";
 		die "No gene in $table corresponds to $junc\n";
 	    } else {
 		while (my ($gene)=$sth->fetchrow_array()) {
