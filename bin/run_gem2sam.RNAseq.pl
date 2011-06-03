@@ -80,7 +80,9 @@ foreach my $pair (keys %lane_files) {
 		  $pair,
 		  $samfn,
 		  $tmpdir);
-    if (-r $genomefile.'.fai') {
+    # This has to be modified, because if not the file is not filtered and it
+    # will crash due to the hard clippings from GEM
+    if (-r $genomefile.'.fai' && 0) {
 	print STDERR "$genomefile.fai is present\n";
 	generate_merged_sorted_bam($samfn,
 				   $bamfn,
@@ -139,7 +141,8 @@ sub generate_merged_sorted_bam {
 
     my $command='samtools import ';
     $command.="$indexfile.fai ";
-    $command.="$samfile.$$ $tmpsam;samtools sort $tmpsam $bamfile; rm $tmpsam $samfile.$$";
+    $command.="$samfile.$$ $tmpsam;samtools sort $tmpsam $bamfile;";
+    $command.="rm $tmpsam $samfile.$$";
     run_system_command($command);
 }
 
@@ -231,12 +234,12 @@ sub generate_sam_header {
 	    next;
 	}
 
-
 	# Filter invalid cigar lines (the indels that samtools does not
 	# recognize hard clippings, etc...)
 	my @line=split("\t",$line);
 
 	# Filter for negative insert lengths
+	print STDERR $line[5],"\n";
 	if ($line[5]) {
 	    if ($line[5]=~/-/o) {
 		$invalid++;
@@ -251,11 +254,11 @@ sub generate_sam_header {
 				  "Hard clipping:",
 				  @line),"\n";
 		next;
-	    } elsif ($line[5]=~/^\d+M\d+N\d+M$/) {
+	    } elsif ($line[5]=~/^\d+M\d+N\d+M$/o) {
 		my @coords=split(/N/,$line[5]);
 		my $gap=$line[0];
-		$gap=~s/.+[^\d]//;
-		$gap=~s/N//;
+		$gap=~s/.+[^\d]//o;
+		$gap=~s/N//o;
 		if ($gap > 10000) {
 		    $invalid++;
 		    print STDERR join("\t",
@@ -263,17 +266,15 @@ sub generate_sam_header {
 				      @line),"\n";
 		    next;
 		}
-	    } elsif ($line[8] > 10000) {
+	    }
+	    if ($line[8] > 10000) {
 		$line[1]=65;
 		$line[6]='*';
 		$line[7]=0;
 		$line[8]=0;
-		print $outfh join("\t",
-				  @line),"\n";
-	    } else {
-		print $outfh join("\t",
-				  @line),"\n";
 	    }
+	    print $outfh join("\t",
+			      @line),"\n";
 	} else {
 	    next;
 	}
@@ -292,7 +293,7 @@ sub generate_sam_header {
     }
 
     my $command="rm $outfn.$$";
-#    run_system_command($command);
+    run_system_command($command);
 }
 
 # This subroutine should take a gem mapping file and remove from it the pair
@@ -313,11 +314,18 @@ sub remove_pair_info {
 
     print STDERR "Checking Pair ID string in $filename...";
 
+    # This assumes all reads in each file are the same and only checks the first
+    my $idok=0;
+    my $orderok=0;
+
     while (my $line=<$infh>) {
 	chomp($line);
 	my @line=split("\t",$line);
 	if ($line[0]=~s/\|p?1$/\/1/o) {
 	} elsif ($line[0]=~s/\|p?2$/\/2/o) {
+	} else {
+	    # This should speed things up
+	    $idok=1;
 	}
 
 	# Check if the lines files are in the correct order
@@ -345,11 +353,11 @@ sub remove_pair_info {
 	}
 
 	# Count cases with indels
-	if ($line[4]=~/<[+-][0-9]+>/o) {
-	    $indels++;
+#	if ($line[4]=~/<[+-][0-9]+>/o) {
+#	    $indels++;
 #	    print STDERR $line,"\n";
 #	    next;
-	}
+#	}
 
 	# Change any chrMT to chrM
 #	if ($line[4]=~/chrMT/o) {
