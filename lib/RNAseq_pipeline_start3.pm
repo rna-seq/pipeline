@@ -261,7 +261,8 @@ sub base_table_build {
        Preprocessing varchar(45) NULL,
        annotation_version varchar(45) NULL,
        genome_assembly varchar(45) NULL,
-       paired bit(1) DEFAULT 1,    
+       paired bit(1) DEFAULT 1, 
+       lab varchar(45) NULL,
        PRIMARY KEY (project_id,experiment_id)
 );',
 		'annotation_files' => 'CREATE TABLE IF NOT EXISTS annotation_files (
