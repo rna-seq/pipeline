@@ -292,7 +292,7 @@ sub generate_sam_header {
     }
 
     my $command="rm $outfn.$$";
-    run_system_command($command);
+#    run_system_command($command);
 }
 
 # This subroutine should take a gem mapping file and remove from it the pair
