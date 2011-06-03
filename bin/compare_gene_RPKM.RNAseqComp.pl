@@ -38,6 +38,7 @@ my $debug=1;
 my $breakdown;
 my $tabsuffix='gene_RPKM_pooled';
 my $fraction='';
+my $geneclass='';
 
 # Get command line options
 GetOptions('nolabels|n' => \$nolabels,

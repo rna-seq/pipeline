@@ -13,77 +13,107 @@ BEGIN {
 }
 
 # Objective
-# This script should take a fasta or fastq file and it will remove some
-# invalid characters from the id
+# This script should take a fasta or fastq file and clean the read ids removing
+# any | or p from the end
 
-use Pod::Usage;
-use Getopt::Long;
+use Bio::SeqIO;
 use RNAseq_pipeline3 qw(get_fh);
+use RNAseq_pipeline_settings3 ('read_config_file');
 
-# Declare some variables
-my $help;
-my $man;
+my %options=%{read_config_file()};
+
 my $infile;
+my $qualities=$options{'QUALITIES'};
+my $format='fastq';
 
-# Get the command line options
-GetOptions('help|h' => \$help,
-	   'man|m' => \$man);
-
-# Print help if needed
-pod2usage(1) if $help;
-pod2usage(-verbose => 2) if $man;
-
-$infile=shift;
-pod2usage("No input file") unless ($infile);
-
-my $infh=get_fh($infile);
-while (my $line=<$infh>) {
-    if ($line=~/^[+>@]/o) {
-	chomp($line);
-	if ($line=~s/\|p?1$/\/1/o) {
-	    print $line,"\n";
-	} elsif ($line=~s/\|p?2$/\/2/o) {
-	    print $line,"\n";
-	}
-    } else {
-	print $line;
-    }
+if ($qualities eq 'ignore') {
+    $format='fasta';
 }
-close($infh);
+
+my %parsers=%{get_parsing_subs()};
+$infile=shift;
+unless($infile) {
+    die "No input file provided\n";
+}
+
+unless ($parsers{$format}) {
+    die "Unknown format %format\n";
+}
+	     
+print STDERR "Cleaning $infile IDs\n";
+  
+# Parse the file
+# Deal with zipped files
+if ($infile=~/.gz$/) {
+    $infile="zcat $infile |";
+}
+$parsers{$format}->($infile);
 
 exit;
 
-__END__
+sub get_parsing_subs {
+    my %parsing_subs;
 
-=head1 NAME
-    
-    clean_read_ids.preprocess.pl
-    
-=head1 SYNOPSIS
-    
-sample [hm] input 
-    
-  Options:
-    -help            brief help message
-    -man             full documentation
-        
-=head1 OPTIONS
-    
-=over 8
-    
-=item B<-help>
-    
-    Print a brief help message and exits.
-    
-=item B<-man>
-    
-    Prints the manual page and exits.
-    
-=back
-    
-=head1 DESCRIPTION
-    
-    This script should rempve the p characters from the endings of the fastq
-    files (p1 and p2)
+    $parsing_subs{'fasta'}=sub {
+	my $infn=shift;
 
-=cut
+	my $infh=Bio::SeqIO->new(-file => $infn,
+				 -format => 'fasta');
+	my $outfh=Bio::SeqIO->new(-fh => \*STDOUT,
+				  -format => 'fasta');
+	while (my $seq_obj=$infh->next_seq()) {
+	    my $id=$seq_obj->display_id();
+	    $id =~s/\|p1$/\/1/o;
+	    $id =~s/\|p2$/\/2/o;
+	    $seq_obj->display_id($id);
+	    $outfh->write_seq($seq_obj);
+	}
+	$infh->close();
+    };
+    $parsing_subs{'fastq'}=sub {
+	my $infn=shift;
+
+	my $infh=get_fh($infn);
+
+	my $line_type=0;
+	my %sequence;
+	while (my $line=<$infh>) {
+	    chomp($line);
+
+	    # Decide which line we are in
+	    if ($line=~s/^@//) {
+		my $id=$line;
+		$id =~s/\|p1$/\/1/o;
+		$id =~s/\|p2$/\/2/o;
+		%sequence=('id' => $id);
+		$line_type=1;
+		next;
+	    } elsif ($line=~/^\+/) {
+		$line_type=2;
+		next;
+	    }
+	    
+	    if ($line_type == 1) {
+		$sequence{'seq'}.=$line;
+		next;
+	    } elsif ($line_type == 2) {
+		$sequence{'qual'}.=$line;
+	    } else {
+		warn "Shouldn't be here\n";
+	    }
+	    
+	    my $seq=$sequence{'seq'};
+	    my $qual=$sequence{'qual'};
+
+	    print '@',$sequence{'id'},"\n";
+	    print "$seq\n";
+	    print "+\n";
+	    print "$qual\n";
+	}
+	close($infh);
+
+	return();
+    };
+
+    return(\%parsing_subs);
+}

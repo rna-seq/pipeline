@@ -116,6 +116,9 @@ sub build_distribution {
 	my @line2=split("\t",$line2);
 	my $junction_id=join('_',@line1[0,4],$line2[3]);
 	my $type=junction_type($junction_id);
+	unless($type) {
+	    die "$junction_id has no type\n";
+	}
 	$class->{$junction_id}++;
 	$dist->{$lane}->{$type}++;
     }

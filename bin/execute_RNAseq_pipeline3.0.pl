@@ -1,7 +1,12 @@
 #!/usr/bin/perl
+#    pip -- pipeline interface program
+#
+#    John Conery
+#    University of Oregon
+#    July 2004
 #
 #    execute_RNAseq_pipeline.pl
-#    Copyright (C) 2009-2011  DGK (Based on pip by John Conery rewritten by DGK)
+#    2009-2011 DGK (Based on pip by John Conery modified by DGK)
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -35,16 +40,13 @@ use DBI;
 use Cwd;
 use RNAseq_pipeline3 qw(MySQL_DB_Connect get_log_fh);
 
-# Set some general variables that will be used through the script:
-
 # Set a signal handler to kill any process started by the script if it
 # receives the kill signal.
-
-# I don't know if this will actually work but its a pain when all the children
-# keep executing after the main program dies
+# Check and Modify
 my ($kill_all_sub,$add_proc_sub)=\&set_process_management;
 $SIG{'INT'}=\&{$kill_all_sub};
 
+# Set some general variables that will be used through the script:
 # Set the global options
 # Read any command line arguments
 my $help;				#  -h   print help and exit
@@ -72,6 +74,7 @@ my $success=GetOptions(
     'restart' => \$force,
     'startpoint|b=s' => \$startpoint
     );
+
 # Check for option errors
 pod2usage(1) unless $success;
 

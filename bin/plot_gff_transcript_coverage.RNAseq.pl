@@ -154,8 +154,7 @@ sub build_distribution {
 # This subroutine will get 5 filehandles one which will contain the stats
 # for all the reads and another four that will contain subsets of the data
 sub get_file_handles {
-    my %files=("read_dist.1_99.$$.stats" => '',
-	       "read_dist.100_999.$$.stats" => '',
+    my %files=("read_dist.1_999.$$.stats" => '',
 	       "read_dist.1000_2999.$$.stats" => '',
 	       "read_dist.3000_5999.$$.stats" => '',
 	       "read_dist.6000_8999.$$.stats" => '',
@@ -176,10 +175,8 @@ sub breakdown_by_size {
     my $length=shift;
     my $fh;
 
-    if ($length < 100) {
-	$fh=$files->{"read_dist.1_99.$$.stats"};
-    } elsif ($length < 1000) {
-	$fh=$files->{"read_dist.100_999.$$.stats"};
+    if ($length < 1000) {
+	$fh=$files->{"read_dist.1_999.$$.stats"};
     } elsif ($length < 3000) {
 	$fh=$files->{"read_dist.1000_2999.$$.stats"};
     } elsif ($length < 6000) {
@@ -198,10 +195,8 @@ sub get_size_cat {
     my $length=shift;
     my $cat;
 
-    if ($length < 100) {
-	$cat='1_99';
-    } elsif ($length < 1000) {
-	$cat='100_999';
+    if ($length < 1000) {
+	$cat='1_999';
     } elsif ($length < 3000) {
 	$cat='1000_2999';
     } elsif ($length < 6000) {
@@ -291,8 +286,7 @@ sub data_4_R {
     $r_string.="postscript(\"$readsfile.breakdown.stats.ps\")\n";
     $r_string.="par(oma=c(2,0,2,0))\n";
     $r_string.="par(mfrow=c(2,3))\n";
-    foreach my $statsfile ("read_dist.1_99.$$.stats",
-			   "read_dist.100_999.$$.stats",
+    foreach my $statsfile ("read_dist.1_999.$$.stats",
 			   "read_dist.1000_2999.$$.stats",
 			   "read_dist.3000_5999.$$.stats",
 			   "read_dist.6000_8999.$$.stats",
