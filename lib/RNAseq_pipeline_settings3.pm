@@ -330,7 +330,8 @@ sub get_gene_from_short_junc_sub {
 		print STDERR $query,"\n";
 		print STDERR join("\t",
 				  $junc,$chr,$start,$end),"\n";
-		die "No gene in $table corresponds to $junc\n";
+		warn "No gene in $table corresponds to $junc. Maybe the junction belongs to more than one gene\n";
+		push @{$cache{$junc}}, 'Unknown';
 	    } else {
 		while (my ($gene)=$sth->fetchrow_array()) {
 		    push @{$cache{$junc}}, $gene;
