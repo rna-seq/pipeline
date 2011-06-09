@@ -108,7 +108,8 @@ sub process_features {
 	    my $total=$gene_reads->{$gene};
 
 	    unless($total) {
-		die "No gene expression form $gene in $junc\n";
+		warn "No gene expression from $gene in $junc\n";
+		next;
 	    }
 	    my $ejei=sprintf "%.3f",($junclist->{$junc} / $total);
 	    # Print results only if they are positive
