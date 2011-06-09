@@ -144,11 +144,10 @@ sub get_split_mapper_routines {
 	my $mismatches=shift;
 	my $zip=shift;
 	
-	# For the moment do not split map with more than 2 mismatches, as the time
-	# is too long
+	# For the moment do not split map with more than 2 mismatches, as the
+	# time is too long
 	if ($mismatches > 2) {
-	    print STDERR "WARNING: Setting mismatches to 2\n";
-	    $mismatches=2;
+	    print STDERR "WARNING: Setting mismatches > 2 during split mapping may take very long\n";
 	}
 	
 	my $tmpfile=$outfile;
@@ -275,8 +274,7 @@ sub split_map {
     # For the moment do not split map with more than 2 mismatches, as the time
     # is too long
     if ($mismatches > 2) {
-	print STDERR "WARNING: Setting mismatches to 2\n";
-	$mismatches=2;
+	print STDERR "WARNING: Setting mismatches > 2 during split mapping may take very long\n";
     }
 
     my $tmpfile=$outfile;

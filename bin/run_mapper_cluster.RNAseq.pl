@@ -136,7 +136,8 @@ if ($usecluster) {
 					    $bindir,
 					    $index,
 					    $threads,
-					    $jobname);
+					    $jobname,
+					    $mismatches);
     my $queue=$options{'CLUSTER'};
     send2cluster($subfile,
 		 $queue,
@@ -169,6 +170,7 @@ sub build_run_mapper_submission {
     my $index=shift;
     my $threads=shift || 2;
     my $jobname=shift;
+    my $mismatches=shift;
 
     print STDERR 'Building submission file...';
     my $filenum=@{$pairs};
@@ -212,7 +214,7 @@ export infile=\${infiles[\$SGE_TASK_ID-1]}
 export outfile=\${outfiles[\$SGE_TASK_ID-1]}
 
 echo \$HOSTNAME >&2
-$bindir/run_mapper.RNAseq.parallel.pl -index $index -infile \$infile -outfile \$outfile -t $threads -mismatches 2 > \$infile.mapping.log
+$bindir/run_mapper.RNAseq.parallel.pl -index $index -infile \$infile -outfile \$outfile -t $threads -mismatches $mismatches > \$infile.mapping.log
 FORMEND
     ;
     close($outfh);
