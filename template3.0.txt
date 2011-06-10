@@ -190,7 +190,7 @@ annotation_info: _junction_classification
 # each of them. The following steps will each perform the mapping to one of the
 # indices and extract a number of statistics from these mappings
 # The mapping to the exons could be useful, but is not at the moment implemented
-_genome_mapping: _datasets _indices
+_genome_mapping: _dataset _indices
 	run_mapper_cluster.RNAseq.pl -index $GENOMEINDEX -o $GENOMEDIR
 	build_mapping_stats.RNAseq.pl `ls $GENOMEDIR/* | grep '.gem.map'` > _genome_mapping.txt
 	plot_mapping_graph.RNAseq.pl -graph _genome_mapping -type 'Genome'
