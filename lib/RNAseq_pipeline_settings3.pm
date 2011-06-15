@@ -474,7 +474,11 @@ sub get_junction_type_sub {
 	unless (exists $types{$junction}) {
 	    $count=$sth->execute($chr,$start,$end);
 	    unless ($count) {
-		die "No junction type for $junction\n";
+		# This will happen when the junction is present in 2 genes and
+		# because of this has not been included in the junction list
+		# we have to fix this in a better way
+		warn "No junction type for $junction setting to ambiguous\n";
+		$junctypes{'ambiguous'}++;
 	    }
 	    my %junctypes;
 	    while (my ($junctype)=$sth->fetchrow_array()) {
