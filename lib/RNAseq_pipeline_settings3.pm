@@ -20,7 +20,7 @@ use Exporter;
 	    'get_pair_id','get_lane_id','get_dataset_id','get_mapping_fh',
 	    'get_gene_info_sub','get_trans_info_sub',
 	    'get_gene_RPKM_data','get_gene_readcount_data',
-	    'get_exon_readcount_data',
+	    'get_exon_readcount_data','get_splicing_data',
 	    'get_trans_expression_data','get_junc_expression_data',
 	    'get_desc_from_gene_sub','get_chr_from_gene_sub',
 	    'get_type_from_gene_sub','get_exp_info_sub',
@@ -267,7 +267,7 @@ sub get_gene_from_junc_sub {
 
     my ($query,$sth,$count);
 
-    $query ='SELECT gene_id ';
+    $query ='SELECT DISTINCT gene_id ';
     $query.="FROM $table ";
     $query.='WHERE junction_id = ?';
     $sth=$dbh->prepare($query);
@@ -1639,6 +1639,35 @@ sub get_gene_RPKM_data {
 	print STDERR "Too few genes detected for $sample\n";
     }
     
+    # get all the necessary tables
+    while (my ($gene,$rpkm)=$sth->fetchrow_array()) {
+	$expression{$gene}=$rpkm;
+	$detected->{$gene}=1;
+    }
+
+    return(\%expression);
+}
+
+sub get_splicing_data {
+    my $dbh=shift;
+    my $table=shift;
+    my $detected=shift;
+
+    my %expression;
+
+    my ($query,$sth,$count);
+    $query ='SELECT junc_type, detected ';
+    $query.="FROM $table ";
+
+    $sth=$dbh->prepare($query);
+    $count=$sth->execute();
+    
+    if ($count && ($count > 1)) {
+	print STDERR $count,"\tGenes are detected in $table\n";
+    } else {
+	die "No genes present in $table\n";
+    }
+
     # get all the necessary tables
     while (my ($gene,$rpkm)=$sth->fetchrow_array()) {
 	$expression{$gene}=$rpkm;
