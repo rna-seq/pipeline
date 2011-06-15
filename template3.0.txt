@@ -198,7 +198,7 @@ _genome_mapping: _dataset _indices
 	all_no_log_table
 	check_mappings.RNAseq.pl -type _genome_mapping
 
-_transcriptome_mapping: QC _indices
+_transcriptome_mapping: _dataset _indices
 	run_mapper_cluster.RNAseq.pl -index $TRANSCRIPTOMEINDEX -o $TRANSDIR
 	build_mapping_stats.RNAseq.pl `ls $TRANSDIR/* | grep '.gem.map'` > _transcriptome_mapping.txt
 	plot_mapping_graph.RNAseq.pl -graph _transcriptome_mapping -type 'Transcriptome'
@@ -207,7 +207,7 @@ _transcriptome_mapping: QC _indices
 	check_mappings.RNAseq.pl -type _transcriptome_mapping
 
 ### TO DO find a better way to remove the .fa with sed (or something else)
-_junctions_mapping: QC _indices
+_junctions_mapping: _dataset _indices
 	run_mapper_cluster.RNAseq.pl -index $JUNCTIONSINDEX -o $JUNCTIONSDIR
 	for file in `cat $FILELIST |gawk '{print $1}' |sed 's/\.fastq$//'| sed 's/\.fa$//'`; do gemjunc2gemsplit.RNAseq.pl -i $JUNCTIONSDIR/$file.gem.map* -o $JUNCTIONSDIR/$file.gem.map.gen.coords.gz; done
 	build_mapping_stats.RNAseq.pl `ls $JUNCTIONSDIR/* | grep '.gem.map' |grep -v 'coords'` > _junctions_mapping.txt
