@@ -239,7 +239,7 @@ sub generate_sam_header {
 	my @line=split("\t",$line);
 
 	# Filter for negative insert lengths
-	print STDERR $line[5],"\n";
+#	print STDERR $line[5],"\n";
 	if ($line[5]) {
 	    if ($line[5]=~/-/o) {
 		$invalid++;
