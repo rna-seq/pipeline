@@ -239,6 +239,7 @@ sub base_table_build {
        project_id varchar(50) NOT NULL,
        species varchar(50) NOT NULL,
        proj_description mediumtext,
+       secret varchar(50) NULL,
        PRIMARY KEY (project_id)
 );',
 		'experiments' => 'CREATE TABLE IF NOT EXISTS experiments (
