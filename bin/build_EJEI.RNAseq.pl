@@ -142,9 +142,8 @@ sub get_feature_coverage_junctions {
 	my $genes=junc2gene($feature);
 	foreach my $gene_id( @{$genes}) {
 	    $gene_reads->{$gene_id}+=$coverage;
-
-	    $features->{$feature}+=$coverage;
 	}
+	$features->{$feature}+=$coverage;
     }
     print STDERR "done\n";
 }
