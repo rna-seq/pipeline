@@ -381,7 +381,7 @@ _proj_coverage: _junction_classification _unique_maps_genome
 
 # This has to be fixed so the get_exon_total_inclusion script does not take the
 # files from the command line
-_exon_coverage: annotation_info _unique_maps_genome
+_exon_coverage: _junction_classification _unique_maps_genome
 	get_exon_overlaps_cluster.RNAseq.pl
 	cd $EXONDIR; for file in `ls *.gtf.overlap.gz | sed 's/\/.*\///' |sed 's/.gz//'`; do get_exon_total_inclusion.RNAseq.pl $file.gz > $file.total; done
 	plot_exon_detection.RNAseq.pl; mv $PREFIX.Exons.*.ps $PREFIX.Exons.*.jpeg $GRAPHS
@@ -389,7 +389,7 @@ _exon_coverage: annotation_info _unique_maps_genome
 	cd $EXONDIR; wc -l *.overlap.total |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _exon_coverage.txt; mv _exon_coverage.txt $PROJECT
 	all_no_log_table
 
-_junction_coverage: annotation_info _unique_maps_junctions
+_junction_coverage: _junction_classification _unique_maps_junctions
 	for file in `ls $JUNCTIONSDIR/*.unique.gtf.gz | sed 's/\/.*\///'| sed 's/.gtf.gz//'`; do get_junction_total_inclusion.RNAseq.pl $JUNCTIONSDIR/$file.gtf.gz > $file.overlap.total; done
 	wc -l *.overlap.total |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _junction_coverage.txt;
 	mv *.overlap.total $JUNCTIONSDIR
@@ -498,20 +498,20 @@ _EJEI: _junction_coverage
 # First build some bed files
 ### TO DO we need to add to these files the ones from the split mapping and
 # from the recursive mapping
-_bed_files: mapping
+_bed_files: _merged_mapping
 	cluster_run.RNAseq.pl gem2bed_combined_cluster.RNAseq.pl
 	wc -l $LOCALDIR/*.combined.bed |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _bed_files.txt;
 	all_no_log_table
 
 ### TO DO fix the flux to run on the cluster in parallel
 # Run the flux
-_transcript_expression_levels: annotation_info _bed_files
+_transcript_expression_levels: _junction_classification _bed_files
 	cluster_run.RNAseq.pl run_flux.RNAseq.pl
 	build_transcript_expression_levels.RNAseq.pl > _transcript_expression_levels.txt
 	mv run_flux.RNAseq.log $LOGS
 	all_no_log_table
 
-_transcript_expression_levels_pooled: annotation_info _bed_files _junction_classification
+_transcript_expression_levels_pooled: _junction_classification _bed_files _junction_classification
 	cluster_run.RNAseq.pl run_flux_pooled.RNAseq.pl
 	build_transcript_expression_levels_pooled.RNAseq.pl > _transcript_expression_levels_pooled.txt
 	mv run_flux_pooled.RNAseq.log $LOGS
@@ -522,7 +522,7 @@ _detected_transcripts: _transcript_expression_levels_pooled
 	mv build_detected_transcripts.RNAseq.log $LOGS
 	all_no_log_table
 
-transcript_expression: detected_transcripts _transcript_expression_levels
+transcript_expression: _detected_transcripts _transcript_expression_levels
 
 #######################
 # Calculate gene RPKM from the flux capacitor results
