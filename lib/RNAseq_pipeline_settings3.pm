@@ -474,7 +474,7 @@ sub get_junction_type_sub {
 	unless (exists $types{$junction}) {
 	    $count=$sth->execute($chr,$start,$end);
 	    my %junctypes;
-	    unless ($count) {
+	    unless ($count > 0) {
 		# This will happen when the junction is present in 2 genes and
 		# because of this has not been included in the junction list
 		# we have to fix this in a better way
