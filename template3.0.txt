@@ -498,7 +498,7 @@ _EJEI: _junction_coverage
 # First build some bed files
 ### TO DO we need to add to these files the ones from the split mapping and
 # from the recursive mapping
-_bed_files: _merged_mapping
+_bed_files: _merged_mapping _recursive_mapping
 	cluster_run.RNAseq.pl gem2bed_combined_cluster.RNAseq.pl
 	wc -l $LOCALDIR/*.combined.bed |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _bed_files.txt;
 	all_no_log_table
