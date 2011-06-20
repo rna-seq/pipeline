@@ -13,11 +13,15 @@ BEGIN {
 }
 
 # This script should parse the output of the GEM splitmapper at the moment it
-# returns only the unique maps
+# returns only the unique maps. Here the lenght is always considered constant
+# as there has been no trimming in principle.
+# Ths splititn of theline and hit parsing have to rewritten using the code
+# in the GEM module
 
 use Getopt::Long;
 use RNAseq_pipeline3 qw(get_fh get_files_from_table_sub);
 use RNAseq_pipeline_settings3 ('read_config_file','read_file_list','get_dbh');
+use RNAseq_GEM3 ('get_split_coord_parser');
 
 # Get command line options
 my $mismatches;
@@ -83,183 +87,14 @@ sub get_coords {
     if (exists $coord_parser->{$parser_key}){
 	($hit{'up_start'},
 	 $hit{'down_end'})=$coord_parser->{$parser_key}->($up_coords,
-							 $down_coords,
-							 $pos);
+							  $down_coords,
+							  $pos,
+							  $read_length);
     } else {
 	warn "Unknown strand combination $parser_key\n";
     }
 
     return(\%hit);
-}
-
-sub check_multi_start {
-    my $coord_string=shift;
-    my $pos=shift;
-    my $down=shift;
-    my @ranges;
-
-    my %starts;
-    $pos=~s/(\[|])//g;
-    $coord_string=~s/(\[|])//g;
-    
-    my @pos=sort {$a <=> $b} (split(/[-;]/,$pos));
-    my ($pos_start,$pos_end)=($pos[0],$pos[-1]);
-    my @splits=($pos_start .. $pos_end);
-    if ($down) {
-	foreach my $split (@splits) {
-	    $split=$read_length - $split;
-	}
-	@splits=sort {$b <=> $a} @splits;
-    } else {
-	@splits=sort {$a <=> $b} @splits;
-    }
-
-    my @coords=split(/[-;]/,$coord_string);
-    my @coords_sort=sort {$a <=> $b} @coords;
-    my ($hit_start,$hit_end)=($coords_sort[0],$coords_sort[-1]);
-    my @starts=($hit_start .. $hit_end);
-
-    if ($coords[1] &&
-	($coords[0] > $coords[1])) {
-	# This means we are in the munus strand, so we invert the array
-	@starts=reverse(@starts);
-    }
-
-    unless (@splits == @starts) {
-	warn "Wrong number of starts $pos, $coord_string\n";
-	print STDERR join("\t",
-			  @splits),"\n";
-	print STDERR join("\t",
-			  @starts),"\n";
-	return();
-    }
-
-    for (my $i=0;$i<@splits;$i++) {
-	push @ranges, [$starts[$i],$starts[$i] + $splits[$i] - 1];
-    }
-
-    return(\@ranges);
-}
-
-sub check_single_start {
-    my $coord_string=shift;
-    my $pos=shift;
-    my $down=shift;
-    my @ranges;
-
-    my %starts;
-    $pos=~s/(\[|])//g;
-    $coord_string=~s/(\[|])//g;
-
-    my @pos=sort {$a <=> $b} (split(/[-;]/,$pos));
-    my ($pos_start,$pos_end)=($pos[0],$pos[-1]);
-    my @splits=($pos_start .. $pos_end);
-    if ($down) {
-	foreach my $split (@splits) {
-	    $split= $read_length - $split;
-	}
-	@splits=sort {$b <=> $a} @splits;
-    } else {
-	@splits=sort {$a <=> $b} @splits;
-    }
-    my @starts=split(/[-;]/,$coord_string);
-    @starts=($starts[0] .. $starts[-1]);
-
-    unless ((@splits == @starts) ||
-	    (@starts == 1)){
-	warn "Wrong number of starts $pos, $coord_string\n";
-	return();
-    }
-
-    for (my $i=0;$i<@splits;$i++) {
-	my $start;
-	if (@starts > 1) {
-	    $start=$starts[$i];
-	} else {
-	    $start=$starts[0]
-	}
-	push @ranges, [$start,$start + $splits[$i] - 1];
-    }
-
-    return(\@ranges);
-}
-
-sub get_split_coord_parser {
-    my %parser;
-
-    $parser{'FF'}=sub{
-	my $up_coord_string=shift;
-	my $down_coord_string=shift;
-	my $pos=shift;
-
-	# Check input
-	# First the up string
-	my $ranges1=check_single_start($up_coord_string,
-				       $pos);
-
-	# Check the down string
-	my $ranges2=check_multi_start($down_coord_string,
-				      $pos,
-				      1);
-
-	return($ranges1,$ranges2);
-    };
-    
-    $parser{'FR'}=sub{
-	my $up_coord_string=shift;
-	my $down_coord_string=shift;
-	my $pos=shift;
-
-	# Check input
-	# First the up string
-	my $ranges1=check_single_start($up_coord_string,
-					      $pos);
-
-	# Check the down string
-	my $ranges2=check_single_start($down_coord_string,
-					      $pos,
-					      1);
-
-	return($ranges1,$ranges2);
-    };
-
-    $parser{'RR'}=sub{
-	my $up_coord_string=shift;
-	my $down_coord_string=shift;
-	my $pos=shift;
-
-	# Check input
-	# First the up string
-	my $ranges1=check_multi_start($up_coord_string,
-				      $pos);
-
-	# Check the down string
-	my $ranges2=check_single_start($down_coord_string,
-					      $pos,
-					      1);
-
-	return($ranges1,$ranges2);
-    };
-    
-    $parser{'RF'}=sub{
-	my $up_coord_string=shift;
-	my $down_coord_string=shift;
-	my $pos=shift;
-
-	# Check input
-	# First the up string
-	my $ranges1=check_multi_start($up_coord_string,
-				      $pos);
-
-	# Check the down string
-	my $ranges2=check_multi_start($down_coord_string,
-				      $pos,
-				      1);
-
-	return($ranges1,$ranges2);
-    };
-
-    return(\%parser);
 }
 
 sub get_split_parser {
@@ -304,10 +139,9 @@ sub get_split_parser {
 		$read_length=length($line[1]);
 	    }
 	    my @map=split(':',$line[2]);
-	    if (@map < $mismatches - 1) {
-		$mismatches=@map - 1;
-		warn "File was mapped with $mismatches mismatches, reducing mismatch threshold accordingly \n";
-	    }
+
+	    # Adjust the mismatches to the numbes reported
+	    $mismatches=@map - 1;
 
 	    # Get best match position
 	    my $best_match=0;
