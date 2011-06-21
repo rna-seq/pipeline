@@ -1880,6 +1880,8 @@ sub get_gene_info_sub {
     return($get_gene_info)
 }
 
+# Add a check to prevent repeated entries in the transcript and junction class
+# tables when the annotations are redundant...
 sub get_trans_info_sub {
     my %options=%{read_config_file()};
     my $dbh=get_dbh(1);
@@ -1895,7 +1897,7 @@ sub get_trans_info_sub {
     my %cache;
 
     my ($query,$sth);
-    $query ='SELECT '.join(',',@fields).' ';
+    $query ='SELECT DISTINCT '.join(',',@fields).' ';
     $query.="FROM $table ";
     $query.='WHERE transcript_id = ?';
     $sth=$dbh->prepare($query);
