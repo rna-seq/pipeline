@@ -514,7 +514,6 @@ sub get_dbh {
 
     my $database;
     my %options=%{read_config_file()};
-    my $host=$options{'HOST'};
 
     if ($common) {
 	$database=$options{'COMMONDB'};
@@ -522,12 +521,11 @@ sub get_dbh {
 	$database=$options{'DB'};
     }
 
-    unless ($database && $host) {
-	die "Both database and host are required in the config file\n";
+    unless ($database) {
+	die "A database is required in the config file\n";
     }
 
-    my $dbh=MySQL_DB_Connect($database,
-			     $host);
+    my $dbh=MySQL_DB_Connect($database);
     if ($dbh) {
 	return($dbh);
     } else {
@@ -538,18 +536,7 @@ sub get_dbh {
 # This subroutine will get the database containing the common information
 ### TO DO remove it and change every place where it appears to get_dbh(1)
 sub get_common_dbh {
-#    my %options=%{read_config_file()};
-#    my $database=$options{'COMMONDB'};
-#    my $host=$options{'HOST'};
-
-#    unless ($database && $host) {
-#	die "Both database and host are required in the config file\n";
-#    }
-
-#    my $dbh=MySQL_DB_Connect($database,
-#			     $host);
-
-    warn "This subroutine is deprecated. Use get_dbh(1)\n";
+    warn "WARNING:This subroutine is deprecated. Use get_dbh(1)\n";
     my $dbh=get_dbh(1);
     return($dbh);
 }
@@ -1080,6 +1067,8 @@ sub get_feature_overlap_sub {
 	my $stranded=shift;
 	my $outfile=shift;
 	my $tmpdir=$paralleltmp;
+
+	warn "WARNING:THis is obsolete and should never happen\n";
 
 	# Get the otput file name
 	my $overlapfn=$outfile;

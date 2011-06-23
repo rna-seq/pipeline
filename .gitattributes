@@ -38,7 +38,6 @@ bin/build_transcript_expression_levels.RNAseq.pl -text
 bin/build_transcript_expression_levels_pooled.RNAseq.pl -text
 bin/build_transcript_sequences.RNAseq.pl -text
 bin/build_transcripts.RNAseq.pl -text
-bin/check_completed_steps.RNAseq.pl -text
 bin/check_mappings.RNAseq.pl -text
 bin/check_prerequisites.RNAseq.pl -text
 bin/classify_mapped_read.RNAseq.pl -text
@@ -54,9 +53,9 @@ bin/compare_unique_maps_genome.RNAseqComp.pl -text
 bin/completed.RNAseq.pl -text
 bin/execute_RNAseq_pipeline3.0.pl -text
 bin/extract_mapping_info.RNAseqComp.pl -text
+bin/extract_read_files.RNAseqComp.pl -text
 bin/extract_read_stats_info.RNAseqComp.pl -text
 bin/extract_reads_info.RNAseqComp.pl -text
-bin/gem2bed_combined.RNAseq.pl -text
 bin/gem2bed_combined_cluster.RNAseq.pl -text
 bin/gem2gff_genome.RNAseq.pl -text
 bin/gem2gff_junctions.RNAseq.pl -text
@@ -113,6 +112,7 @@ bin/plot_transcript_saturation.RNAseq.pl -text
 bin/prepare_files.RNAseq.pl -text
 bin/preprocess.RNAseq.pl -text
 bin/run_IDR.RNAseqComp.pl -text
+bin/run_IDR.RNAseqCompA.pl -text
 bin/run_flux.RNAseq.pl -text
 bin/run_flux_pooled.RNAseq.pl -text
 bin/run_gem2sam.RNAseq.pl -text

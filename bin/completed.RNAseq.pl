@@ -18,7 +18,7 @@ use Getopt::Long;
 use DBI;
 use Cwd;
 use RNAseq_pipeline_start3 qw(get_tables_hash);
-use RNAseq_pipeline3 qw( MySQL_DB_Connect);
+use RNAseq_pipeline3 qw(MySQL_DB_Connect);
 
 # Set the global options
 # Read any command line arguments

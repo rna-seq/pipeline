@@ -49,19 +49,14 @@ use Bio::SeqFeature::Gene::Exon;
 
 # Modified 27.01.2009 to connect to rusc without adding localhost
 sub MySQL_DB_Connect {
-    my ($database, $host) = @_;
+    my $database = shift;
 
-    # This piece of code is only requred if the host is different
-    unless ($host) {
-	$host='pou';
-	print STDERR "WARNING: No host was found, so I've set it to $host\n";
-    }
-
-    my $datasource = "DBI:mysql:$database;host=$host";
+    my $datasource = "DBI:mysql:$database";
     my $dbh;
     my $cnf_file='.my.cnf';
 
-    # Check for .my.cnf
+    # Check for .my.cnf as this will contain all required information for the
+    # database connection
     if (-e "$ENV{HOME}/$cnf_file") {
 	$datasource .= ";mysql_read_default_file=$ENV{HOME}/$cnf_file";
 	$dbh = DBI->connect($datasource, undef, undef, {RaiseError => 1});

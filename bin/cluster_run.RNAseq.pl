@@ -50,7 +50,7 @@ if ($queue) {
     my $command="rm $subfile";
     run_system_command($command);
 } else {
-    print STDERR "Unable to run this on the cluster. running locally\n";
+    print STDERR "Unable to run this on the cluster. Running locally...\n";
     my $command=$bindir.'/'.$script;
     run_system_command($command);
 }

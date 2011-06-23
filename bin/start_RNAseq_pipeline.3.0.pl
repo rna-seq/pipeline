@@ -51,7 +51,8 @@ BEGIN {
 
 use Pod::Usage;
 use Getopt::Long;
-use RNAseq_pipeline_start3 ('check_option_characters','defaults','check_base_tables',
+use RNAseq_pipeline_start3 ('check_option_characters','defaults',
+			    'check_base_tables',
 			    'get_species_hash','base_table_build',
 			    'get_existing_data_subs',
 			    'get_tables_hash', 'build_table_files',
@@ -87,7 +88,8 @@ my $file_list; # this file will list all the files in the directory to map as
                # well as if they are paired, and/or stranded.
 
 # Database information
-my $host;
+# Most of the connection information will be read from the .my.cnf file, so it
+# is not necessary to supply this
 my $commondb='RNAseqPipelineCommon';
 my $database='RNAseqPipeline';
 my $junctionstable;
@@ -153,7 +155,6 @@ my %options=('species' => \$species,
 	     'annotation' => \$annotation_file,
 	     'genome' => \$genome_file,
 	     'files' => \$file_list,
-	     'host' => \$host,
 	     'commondb' => \$commondb,
 	     'database' => \$database,
 	     'geneclass' => \$geneclasstable,
@@ -199,7 +200,6 @@ my $success=GetOptions(\%options,
 		       'annotation|a=s',
 		       'genome|g=s',
 		       'files=s',
-		       'host=s',
 		       'commondb=s',
 		       'database=s',
 		       'geneclass=s',
@@ -305,8 +305,7 @@ pod2usage("WARNING: $missing information is necessary but missing") if $missing;
 # Check for the existence of the tables that will contain the annotation files
 # and the other necessary tables and if they are not present create them
 # If clean option is used this step will also delete the tables
-check_base_tables($host,
-		  $commondb,
+check_base_tables($commondb,
 		  $log_fh,
 		  $clean,);
 
@@ -320,7 +319,6 @@ check_base_tables($host,
 			      $species,
 			      $project_dir,
 			      $commondb,
-			      $host,
 			      $log_fh);
 
 if (keys %{$guessmaster}) {
@@ -348,8 +346,7 @@ print $log_fh join("\n",
 		   $proj_prefix.':'.$exp_prefix),"\n";
 
 # Get the species information
-my %species=%{get_species_hash($commondb,
-			       $host)};
+my %species=%{get_species_hash($commondb)};
 
 unless ($species{$species}) {
     die "Something has happened and I cannot find $species in $commondb\n";
@@ -394,8 +391,7 @@ build_file_list(\%vars,
 		$log_fh);
 
 # Add the project and experiment entries to the respective tables
-add_project($host,
-	    $commondb,
+add_project($commondb,
 	    $proj_prefix,
 	    $species,
 	    $log_fh);
@@ -497,7 +493,6 @@ __END__
   Advanced Options:
     -database:       Sets the database to use for the experiment tables.
     -commondb:       Sets the database to use for the common tables.
-    -host:           Sets the host where the databases are located.
     -localdir:       Directory in which to store the temporary files generated during the pipeline execution. It is advisable to set it to a local drive.
 
   Optional

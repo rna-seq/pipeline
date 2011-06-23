@@ -83,6 +83,11 @@ Check that the GEM tools are available both
     
     * the cluster nodes where jobs will be run
 
+== samtools ==
+
+Install the samtools package. This is available from sourceforge
+    http://samtools.sourceforge.net/
+
 == Recommended Setup ==
 
 * SGI cluster

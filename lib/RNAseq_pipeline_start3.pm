@@ -125,7 +125,6 @@ sub defaults {
 		  'annotation' => undef,
 		  'genome' => undef,
 		  'files' => 'read.list.txt',
-		  'host' =>'pou',
 		  'commondb' => 'RNAseqPipelineCommon',
 		  'database' => 'RNAseqPipeline',
 		  'mismatches' => 2,
@@ -183,13 +182,11 @@ sub defaults {
 # populating it
 # Build the tables that will be shared between the projects and experiments
 sub check_base_tables {
-    my $host=shift;
     my $database=shift;
     my $log_fh=shift;
     my $clean=shift;
     
-    my $dbh=MySQL_DB_Connect($database,
-			     $host);
+    my $dbh=MySQL_DB_Connect($database);
     
     my %tables=%{base_table_build()};
     
@@ -347,9 +344,7 @@ sub base_table_build {
 # subroutine as an interface, as that woudl allow us to add a species
 sub get_species_hash {
     my $database=shift;
-    my $host=shift;
-    my $dbh=MySQL_DB_Connect($database,
-			     $host);
+    my $dbh=MySQL_DB_Connect($database);
     my %species;
     my $table='species_info';
 
@@ -542,13 +537,11 @@ sub get_existing_data_subs {
     my $species=shift;
     my $project_dir=shift;
     my $database=shift;
-    my $host=shift;
     my $log_fh=shift;
     my %guessing_subs;
 
     # Connect to the database as we will need the info in
-    my $dbh=MySQL_DB_Connect($database,
-			     $host);
+    my $dbh=MySQL_DB_Connect($database);
 
     # Get the genome unique id and the annotation unique id
     my $species_id=gset_species_id($dbh,
@@ -1741,7 +1734,7 @@ CREATE TABLE ${prefix}_register_results (
     filetype varchar(100),
     filename varchar(100),
     filemd5sum char(32) not null,
-    registeredfile varchar(100),
+    registeredfile varchar(200),
     runmd5sum char(32) not null
     );",
 	);
@@ -1838,7 +1831,6 @@ sub create_directory_structure {
 	      'GENOMEDIR' => 'genome',
 	      'STRANDED' => ${$options->{'stranded'}},
 	      'READLENGTH' => ${$options->{'readlength'}},
-	      'HOST' => ${$options->{'host'}},
 	      'GENECLASSTABLE' => ${$options->{'geneclass'}},
 	      'TRANSCLASSTABLE' => ${$options->{'transclass'}},
 	      'JUNCTIONSTABLE' => ${$options->{'junctionstable'}},
@@ -2011,14 +2003,12 @@ sub build_file_list {
 
 # Add the project and experiment information to the database
 sub add_project {
-    my $host=shift;
     my $database=shift;
     my $project=shift;
     my $species=shift;
     my $log_fh=shift;
 
-    my $dbh=MySQL_DB_Connect($database,
-			     $host);
+    my $dbh=MySQL_DB_Connect($database);
 
     print $log_fh "Checking for the presence of $project in the database...\n";
     my $table='projects';
@@ -2052,7 +2042,6 @@ sub add_project {
 sub add_experiment {
     my $opts=shift;
     my $database=${$opts->{'commondb'}};
-    my $host=${$opts->{'host'}};
     my $project_id=${$opts->{'project'}};
     my $exp_id=${$opts->{'experiment'}};
     my $species=${$opts->{'species'}};
@@ -2074,8 +2063,7 @@ sub add_experiment {
 
     my $log_fh=shift;
 
-    my $dbh=MySQL_DB_Connect($database,
-			     $host);
+    my $dbh=MySQL_DB_Connect($database);
 
     my $species_id=gset_species_id($dbh,
 				   $species,
@@ -2142,14 +2130,12 @@ sure you want to continue?(y/N)";
 sub add_proj_info {
     my $opts=shift;
     my $database=${$opts->{'commondb'}};
-    my $host=${$opts->{'host'}};
     my $proj_id=${$opts->{'project'}};
     my $project_desc=${$opts->{'projdesc'}};
 
     my $log_fh=shift;
 
-    my $dbh=MySQL_DB_Connect($database,
-			     $host);
+    my $dbh=MySQL_DB_Connect($database);
 
     if ($project_desc) {
 	print $log_fh "Inserting description $project_desc of $proj_id into the database...\n";
@@ -2202,7 +2188,6 @@ sub add_exp_info {
     my $log_fh=shift;
 
     my $database=${$opts->{'commondb'}};
-    my $host=${$opts->{'host'}};
     my $proj_id=${$opts->{'project'}};
     my $exp_id=${$opts->{'experiment'}};
     my $preprocess_trim_length=${$opts->{'preprocess_trim_length'}};
@@ -2219,8 +2204,7 @@ sub add_exp_info {
 	$vals{'exp_description'}.=" Original reads were trimmed by $preprocess_trim_length nucleotides";
     }
     
-    my $dbh=MySQL_DB_Connect($database,
-			     $host);
+    my $dbh=MySQL_DB_Connect($database);
 
     my $table='experiments';
     my ($query,$sth,$count);

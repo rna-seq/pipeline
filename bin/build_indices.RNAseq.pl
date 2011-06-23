@@ -26,9 +26,6 @@ my $junctionsfile;
 my $genomefile;
 my $transcriptomefile;
 my $database;
-my $host;
-my $mismatches;
-my $readlength;
 my $genomeindex;
 my $junctionsindex;
 my $transcriptomeindex;
@@ -41,10 +38,6 @@ $genomefile=$options{'GENOMESEQ'};
 $transcriptomefile=$options{'TRANSCRIPTOMEFASTA'};
 
 $database=$options{'DB'};
-$host=$options{'HOST'};
-
-$mismatches=$options{'MISMATCHES'};
-$readlength=$options{'READLENGTH'};
 
 $genomeindex=$options{'GENOMEINDEX'};
 $junctionsindex=$options{'JUNCTIONSINDEX'};
