@@ -249,7 +249,7 @@ sub run_flux {
 	print STDERR $outfile,"\tBuilt\n";
 	# Clean up by removing the parameter file
 	# The read file seems to be cleared by the flux
-	$command="rm $parameterfile $maps";
+	$command="rm $parameterfile";
 	print STDERR "Executing: $command\n";
 	system($command);
     } else {
