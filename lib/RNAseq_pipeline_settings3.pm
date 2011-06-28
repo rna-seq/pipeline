@@ -549,7 +549,6 @@ sub check_db {
 
     my %options=%{read_config_file()};
     if ($outtable) {
-#	$outtable=$options{'PREFIX'}.'_junctions.txt';
 	print STDERR "Setting outtable to $outtable\n";
     } else {
 	die "No out table provided\n";
@@ -993,6 +992,7 @@ sub get_feature_overlap_sub {
     my $parallel=shift;
     my $paralleltmp=shift;
     my $bindir=shift;
+    my $queue=shift;
     my $m_value=shift;
     my $size=1000000;
     my %subs;
@@ -1237,7 +1237,6 @@ sub get_feature_overlap_sub {
 						 $jobname);
 
 	# submit to the cluster
-	my $queue;
 	my $job_id=send2cluster($subfile,
 				$queue,
 				$jobname);

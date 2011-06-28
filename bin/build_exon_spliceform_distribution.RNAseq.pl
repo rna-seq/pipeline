@@ -70,7 +70,8 @@ unless ($paralleltmp) {
 # Get some subroutines
 *get_feature_overlap=get_feature_overlap_sub($parallel,
 					     $paralleltmp,
-					     $bindir);
+					     $bindir,
+					     $options{'CLUSTER'});
 
 # First check if the tables need to be created or not
 my $exon_present=check_db($exontable,

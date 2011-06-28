@@ -56,9 +56,6 @@ unless($options{'CLUSTER'}) {
     print STDERR "Running locally as no cluster has been defined\n";
     $parallel='default';
 }
-#if ($options{'PARALLEL'}) {
-#    $parallel='parallel';
-#}
 
 unless ($paralleltmp) {
     $paralleltmp=$options{'PROJECT'}.'/work';
@@ -67,7 +64,8 @@ unless ($paralleltmp) {
 # Get the required sub
 *get_feature_overlap=get_feature_overlap_sub($parallel,
 					     $paralleltmp,
-					     $bindir);
+					     $bindir,
+					     $options{'CLUSTER'});
 
 # First get the files we are going to analyze
 my %files=%{read_file_list($file_list)};

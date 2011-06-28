@@ -65,7 +65,8 @@ unless ($paralleltmp) {
 # Get the required sub
 *get_feature_overlap=get_feature_overlap_sub($parallel,
 					     $paralleltmp,
-					     $bindir);
+					     $bindir,
+					     $options{'CLUSTER'});
 
 # First get the files we are going to analyze
 my %files=%{read_file_list($file_list)};
