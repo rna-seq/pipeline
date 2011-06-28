@@ -57,7 +57,7 @@ RESULTS = $PROJECT
 
 # PHONY rules always execute as they do not build a table if they are in the
 # prerequisites of another rule
-.PHONY: status preprocess QC annotation_info mapping mapping_summary exon_inclusion html_report encode all browser transcript_expression
+.PHONY: status preprocess QC annotation_info mapping mapping_summary exon_inclusion html_report encode all browser
 status: @
 	mysql $DB -e 'SHOW TABLE STATUS'
 
@@ -521,8 +521,6 @@ _detected_transcripts: _transcript_expression_levels_pooled
 	mv build_detected_transcripts.RNAseq.log $LOGS
 	all_no_log_table
 
-transcript_expression: _detected_transcripts _transcript_expression_levels
-
 #######################
 # Calculate gene RPKM from the flux capacitor results
 _gene_RPKM_pooled_flux: _transcript_expression_levels_pooled
@@ -547,7 +545,7 @@ _fusion_transcripts: _transcriptome_mapping _gene_RPKM
 # a summary of the detected junctions. this table will contain the completion
 # status of these two steps (it is only here to run the two scripts as they
 # both generate their own tables ad load them
-_summaries: _exon_RPKM_pooled _gene_RPKM_dist _inclusion_dist transcript_expression _splicing_summary _novel_junctions_summary _exon_RPKM
+_summaries: _exon_RPKM_pooled _gene_RPKM_dist _inclusion_dist _detected_transcripts _splicing_summary _novel_junctions_summary _exon_RPKM
 	build_expression_summary.RNAseq.pl > _summaries.txt
 	build_top_genes.RNAseq.pl >> _summaries.txt
 	build_top_transcripts.RNAseq.pl >> _summaries.txt
