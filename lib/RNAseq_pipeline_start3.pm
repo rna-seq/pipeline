@@ -46,7 +46,7 @@ use Bio::SeqFeature::Gene::Exon;
 ## Pipeline specific modules
 use RNAseq_pipeline3 ('get_fh','MySQL_DB_Connect','check_file_existence',
 		      'check_gff_file','check_fasta_file','run_system_command',
-		      'check_table_existence');
+		      'check_table_existence','check_field_value');
 
 ### Subroutines
 
@@ -372,17 +372,15 @@ sub gset_species_id {
     my $dbh=shift;
     my $species=shift;
     my $log_fh=shift;
-
     my $table='species_info';
 
     my $species_id;
-    my ($query,$sth,$count);
-    $query ='SELECT species_id ';
-    $query.="FROM $table ";
-    $query.='WHERE species = ?';
-    $sth=$dbh->prepare($query);
-   
-    $count=$sth->execute($species);
+    my $sth=check_field_value($dbh,
+			      ['species',$species],
+			      $table,
+			      'species_id');
+
+    my $count=$sth->execute($species);
 
     print $log_fh "Found $count entries in $table for $species\n";
     if ($count == 1) {
@@ -400,17 +398,14 @@ sub gset_species_id {
 			      substr($specific,0,3));
 
 	# Insert the info into the database
+	my $query;
 	$query ="INSERT INTO $table ";
 	$query.='SET species = ? , genus = ? , abbreviation = ?, sp_alias = ? ';
 	print $log_fh "Executing: $query\n";
-	$sth=$dbh->prepare($query);
-	$sth->execute($species,$genus,$abbreviation,'-');
+	my $sth2=$dbh->prepare($query);
+	$sth2->execute($species,$genus,$abbreviation,'-');
 
 	# Get the Id of the genome we just inserted
-	$query ='SELECT species_id ';
-	$query.="FROM $table ";
-	$query.='WHERE species= ?';
-	$sth=$dbh->prepare($query);
 	$sth->execute($species);
 	($species_id)=$sth->fetchrow_array();
     }
@@ -431,13 +426,12 @@ sub gset_genome_id {
     $genome=~s/.*\///;
 
     my $genome_id;
-    my ($query,$sth,$count);
-    $query ='SELECT genome_id ';
-    $query.="FROM $table ";
-    $query.='WHERE genome = ?';
-    $sth=$dbh->prepare($query);
-   
-    $count=$sth->execute($genome);
+    my $sth=check_field_value($dbh,
+			      ['genome',$genome],
+			      $table,
+			      'genome_id');
+
+    my $count=$sth->execute($genome);
 
     print $log_fh "Found $count entries in $table for $genome\n";
     if ($count == 1) {
@@ -455,6 +449,7 @@ sub gset_genome_id {
 	}
 
 	# The entry is absent and we must set it
+	my $query;
 	$query ="INSERT INTO $table ";
 	$query.='SET genome= ? , species_id= ? , location= ? ';
 	print $log_fh "Executing: $query\n";
@@ -462,12 +457,8 @@ sub gset_genome_id {
 	$sth2->execute($genome,$species,$file);
 
 	# Get the Id of the genome we just inserted
-	$query ='SELECT genome_id ';
-	$query.="FROM $table ";
-	$query.='WHERE genome= ?';
-	my $sth3=$dbh->prepare($query);
-	$sth3->execute($genome);
-	($genome_id)=$sth3->fetchrow_array();
+	$sth->execute($genome);
+	($genome_id)=$sth->fetchrow_array();
     }
     print $log_fh "Genome_id: $genome_id obtained from $table for $genome\n";
     return($genome_id);
@@ -488,13 +479,12 @@ sub gset_annotation_id {
     $annotation=~s/.*\///;
 
     my $annot_id;
-    my ($query,$sth,$count);
-    $query ='SELECT annotation_id ';
-    $query.="FROM $table ";
-    $query.='WHERE annotation = ?';
-    $sth=$dbh->prepare($query);
+    my $sth=check_field_value($dbh,
+			      ['annotation',$annotation],
+			      $table,
+			      'annotation_id');
    
-    $count=$sth->execute($annotation);
+    my $count=$sth->execute($annotation);
 
     print $log_fh "Found $count entries in $table for $annotation\n";
     if ($count == 1) {
@@ -506,18 +496,15 @@ sub gset_annotation_id {
     } else {
 	# first we will check the file to see if it conforms to the gff format
 	check_gff_file($file);
-	
+
+	my $query;
 	# The entry is absent and we must set it
 	$query ="INSERT INTO $table ";
 	$query.='SET annotation= ? , species_id= ? , location= ? ';
-	$sth=$dbh->prepare($query);
-	$sth->execute($annotation,$species,$file);
+	my $sth2=$dbh->prepare($query);
+	$sth2->execute($annotation,$species,$file);
 
 	# Get the Id of the annotation we just inserted
-	$query ='SELECT annotation_id ';
-	$query.="FROM $table ";
-	$query.='WHERE annotation= ?';
-	$sth=$dbh->prepare($query);
 	$sth->execute($annotation);
 	($annot_id)=$sth->fetchrow_array();
     }

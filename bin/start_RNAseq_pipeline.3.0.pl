@@ -90,6 +90,7 @@ my $file_list; # this file will list all the files in the directory to map as
 # Database information
 # Most of the connection information will be read from the .my.cnf file, so it
 # is not necessary to supply this
+my $host;
 my $commondb='RNAseqPipelineCommon';
 my $database='RNAseqPipeline';
 my $junctionstable;
@@ -155,6 +156,7 @@ my %options=('species' => \$species,
 	     'annotation' => \$annotation_file,
 	     'genome' => \$genome_file,
 	     'files' => \$file_list,
+	     'host' => \$host,
 	     'commondb' => \$commondb,
 	     'database' => \$database,
 	     'geneclass' => \$geneclasstable,
@@ -200,6 +202,7 @@ my $success=GetOptions(\%options,
 		       'annotation|a=s',
 		       'genome|g=s',
 		       'files=s',
+		       'host=s',
 		       'commondb=s',
 		       'database=s',
 		       'geneclass=s',
@@ -287,7 +290,7 @@ if ($clean) {
     # characters that may cause problems with the database if used for naming
     #tables
     my $problems=check_option_characters(\%options,
-				   $log_fh);
+					 $log_fh);
 
     # If any issues are found during the checking of the options print them all
     # out as well as the help
@@ -410,6 +413,38 @@ add_exp_info(\%options,
 close($log_fh);
 
 exit;
+
+sub insert_value {
+    my $database=shift;
+    my $table=shift;
+    my $keys=shift;
+    my $values=shift;
+
+    my $dbh=MySQL_DB_Connect($database);
+
+    # Build the key string
+    my $key_string;
+    my @keys;
+    foreach my $key (@{$keys}) {
+	$key_string.=$key->[0]." = ? ";
+	push @keys, $key->[1];
+    }
+
+    # Build the value string
+    my $value_string;
+    my @values;
+    foreach my $value (@{$values}) {
+	$value_string.=$value->[0]." = ? ";
+	push @values, $value->[1];
+    }
+
+    # Run queries
+    my ($query,$sth,$count);
+    $query ="INSERT INTO $table ";
+    $query.="SET $value_string";
+    $sth=$dbh->prepare($query);
+    $sth->execute(@values);
+}
 
 # This script should for each of the necessary files
 sub guess_values {
