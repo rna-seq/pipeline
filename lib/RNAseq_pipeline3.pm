@@ -7,7 +7,7 @@ use Exporter;
 @ISA=('Exporter');
 push @EXPORT_OK,('MySQL_DB_Connect','get_fh','get_log_fh');
 push @EXPORT_OK,('check_table_existence','check_file_existence');
-push @EXPORT_OK,('check_field_existence');
+push @EXPORT_OK,('check_field_existence','check_field_value');
 push @EXPORT_OK,('check_gff_file','check_fasta_file','get_md5sum');
 push @EXPORT_OK,('run_system_command');
 push @EXPORT_OK,('print_gff','get_sorted_gff_fh','parse_gff_line');
@@ -123,6 +123,23 @@ sub check_field_existence {
 	print STDERR "Absent\n";
     }
     return($present);
+}
+
+sub check_field_value {
+    my $dbh=shift;
+    my $reference=shift;
+    my $table=shift;
+    my $check=shift;
+
+    my ($key,$value)=@{$reference};
+    my ($query,$sth,$count);
+    $query ="SELECT $check ";
+    $query.="FROM $table ";
+    $query.="WHERE $key = ?";
+
+    $sth=$dbh->prepare($query);
+
+    return($sth);
 }
 
 # Get a small subroutine to run system commands
