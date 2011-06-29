@@ -1250,9 +1250,9 @@ sub parse_gff_line {
 		    if ((exists $line{'feature'})&&
 			(exists $line{'feature'}{$key})) {
 			if ($key eq 'gene_id') {
-			    die "gene_id is presence more than once in $line\n";
+			    die "gene_id is present more than once in $line\n";
 			} elsif ($key eq 'transcript_id') {
-			    die "transcript_id is presence more than once in $line\n";
+			    die "transcript_id is present more than once in $line\n";
 			} else {
 			    $line{'feature'}{$key}.=",$value";
 			}
