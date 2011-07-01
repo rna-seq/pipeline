@@ -142,3 +142,5 @@ sub run_flux {
 
     return($outfile);
 }
+
+1;
