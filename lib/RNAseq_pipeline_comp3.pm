@@ -122,7 +122,7 @@ sub get_labels_sub {
 		} else {
 		    push @label,$exp_id;
 		}
-		$cache{$key}=join('.',@label);
+		$cache{$key}=join('.',$exp_id,@label);
 	    } else {
 	        warn "Wrong number of elements ($count) returned for $key\n";
 	    }
