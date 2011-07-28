@@ -83,7 +83,7 @@ check_tables($dbh,
 # If a subset has been provided remove any tables that are not included in the
 # subset
 if ($subset && -r $subset) {
-    my %subset=get_list($subset);
+    my %subset=%{get_list($subset)};
     remove_tables(\%tables,
 		  \%subset);
 }
