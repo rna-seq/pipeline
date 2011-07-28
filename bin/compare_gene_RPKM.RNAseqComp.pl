@@ -22,7 +22,7 @@ BEGIN {
 # gawk -F"\t" '{print "UPDATE 1_H_sapiens_EnsEMBL_55_parsed_gt_geneclass set description=\""$4"\" WHERE gene_id=\""$1"\";"}' all.genes.desc.txt > add.description.sql
 
 
-use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
+use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command remove_tables);
 use RNAseq_pipeline_settings3 ('get_dbh','read_config_file',
 			       'get_gene_RPKM_data','get_gene_info_sub');
 use RNAseq_pipeline_comp3 ('get_tables','check_tables','get_labels_sub',
@@ -46,7 +46,7 @@ GetOptions('nolabels|n' => \$nolabels,
 	   'debug|d' => \$debug,
 	   'limit|l=s' => \$fraction,
 	   'breakdown|b' => \$breakdown,
-	   'subset|s=s' => $subset);
+	   'subset|s=s' => \$subset);
 
 if ($breakdown) {
     $tabsuffix='gene_RPKM';
