@@ -39,7 +39,6 @@ my $breakdown;
 my $tabsuffix='gene_RPKM_pooled';
 my $fraction='';
 my $subset='';
-my $geneclass='';
 
 # Get command line options
 GetOptions('nolabels|n' => \$nolabels,

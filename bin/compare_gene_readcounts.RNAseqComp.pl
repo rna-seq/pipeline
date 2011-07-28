@@ -22,11 +22,11 @@ BEGIN {
 # gawk -F"\t" '{print "UPDATE 1_H_sapiens_EnsEMBL_55_parsed_gt_geneclass set description=\""$4"\" WHERE gene_id=\""$1"\";"}' all.genes.desc.txt > add.description.sql
 
 
-use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
+use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command get_list);
 use RNAseq_pipeline_settings3 ('get_dbh','read_config_file',
 			       'get_gene_readcount_data','get_gene_info_sub');
 use RNAseq_pipeline_comp3 ('get_tables','check_tables','get_labels_sub',
-			   'get_samples');
+			   'get_samples','remove_tables');
 use Getopt::Long;
 
 # Declare some variables
@@ -35,19 +35,16 @@ my $dbh;
 my $dbhcommon;
 my $project;
 my $debug=1;
-my $breakdown;
 my $tabsuffix='gene_readcount_pooled';
 my $fraction='';
+my $subset='';
 
 # Get command line options
 GetOptions('nolabels|n' => \$nolabels,
 	   'debug|d' => \$debug,
 	   'limit|l=s' => \$fraction,
-	   'breakdown|b' => \$breakdown);
-
-if ($breakdown) {
-    $tabsuffix='gene_RPKM';
-}
+	   'breakdown|b' => \$breakdown,
+	   'subset|s=s' => \$subset);
 
 # read the config file
 my %options=%{read_config_file()};
@@ -76,6 +73,14 @@ my %tables=%{get_tables($dbhcommon,
 # Remove any tables that do not exist
 check_tables($dbh,
 	     \%tables);
+
+# If a subset has been provided remove any tables that are not included in the
+# subset
+if ($subset && -r $subset) {
+    my %subset=%{get_list($subset)};
+    remove_tables(\%tables,
+		  \%subset);
+}
 
 # For each of tables extract the RPKMs of interest and get for each of the
 # tables the different samples present in them
