@@ -1719,4 +1719,19 @@ sub get_exon_coverage_1000nt {
     print STDERR "done\n";
 }
 
+# This subroutine will take a file and return a hash with each of the lines
+# in the file as keys
+sub get_list {
+    my $filename=shift;
+    my %hash;
+    my $infh=get_fh($filename);
+    while (my $line=<$infh>) {
+	chomp($line);
+	$hash{$line}++;
+    }
+    close($infh);
+
+    return(\%hash);
+}
+
 1;

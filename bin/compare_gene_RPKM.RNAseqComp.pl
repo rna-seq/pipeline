@@ -38,13 +38,15 @@ my $debug=1;
 my $breakdown;
 my $tabsuffix='gene_RPKM_pooled';
 my $fraction='';
+my $subset='';
 my $geneclass='';
 
 # Get command line options
 GetOptions('nolabels|n' => \$nolabels,
 	   'debug|d' => \$debug,
 	   'limit|l=s' => \$fraction,
-	   'breakdown|b' => \$breakdown);
+	   'breakdown|b' => \$breakdown,
+	   'subset|s=s' => $subset);
 
 if ($breakdown) {
     $tabsuffix='gene_RPKM';
@@ -77,6 +79,14 @@ my %tables=%{get_tables($dbhcommon,
 # Remove any tables that do not exist
 check_tables($dbh,
 	     \%tables);
+
+# If a subset has been provided remove any tables that are not included in the
+# subset
+if ($subset && -r $subset) {
+    my %subset=get_list($subset);
+    remove_tables(\%tables,
+		  \%subset);
+}
 
 # For each of tables extract the RPKMs of interest and get for each of the
 # tables the different samples present in them

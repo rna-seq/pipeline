@@ -87,6 +87,29 @@ sub check_tables {
     }
 }
 
+# This table should take a hash of tables and a hash of experiments and it will
+# remove from the tables hash all those cases that are not in the experiments
+# hash
+sub remove_tables {
+    my $tables=shift;
+    my $keep=shift;
+    
+    my %remove;
+    foreach my $exp (keys %{$tables}) {
+	unless($keep->{$exp}) {
+	    # Remove the table from the dataset
+	    $remove{$exp}=1;
+	}
+    }
+
+    # Remove the missing tables from the analysis
+    foreach my $exp (keys %remove) {
+	print STDERR "Removing $exp\n";
+	delete $tables->{$exp};
+    }
+}
+
+
 # This sub should take the information from the experiments table and where
 # available build more human readable lables for the each of the datasets
 sub get_labels_sub {
