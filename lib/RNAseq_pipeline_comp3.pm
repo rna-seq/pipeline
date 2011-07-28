@@ -5,7 +5,7 @@ package RNAseq_pipeline_comp3;
 use Exporter;
 @ISA=('Exporter');
 @EXPORT_OK=('get_tables','check_tables','get_labels_sub','get_samples',
-	    'get_filenames');
+	    'get_filenames','remove_tables');
 
 use strict;
 use warnings;

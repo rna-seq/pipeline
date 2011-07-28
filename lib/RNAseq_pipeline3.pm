@@ -22,7 +22,7 @@ push @EXPORT_OK,('get_Average',
 		 'get_exon_mappable_length_sub','get_exon_sequences',
 		 'get_exon_coverage_1000nt');
 push @EXPORT_OK,('get_distinct_col_value_from_tab','plot_heatmap');
-push @EXPORT_OK,('get_feat_mappable_length_sub','remove_tables','get_list');
+push @EXPORT_OK,('get_feat_mappable_length_sub','get_list');
 
 use strict;
 use warnings;
