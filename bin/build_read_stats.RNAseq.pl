@@ -28,6 +28,7 @@ BEGIN {
 use RNAseq_pipeline3 qw(get_fh get_log_fh);
 use RNAseq_pipeline_settings3 qw(read_config_file read_file_list);
 use Bio::SeqIO;
+use Tools::Bam qw(process_bam_file);
 
 # Get some options from the configuration file
 my $species;
@@ -69,6 +70,8 @@ foreach my $infile (keys %files) {
 	$filetype='fasta';
     } elsif ($infile=~/.fastq$/) {
 	$filetype='fastq';
+    } elsif ($infile=~/.bam$/) {
+	$filetype='bam';
     } else {
 	warn "Unknown filetype for $infile.\nFiletype is guessed from the file ending (fa, fasta or fastq), if the file namings are different please fix them.\n";
 	next;

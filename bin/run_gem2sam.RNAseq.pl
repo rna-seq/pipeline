@@ -259,7 +259,7 @@ sub generate_sam_header {
 		my $gap=$line[0];
 		$gap=~s/.+[^\d]//o;
 		$gap=~s/N//o;
-		if ($gap > 10000) {
+		if ($gap && $gap > 10000) {
 		    $invalid++;
 		    print STDERR join("\t",
 				      "Gap Too large:",
