@@ -43,7 +43,6 @@ my $subset='';
 GetOptions('nolabels|n' => \$nolabels,
 	   'debug|d' => \$debug,
 	   'limit|l=s' => \$fraction,
-	   'breakdown|b' => \$breakdown,
 	   'subset|s=s' => \$subset);
 
 # read the config file
