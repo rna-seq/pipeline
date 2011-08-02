@@ -136,4 +136,5 @@ lib/RNAseq_pipeline_settings3.pm -text
 lib/RNAseq_pipeline_start3.pm -text
 lib/RNAseq_pipeline_stats3.pm -text
 lib/Tools/Flux.pm -text
+/template.bam.txt -text
 /template3.0.txt -text
