@@ -13,6 +13,7 @@ use warnings;
 # and SAM files
 
 use RNAseq_pipeline3 qw(get_fh run_system_command);
+use Bio::DB::Sam;
 
 sub process_bam_file {
     my $infn=shift;
@@ -23,6 +24,7 @@ sub process_bam_file {
     my $laneid=shift;
     my $ntpos=shift;
     my $qualities=shift;
+    my $genomefn=shift;
 
     my $unique=0;
     my $read_length=0;
@@ -32,15 +34,15 @@ sub process_bam_file {
     my %sequence;
     my $line_type=0;
 
-    # determine the quality variant
-    my $variant='illumina';
-    if ($qualities eq 'phred') {
-	$variant='sanger';
+    # The qualities should be phred in the BAM format
+    unless ($qualities eq 'phred') {
+	warn "Qualities should be phred in BAM file but are specified as $qualities";
     }
 
-    # Open the bam file. 
-    my $infh;
-    $infh=get_fh($tmpdir.'/'.$infn);
+    # Open the BAM file.
+    my $sam = Bio::DB::Sam->new(-bam  => $tmpdir.'/'.$infn,
+				-fasta=> $genomefn,
+	);
 
     my $tmpfn=$$.'.tmp.sequences.txt';
     my $tmpfh=get_fh($tmpfn,1);
@@ -50,41 +52,20 @@ sub process_bam_file {
 		 'G' => 3,
 		 'T' => 4);
 
-    # Process the fastq file
-    while (my $line=<$infh>) {
-	chomp($line);
+    # Process the BAM file
+    # get all the alignments
+    my @all_alignments=$sam->features();
 
-	# Decide which line we are in
-	if (($line_type == 0) &&
-	    ($line=~s/^@//o)) {
-	    # Initialize the sequence hash
-	    %sequence=('id' => $line);
-	    $line_type=1;
-	    $total_reads++;
-	    $line=<$infh>;
-	    chomp($line);
-	} elsif (($line_type==1) &&
-		 ($line=~/^\+/o)) {
-	    $line_type=2;
-	    $line=<$infh>;
-	    chomp($line);
-	}
-
-	if ($line_type == 1) {
-	    $sequence{'seq'}.=$line;
-	    next;
-	} elsif ($line_type == 2) {
-	    $sequence{'qual'}.=$line;
-	    $line_type=0;
-	    if (length($sequence{'qual'}) < length($sequence{'seq'})) {
+    for my $a (@all_alignments) {
+	$total_reads++;
+	$sequence{'seq'}=$a->query->dna;
+	$sequence{'qual'}=$a->qscore;
+	if (@{$sequence{'qual'}} < length($sequence{'seq'})) {
 		warn "Quality string shorter than sequence,skipping???\n";
 		next;
-	    } elsif (length($sequence{'qual'}) > length($sequence{'seq'})) {
+	} elsif (@{$sequence{'qual'}} > length($sequence{'seq'})) {
 		warn "Quality string longer than sequence,skipping???\n";
 		next;
-	    }
-	} else {
-	    warn "Problem with $infn. Shouldn't be here\n";
 	}
 
 	my $seq=$sequence{'seq'};
@@ -107,9 +88,9 @@ sub process_bam_file {
 
 	# Build the distribution of the N's and qualities per position
 	my @nucleotides=split('',$seq);
-	my @qualities=split('',$sequence{'qual'});
+	my @qualities=@{$sequence{'qual'}};
 	unless (scalar(@nucleotides) == scalar(@qualities)) {
-	    die "Quality and nucleotide lengths differe\n";
+	    die "Quality and nucleotide lengths differ\n";
 	}
 
 	# Using a single loop to go through both nt and qualities should save
@@ -118,12 +99,7 @@ sub process_bam_file {
 	    my $pos=$i + 1;
 
 	    # Set the qualities
-	    my $qual=ord($qualities[$i]);
-	    if ($variant eq 'sanger') {
-		$qual-=33;
-	    } else {
-		$qual-=64;
-	    }
+	    my $qual=$qualities[$i];
 	    $quals_pos->{$laneid}->{$pos}+=$qual;
 
 	    # Set the nucleotides
@@ -135,7 +111,6 @@ sub process_bam_file {
 	}
     }
     close($tmpfh);
-    $infh->close();
 
     ### TO DO
     # Calculate the average qualities.
