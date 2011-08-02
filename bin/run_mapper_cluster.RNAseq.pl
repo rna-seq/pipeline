@@ -20,7 +20,7 @@ BEGIN {
 # Make the mapper take a list of files
 
 use Getopt::Long;
-use RNAseq_pipeline3 qw(get_fh);
+use RNAseq_pipeline3 qw(get_fh run_system_command);
 use RNAseq_pipeline_settings3 qw(read_config_file read_file_list send2cluster);
 use RNAseq_GEM3 ('check_index','determine_quality_type','get_mapper_routines',
 		 'check_input');
@@ -145,8 +145,7 @@ if ($usecluster) {
 
     # clean up
     my $command="rm $subfile";
-    print STDERR "Executing: $command\n";
-    system($command);
+    run_system_command($command);
 
     } else {
 	my %mapper=%{get_mapper_routines()};
@@ -243,15 +242,14 @@ sub check_read_files {
 	    print STDERR "copying to $paralleldir\n";
 	    $locations{$file}=$filepath1;
 	    my $command="cp $filepath2 $filepath1";
-	    print STDERR "executing: $command\n";
-	    system($command);
+	    run_system_command($command);
 	} elsif (-r $filepath3) {
 	    print STDERR "Present at $readdir\n";
 	    $locations{$file}=$filepath3;
 	} elsif (-r "$filepath3.gz") {
 	    print STDERR "Unzipping in paralleldir\n";
 	    my $command="gunzip -c $filepath3.gz > $filepath1";
-	    system($command);
+	    run_system_command($command);
 	    $locations{$file}=$filepath1;
 	} else {
 	    die "I can't find file $file\n";

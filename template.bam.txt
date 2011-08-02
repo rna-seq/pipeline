@@ -133,10 +133,14 @@ _transcript_seqs: _exon_seqs
 	$BIN/build_transcript_sequences.RNAseq.pl
 	all_no_log_table
 
-### NO indices are necessary because when starting from the BAM file the mapping
-# should be already completed We need the transcriptome index in order to
-# determine if there is a bias in the distribution of the reads along the
-# transcriptome
+### Not all indices are necessary because when starting from the BAM file
+# the mapping to the genome and junctions
+# should be already completed. However, we do need the transcriptome index
+# in order to determine if there is a bias in the distribution of the reads
+# along the transcriptome, so we will build all the indices just in case they
+# are later needed.
+### This may be configured in the future in order to only build for each
+# template those indices that are strictly required.
 _indices: _junction_seqs _transcript_seqs
 	$BIN/build_indices.RNAseq.pl
 	all_no_log_table
