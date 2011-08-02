@@ -200,7 +200,7 @@ annotation_info: _junction_classification
 
 _transcriptome_mapping: _dataset _indices
 	run_mapper_cluster.RNAseq.pl -index $TRANSCRIPTOMEINDEX -o $TRANSDIR
-	build_mapping_stats.RNAseq.pl `ls $TRANSDIR/* | grep '.gem.map'` > _transcriptome_mapping.txt
+	build_mapping_stats.RNAseq.pl `ls $TRANSDIR/* | grep '.bam.map'` > _transcriptome_mapping.txt
 	plot_mapping_graph.RNAseq.pl -graph _transcriptome_mapping -type 'Transcriptome'
 	mv _transcriptome_mapping.ps $GRAPHS
 	all_no_log_table

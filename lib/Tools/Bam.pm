@@ -4,7 +4,7 @@ package Tools::Bam;
 # Must be done before strict is used
 use Exporter;
 @ISA=('Exporter');
-@EXPORT_OK=('process_bam_file');
+@EXPORT_OK=('process_bam_file','bam2sequence');
 
 use strict;
 use warnings;
@@ -14,6 +14,8 @@ use warnings;
 
 use RNAseq_pipeline3 qw(get_fh run_system_command);
 use Bio::DB::Sam;
+use Bio::SeqIO;
+use Bio::Seq::Quality;
 
 sub process_bam_file {
     my $infn=shift;
@@ -129,6 +131,64 @@ sub process_bam_file {
 
     $unique=~s/[^\d]//g;
     return($good_reads,$ambiguous_reads,$total_reads,$read_length,$unique);
+}
+
+sub bam2sequence {
+    my $infn=shift;
+
+    my %sequence;
+
+    # Open the BAM file.
+    my $sam = Bio::DB::Sam->new(-bam  => $infn);
+
+    my $outfn=$infn;
+
+    # Process the BAM file
+    # get all the alignments
+    my @all_alignments=$sam->features();
+
+    # Check the first line to see if the file has qualities or not.
+    my $a1=shift(@all_alignments);
+
+    my $seq= Bio::Seq::Quality->new();
+	
+    $seq->id($a1->name);
+    $seq->seq($a1->query->dna);
+    $seq->qual([$a1->qscore]);
+
+    # Get the quality string from the values
+    my $outfh;
+    if (@{$seq->qual} != length($seq->seq())) {
+	# The file should be extracted as fasta
+	print STDERR "Extracting file as fasta, as it is missing qualities\n";
+	$outfn=~s/.bam/.fa/;
+	$outfh=Bio::SeqIO->new(-format    => 'fasta',
+			       -file      => ">$outfn");
+    } else {
+	# The file should be extracted as fastq
+	print STDERR "Extracting file as fastq\n";
+	$outfn=~s/.bam/.fastq/;
+	$outfh=Bio::SeqIO->new(-format    => 'fastq-sanger',
+			       -file      => ">$outfn");
+
+    }
+
+    # Print the first entry:
+    $outfh->write_seq($seq);
+
+    for my $a (@all_alignments) {
+	my $seq= Bio::Seq::Quality->new();
+
+	$seq->id($a->name());
+	$seq->seq($a->query->dna());
+	$seq->qual([$a->qscore()]);
+
+	# Print the entry:
+	$outfh->write_seq($seq);
+    }
+    $outfh->close();
+
+    return($outfn);
 }
 
 1;

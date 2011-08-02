@@ -24,6 +24,7 @@ use RNAseq_pipeline3 qw(get_fh run_system_command);
 use RNAseq_pipeline_settings3 qw(read_config_file read_file_list send2cluster);
 use RNAseq_GEM3 ('check_index','determine_quality_type','get_mapper_routines',
 		 'check_input');
+use Tools::Bam ('bam2sequence');
 
 my $index;
 my $mapper;
@@ -97,17 +98,28 @@ my @filepairs;
 foreach my $file (keys %locations) {
     # Check the input file
     my $infile=$locations{$file};
-    my $input_ok=check_input($infile,
-			     \$filetype);
-    unless ($input_ok) {
-	die $infile,"\tIs not readable\n";
-    }
+
+    # If the input is in BAM format we need to make sure the fastq file with the
+    # sequence is available. For this we will create a fastq file changing the
+    # name .bam for .fastq of .fa, but we will keep the original name for the
+    # purpose of naming the output.
 
     # Make the outfile
     my $outfile=$infile;
     $outfile=~s/.*\///;
     $outfile=$outdir.'/'.$outfile;
     $outfile=~s/(.fa(stq)*)$/.gem/;
+
+    if ($infile=~/.bam$/) {
+	$infile=bam2sequence($infile);
+    }
+
+    my $input_ok=check_input($infile,
+			     \$filetype);
+
+    unless ($input_ok) {
+	die $infile,"\tIs not readable\n";
+    }
 
     if (-r "$outfile.map" ||
 	-r "$outfile.map.gz") {
