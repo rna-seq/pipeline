@@ -410,7 +410,7 @@ sub getDate {
     }
 
     while (my $href = $sth->fetchrow_hashref() ) {
-	$dh->{$href->{'Name'}} = $href->{'Update_time'};
+	$dh->{$href->{'Name'}} = $href->{'Update_time'} || $href->{'Create_time'};
     }
 
     if ($tbl) {
