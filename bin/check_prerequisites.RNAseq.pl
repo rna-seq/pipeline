@@ -47,7 +47,11 @@ foreach my $req (@prerequisites) {
 				  $cluster);
 
     if ($absent) {
-	die "I cannot find required executable $req\n";
+	print STDERR "WARNING:I cannot find required executable $req\n";
+	print $log_fh join("\t",
+			   $req,
+			   'absent'),"\n";
+	exit(1);
     } else {
 	print $log_fh join("\t",
 			   $req,

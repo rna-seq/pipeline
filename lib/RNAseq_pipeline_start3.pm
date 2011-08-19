@@ -1928,14 +1928,19 @@ sub print_pipeline_file {
 			   $value);
 	    } elsif ($line=~/(^|\s+)(_\w+)/) {
 		if (exists $tables->{$2}) {
-		    $line=~s/(^|\s+)(_\w+)/$1$tables->{$2}/g;
+		    # Table is present in the module. This has to be removed
+		    # moving the tables gradually to the rules
 		} elsif ($vars->{'PREFIX'}) {
+		    # The table does not exist in the module, and has to be
+		    # creted by the rule. When all the tables are migrated this
+		    # warning should be removed
 		    warn "WARNING: $2 Does not exist as a table\n";
 		    my $prefix=$vars->{'PREFIX'};
-		    $line=~s/(^|\s+)(_\w+)/$1$prefix$2/g;
+		    $tables->{$2}=$prefix.$2;
 		} else {
 		    die "Something whent very wrong...\n";
 		}
+		$line=~s/(^|\s+)(_\w+)/$1$tables->{$2}/g;
 	    }
 	}
 	print $new_pip_fh $line,"\n";
