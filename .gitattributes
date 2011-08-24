@@ -30,6 +30,7 @@ bin/build_novel_junctions_summary.pl -text
 bin/build_read_stats.RNAseq.pl -text
 bin/build_reads_supporting_inclusions.RNAseq.pl -text
 bin/build_register_results.RNAseq.pl -text
+bin/build_seq_files.pl -text
 bin/build_store_reads.RNAseq.pl -text
 bin/build_top_exons.RNAseq.pl -text
 bin/build_top_genes.RNAseq.pl -text

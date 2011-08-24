@@ -158,36 +158,39 @@ sub bam2sequence {
 
     # Get the quality string from the values
     my $outfh;
+    my $filetype;
     if (@{$seq->qual} != length($seq->seq())) {
 	# The file should be extracted as fasta
 	print STDERR "Extracting file as fasta, as it is missing qualities\n";
 	$outfn=~s/.bam/.fa/;
-	$outfh=Bio::SeqIO->new(-format    => 'fasta',
-			       -file      => ">$outfn");
+	$filetype='fasta';
     } else {
 	# The file should be extracted as fastq
 	print STDERR "Extracting file as fastq\n";
-	$outfn=~s/.bam/.fastq/;
-	$outfh=Bio::SeqIO->new(-format    => 'fastq-sanger',
+	$outfn=~s/.bam$/.fastq/;
+	$filetype='fastq';
+    }
+
+    if (-r $outfn) {
+	print STDERR $outfn,"\tIs present already...Skipping\n";
+    } else {
+	$outfh=Bio::SeqIO->new(-format    => $filetype,
 			       -file      => ">$outfn");
-
-    }
-
-    # Print the first entry:
-    $outfh->write_seq($seq);
-
-    for my $a (@all_alignments) {
-	my $seq= Bio::Seq::Quality->new();
-
-	$seq->id($a->name());
-	$seq->seq($a->query->dna());
-	$seq->qual([$a->qscore()]);
-
-	# Print the entry:
+	# Print the first entry:
 	$outfh->write_seq($seq);
+	
+	for my $a (@all_alignments) {
+	    my $seq= Bio::Seq::Quality->new();
+	    
+	    $seq->id($a->name());
+	    $seq->seq($a->query->dna());
+	    $seq->qual([$a->qscore()]);
+	    
+	    # Print the entry:
+	    $outfh->write_seq($seq);
+	}
+	$outfh->close();
     }
-    $outfh->close();
-
     return($outfn);
 }
 

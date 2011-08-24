@@ -97,8 +97,14 @@ _qualitiespos: _read_stats
 _ambiguous: _qualitiespos
 	all_no_log_table
 
+# Create a multifasta/fastq file in order to later run the transcriptome
+# mappings
+_seq_files: _ambiguous
+	build_seq_files.pl > _seq_files.txt
+	all_no_log_table
+
 # Create a table that reflects the read_list file
-_dataset: _ambiguous
+_dataset: _seq_files
 	build_dataset.RNAseq.pl > _dataset.txt
 	all_no_log_table
 

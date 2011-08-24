@@ -116,7 +116,7 @@ sub print_table_file {
     my $outfile=$options->{'TABLES'}.'/'.$outtable.'.sql';
 
     my $outfh=get_fh($outfile,1);
-    print $outfh "DROP TABLE IF EXISTS $outtable\n";
+    print $outfh "DROP TABLE IF EXISTS $outtable ;\n";
     print $outfh "$outtablesql\n";
     close($outfh);
 }
