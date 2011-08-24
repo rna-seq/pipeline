@@ -311,6 +311,7 @@ _unique_maps_junctions: _junctions_mapping
 	mv *.gtf.gz $JUNCTIONSDIR
 	mv *.ps $GRAPHS
 	cd $JUNCTIONSDIR; gzip_files.RNAseq.pl gem.map
+	cd $JUNCTIONSDIR; gzip_files.RNAseq.pl gen.coords
 	all_no_log_table
 
 _novel_junctions_summary: _unique_maps_junctions
