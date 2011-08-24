@@ -4,6 +4,7 @@
 /ToDo.txt -text
 /Version.txt -text
 bin/SeqToFasta.preprocess.pl -text
+bin/bam2gff_genome.RNAseq.pl -text
 bin/build_EJEI.RNAseq.pl -text
 bin/build_clusters.RNAseq.pl -text
 bin/build_dataset.RNAseq.pl -text

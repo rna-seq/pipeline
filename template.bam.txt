@@ -235,8 +235,8 @@ mapping: _transcriptome_mapping
 # the reads are paired, as we have more information
 # When mapping with closest $MISMATCHES and -unique_strict we can use the
 # mappability information
-_unique_maps_genome: _genome_mapping _junctions_mapping
-	cluster_run.RNAseq.pl gem2gff_genome.RNAseq.pl
+_unique_maps_genome: _dataset
+	cluster_run.RNAseq.pl bam2gff_genome.RNAseq.pl
 	plot_gff_genome_distribution.RNAseq.pl
 	mv _unique_maps_genome.ps $GRAPHS
 	cd $GENOMEDIR; gzip_files.RNAseq.pl gem.map

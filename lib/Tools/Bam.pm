@@ -4,7 +4,7 @@ package Tools::Bam;
 # Must be done before strict is used
 use Exporter;
 @ISA=('Exporter');
-@EXPORT_OK=('process_bam_file','bam2sequence');
+@EXPORT_OK=('process_bam_file','bam2sequence','bam2coords');
 
 use strict;
 use warnings;
@@ -56,9 +56,9 @@ sub process_bam_file {
 
     # Process the BAM file
     # get all the alignments
-    my @all_alignments=$sam->features();
+    my $all_alignments=$sam->features(-iterator => 1);
 
-    for my $a (@all_alignments) {
+    while (my $a=$all_alignments->next_seq()) {
 	$total_reads++;
 	$sequence{'seq'}=$a->query->dna;
 	$sequence{'qual'}=$a->qscore;
@@ -145,10 +145,10 @@ sub bam2sequence {
 
     # Process the BAM file
     # get all the alignments
-    my @all_alignments=$sam->features();
+    my $all_alignments=$sam->features(-iterator => 1);
 
     # Check the first line to see if the file has qualities or not.
-    my $a1=shift(@all_alignments);
+    my $a1=all_alignments->next_seq();
 
     my $seq= Bio::Seq::Quality->new();
 	
@@ -179,7 +179,7 @@ sub bam2sequence {
 	# Print the first entry:
 	$outfh->write_seq($seq);
 	
-	for my $a (@all_alignments) {
+	while (my $a=$all_alignments->next_seq()) {
 	    my $seq= Bio::Seq::Quality->new();
 	    
 	    $seq->id($a->name());
@@ -194,4 +194,51 @@ sub bam2sequence {
     return($outfn);
 }
 
+sub bam2coords {
+    my $aln=shift; # This should be a Bio::DB::BAM::Alignment object
+    my $entry={};
+    
+    my @coords;
+    
+    my $paired=$aln->get_tag_values('PAIRED');
+    $entry->{'id'}=$aln->name();
+    # Add the paired end info to the IDs
+    if ($paired) {
+	if ($aln->get_tag_values('SECOND_MATE')) {
+	    $entry->{'id'}.='/2';
+	} else {
+	    $entry->{'id'}.='/1';
+	}
+    }
+    $entry->{'chr'}=$aln->seq_id();
+    $entry->{'start'}=$aln->start();
+    $entry->{'end'}=$aln->end();
+    $entry->{'strand'}=$aln->strand();
+    # Correct strand format
+    if ($entry->{'strand'} == 1) {
+	$entry->{'strand'}='+';
+    } elsif ($entry->{'strand'} == -1) {
+	$entry->{'strand'}='-';
+    } else {
+	$entry->{'strand'}='.';
+    }
+    $entry->{'unique'}=0;
+    $entry->{'matches'}=join(':',
+			     $aln->get_tag_values('H0'),
+			     $aln->get_tag_values('H1'),
+			     $aln->get_tag_values('H2'));
+    # Determine if it is a unique map.
+    if ($entry->{'matches'}=~/^(0:)*1:.*/) {
+	$entry->{'unique'}=1;
+    }
+			     
+    $entry->{'cigar'}=$aln->cigar_str();
+
+    if ($entry->{'cigar'} &&
+	$entry->{'cigar'}!~/\*/) {
+	push @coords,$entry;
+    }
+
+    return(\@coords);
+}
 1;
