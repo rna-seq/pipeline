@@ -148,7 +148,7 @@ sub bam2sequence {
     my $all_alignments=$sam->features(-iterator => 1);
 
     # Check the first line to see if the file has qualities or not.
-    my $a1=all_alignments->next_seq();
+    my $a1=$all_alignments->next_seq();
 
     my $seq= Bio::Seq::Quality->new();
 	
