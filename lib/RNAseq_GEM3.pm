@@ -635,8 +635,8 @@ sub coords2gtf {
     my $coords=shift;
     my $source=shift;
     my $info=join('; ',
-		  'ID','"'.$coords->{'id'}.'"',
-		  'Identity','"'.$coords->{'matches'}.'"');
+		  'ID "'.$coords->{'id'}.'"',
+		  'Identity "'.$coords->{'matches'}.'"');
     my $gtf=join("\t",
 		 $coords->{'chr'},
 		 $source,
