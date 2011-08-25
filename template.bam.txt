@@ -243,7 +243,7 @@ _unique_maps_genome: _dataset
 	all_no_log_table
 
 # Removed the plotting of the transcript distribution
-_unique_maps_transcripts: _transcriptome_mapping annotation_info
+_unique_maps_transcripts: _transcriptome_mapping
 	cluster_run.RNAseq.pl gem2gff_transcriptome.RNAseq.pl
 	cluster_run.RNAseq.pl get_transcript_lengths.RNAseq.pl
 	plot_gff_transcript_coverage.RNAseq.pl
@@ -257,37 +257,30 @@ _unique_maps_transcripts: _transcriptome_mapping annotation_info
 	cd $TRANSDIR; gzip_files.RNAseq.pl gem.map
 	all_no_log_table
 
-_unique_maps_junctions: _junctions_mapping
-	cluster_run.RNAseq.pl gem2gff_junctions.RNAseq.pl -multi
-	plot_gff_junctions_distribution.RNAseq.pl
-        mysql $DB < $TABLES/$(echo $PREFIX)_junction_maps_class.sql
-        mysqlimport -L $DB _junction_maps_class.txt
-        gzip -9 _junction_maps_class.txt
-        mv _junction_maps_class.txt.gz $TAB_DAT
-	mv *.gtf.gz $JUNCTIONSDIR
-	mv *.ps $GRAPHS
-	cd $JUNCTIONSDIR; gzip_files.RNAseq.pl gem.map
-	all_no_log_table
+# This has to be extracted from the BAM in the unique_maps genome step above and
+# loaded in here
+#_unique_maps_junctions: _junctions_mapping
+#	cluster_run.RNAseq.pl gem2gff_junctions.RNAseq.pl -multi
+#	plot_gff_junctions_distribution.RNAseq.pl
+#        mysql $DB < $TABLES/$(echo $PREFIX)_junction_maps_class.sql
+#        mysqlimport -L $DB _junction_maps_class.txt
+#        gzip -9 _junction_maps_class.txt
+#        mv _junction_maps_class.txt.gz $TAB_DAT
+#	mv *.gtf.gz $JUNCTIONSDIR
+#	mv *.ps $GRAPHS
+#	cd $JUNCTIONSDIR; gzip_files.RNAseq.pl gem.map
+#	all_no_log_table
 
-_novel_junctions_summary: _unique_maps_junctions
-	build_novel_junctions_summary.pl > _novel_junctions_summary.txt
-	all_no_log_table
-
-_unique_maps_split: _split_mapping
-	gem2gff_split.RNAseq.pl -multi
-	plot_gff_split_distribution.RNAseq.pl
-	mv *.gtf.gz $SPLITMAPDIR
-	mv *.ps $GRAPHS
-	cd $SPLITMAPDIR; gzip_files.RNAseq.pl split-map
-	all_no_log_table
-
+#_novel_junctions_summary: _unique_maps_junctions
+#	build_novel_junctions_summary.pl > _novel_junctions_summary.txt
+#	all_no_log_table
 
 ### Build clusters of reads
 # Here we have to add a step to plot the length distribution and number of reads
 # by adding a -threshold we can change the minimum number of reads required for
 # a cluster to be built. The default is 1
 # TO DO Here we need to also estimate the nt coverage of the genome.
-_initial_clusters: _unique_maps_genome _unique_maps_junctions _unique_maps_transcripts _unique_maps_split
+_initial_clusters: _unique_maps_genome _unique_maps_transcripts
 	build_clusters.RNAseq.pl -staggered
 	plot_gff_cluster_distributions.RNAseq.pl
 	mv *.cluster.gtf.gz $CLUSTERDIR
