@@ -5,7 +5,8 @@ package RNAseq_pipeline_settings3;
 use Exporter;
 @ISA=('Exporter');
 @EXPORT_OK=('get_species_names_sub','print_table_file',
-	    'read_config_file','read_file_list','get_dbh','check_db',
+	    'read_config_file','read_file_list','get_lanes',
+	    'get_dbh','check_db',
 	    'get_numbers_from_annotation','get_saturation_curve',
 	    'get_gff_chrom_freq','get_junction_no','get_unique_exons',
 	    'get_unique_transcripts','get_common_dbh',
@@ -105,6 +106,17 @@ sub read_file_list {
     close($file_list);
 
     return(\%files);
+}
+
+sub get_lanes {
+    my $files=read_file_list();
+    my %lanes;
+    
+    foreach my $file (keys %{$files}) {
+	$lanes{$files->{$file}->[0]}{$files->{$file}->[1]}=1;
+    }
+
+    return(\%lanes);
 }
 
 # Print a table file in the correct directory

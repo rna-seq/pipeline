@@ -22,7 +22,7 @@ use Bio::Range;
 use Bio::SeqIO;
 use RNAseq_pipeline3 qw(get_fh parse_gff_line get_feature_overlap);
 use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list',
-			      'get_gene_from_short_junc_sub');
+			      'get_gene_from_short_junc_sub','get_lanes');
 
 # Declare some variables
 my $prefix;
@@ -73,7 +73,7 @@ get_projected_length(\%genes,
 
 # Get the lane names;
 my %files=%{read_file_list()};
-my %lanes=%{get_lanes(\%files)};
+my %lanes=%{get_lanes()};
 my %groups=%{get_groups(\%files)};
 
 # Get unique maps for each lane
@@ -120,9 +120,9 @@ foreach my $group (keys %groups) {
 	foreach my $juncfilename (@junctionfns) {
 	    if (-r $juncfilename) {
 		print STDERR "Processing $juncfilename\n";
-	} else {
-	    die "Can't read $juncfilename\n";
-	}
+	    } else {
+		die "Can't read $juncfilename\n";
+	    }
 	    get_feature_coverage_junctions($juncfilename,
 					   \%gene_juncs_coverage,
 					   $readlength);
@@ -395,27 +395,21 @@ sub get_gene_coverage_1000nt {
     print STDERR $nolength->[1],"\tWas their length\n";
 }
 
-sub get_lanes {
-    my $files=shift;
-    my %lanes;
-    
-    foreach my $file (keys %{$files}) {
-	$lanes{$files->{$file}->[0]}{$files->{$file}->[1]}=1;
-    }
-
-    return(\%lanes);
-}
-
 sub get_groups {
     my $files=shift;
     my %groups;
+    my %groups2;
     
     foreach my $file (keys %{$files}) {
 	my $group=$files->{$file}->[2] || 'All';
-	push @{$groups{$group}},$files->{$file}->[0];
+	$groups{$group}{$files->{$file}->[0]}=1;
     }
 
-    return(\%groups);
+    foreach my $group (keys %groups) {
+	$groups2{$group}=[keys %{$groups{$group}}]
+    }
+
+    return(\%groups2);
 }
 
 sub process_exons {

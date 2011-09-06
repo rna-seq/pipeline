@@ -22,7 +22,7 @@ use Bio::Range;
 use Bio::SeqIO;
 use RNAseq_pipeline3 qw(get_fh parse_gff_line get_feature_overlap);
 use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list',
-			      'get_gene_from_short_junc_sub');
+			      'get_gene_from_short_junc_sub','get_lanes');
 
 # Declare some variables
 my $prefix;
@@ -77,7 +77,7 @@ get_projected_length(\%genes,
 
 # Get the lane names;
 my %files=%{read_file_list()};
-my %lanes=%{get_lanes(\%files)};
+my %lanes=%{get_lanes()};
 
 # Get unique maps for each lane
 my $mappingtable=$prefix.'_genome_mapping';
@@ -454,18 +454,6 @@ sub get_gene_coverage_1000nt {
     print STDERR $nolength->[0],"\tFeatures lacked length information\n";
     print STDERR $nolength->[1],"\tWas their length\n";
 }
-
-sub get_lanes {
-    my $files=shift;
-    my %lanes;
-    
-    foreach my $file (keys %{$files}) {
-	$lanes{$files->{$file}->[0]}{$files->{$file}->[1]}=1;
-    }
-
-    return(\%lanes);
-}
-
 
 sub process_exons {
     my $genelist=shift;
