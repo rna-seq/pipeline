@@ -54,7 +54,7 @@ $script=shift || $options{'PREPROCESS'};
 if ($localdir &&
     -e $localdir) {
     $localdir=~s/\/$//;
-    print STDERR "Using $localdir for tmp files\n";
+    print $log_fh "Using $localdir for tmp files\n";
 } else {
     die "Could not find $localdir\n";
 }
@@ -78,17 +78,21 @@ foreach my $infile (keys %files) {
 
     my $outfile=$localdir.'/'.$infile.'.out.gz';
     my $command="$script $readdir/$infile.gz |gzip -9 -c > $outfile";
-    run_system_command($command);
+    run_system_command($command,
+		       $log_fh);
 
     # save the original read files
     my $original=$readdir.'/'.$infile.'.gz';
     my $destination=$projdir.'/sequence/'.$infile.'.gz';
     $command="mv $original $destination";
-    run_system_command($command);
+    run_system_command($command,
+		       $log_fh);
 
     # Put the preprocessed file into the directory
     $command="mv $outfile $readdir/$infile.gz";
-    run_system_command($command);
+    run_system_command($command,
+		       $log_fh);
 }
+close($log_fh);
 
 exit;

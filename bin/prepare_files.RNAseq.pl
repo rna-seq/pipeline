@@ -50,8 +50,13 @@ foreach my $readfile (keys %files) {
     }
 
     if (-r $infile) {
-	print $log_fh $infile,"\tIs unzipped gzipping for storage\n";
-	$command="cp $infile $target; gzip -7 $infile";
+	if ($infile=~/.bam$/) {
+	    print $log_fh $infile,"\tIs in BAM format. Copying to $tmpdir\n";
+	    $command="cp $infile $target";
+	} else {
+	    print $log_fh $infile,"\tIs unzipped gzipping for storage\n";
+	    $command="cp $infile $target; gzip -7 $infile";
+	}
     } elsif (-r $infile.'.gz') {
 	print $log_fh $infile,"\tIs gzipped. Inflating...\n";
 	$command="gunzip $infile.gz -c > $target";

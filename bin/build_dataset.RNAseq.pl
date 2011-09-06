@@ -17,7 +17,7 @@ BEGIN {
 # to make sure all the formatting, etc.. is correct.
 
 # Load some modules
-use RNAseq_pipeline3 qw(get_log_fh);
+use RNAseq_pipeline3 qw(get_log_fh check_table_existence);
 use RNAseq_pipeline_settings3 qw(read_config_file read_file_list get_dbh);
 
 # Get some options from the configuration file
@@ -89,32 +89,6 @@ close($log_fh);
 
 exit;
 
-sub check_table {
-    my $table=shift;
-
-    my %options=%{read_config_file()};
-
-    my $dbh=get_dbh();
-    my $present=0;
-
-    my ($query,$sth);
-    $query ='SELECT count(*) ';
-    $query.="FROM $table";
-
-    $sth = $dbh->table_info(undef,undef,$table,"TABLE");
-
-    my $count=$sth->execute();
-    my $results=$sth->fetchall_arrayref();
-    $sth->finish();
-    $dbh->disconnect();
-    
-    if (@{$results}) {
-	$present=1;
-    } 
-
-    return($present);
-}
-
 sub get_read_number {
     my $table=shift;
     my $dbh=shift;
@@ -122,7 +96,8 @@ sub get_read_number {
     print STDERR "Extracting info from  $table\n";
 
     my %reads;
-    my $present=check_table($table);
+    my $present=check_table_existence($dbh,
+				      $table);
 
     if ($present) {
 	my ($query,$sth);

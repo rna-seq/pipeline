@@ -124,15 +124,13 @@ foreach my $infile (keys %files) {
 # Print out Nucleotide distribution
 print $log_fh 'Building the nt distribution data...';
 my $ntposfh=get_fh("${prefix}_ambiguous.txt",1);
-my $max=0;
+#my $max=0;
 foreach my $lanename (sort keys %ntpos) {
     foreach my $pos (sort {$a <=> $b} keys %{$ntpos{$lanename}}) {
-	if ($ntpos{$lanename}{$pos}[0] &&
-	    $ntpos{$lanename}{$pos}[0] > $max) {
-	    $max = $ntpos{$lanename}{$pos}[0];
-	} else {
-	    $ntpos{$lanename}{$pos}->[0]=0;
-	}
+#	if ($ntpos{$lanename}{$pos}[0] &&
+#	    $ntpos{$lanename}{$pos}[0] > $max) {
+#	    $max = $ntpos{$lanename}{$pos}[0];
+#	} 
 
 	print $ntposfh join("\t",
 			    $lanename,
@@ -158,7 +156,7 @@ close ($qualityposfh);
 print $log_fh "done\n";
 
 # Adjust the max a bit so there is some space under the legend
-$max*=1.2;
+#$max*=1.2;
 
 # Print out the read summaries
 print $log_fh 'Building the summary file...';
@@ -174,11 +172,12 @@ foreach my $file (sort {$stats{$a}->[7] cmp $stats{$b}->[7]} keys %stats) {
 close($summaryfh);
 print $log_fh "done\n";
 
-print $log_fh 'Plotting the pictures...';
-plot_graphs_R(\%stats,
-	      $max,
-	      $prefix);
-print $log_fh "done\n";
+# Skip the plotting of the graphs in R
+#print $log_fh 'Plotting the pictures...';
+#plot_graphs_R(\%stats,
+#	      $max,
+#	      $prefix);
+#print $log_fh "done\n";
 
 close($log_fh);
 

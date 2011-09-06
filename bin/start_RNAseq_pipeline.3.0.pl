@@ -542,7 +542,7 @@ __END__
     -preprocess_trim_length: Length by which the reads are trimmed. Must be an
                              integer N or in the form <=N where N is the maximum
                              number of nucleotides that could be trimmed (as
-                             when an addaptor is trimmed and the whole adaptor
+                             when an adaptor is trimmed and the whole adaptor
                              is found).
         
 =head1 OPTIONS

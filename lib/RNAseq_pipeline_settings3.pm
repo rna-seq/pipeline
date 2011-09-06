@@ -962,7 +962,7 @@ sub send2cluster {
 	    print STDERR "done\n";
 	    last;
 	} else {
-	    sleep(10);
+	    sleep(60);
 	}
     }
 
