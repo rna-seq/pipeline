@@ -72,6 +72,7 @@ _start:	@
 # are continually different cases appearing
 preprocess: _start
 	$BIN/preprocess.RNAseq.pl
+	mv preprocess.RNAseq.log $LOGS
 
 # This rule will extract the initial raw sequences from the _seq.txt file
 # output by the solexa sequencing, it will also filter those sequences
@@ -585,17 +586,16 @@ _register_results: encode _store_reads _fusion_transcripts
 	build_register_results.RNAseq.pl > _register_results.txt
 	all_no_log_table
 
-# This rule should execute all the steps in the pipeline
-all: _register_results
-
 # Clean up
 # We need to remove the sequence files from the local directory
 # Also junction mapping files from the local dir
 # Create a rule to remove all the temporary files that may be left around 
 # after a crash
-cleanup: @
+cleanup: _register_results
 	rm -r $LOCALDIR
 
+# This rule should execute all the steps in the pipeline
+all: _register_results
 
 # ####
 ## Test rules
