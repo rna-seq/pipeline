@@ -87,6 +87,7 @@ my %unique_maps=%{get_unique_maps($dbh,
 foreach my $group (keys %groups) {
     my %gene_juncs_coverage;
     my %gene_coverage;
+    my $uniquemapsgroup=0;
     foreach my $lane (@{$groups{$group}}) {
 	my $type;
 	if (keys %{$lanes{$lane}} == 1) {
@@ -97,7 +98,7 @@ foreach my $group (keys %groups) {
 	    die "Unknown type $lane\n";
 	}
 	
-	$unique_maps{$group}+=$unique_maps{$lane};
+	$uniquemapsgroup+=$unique_maps{$lane};
 	
 	# Get the projected exon overlap information
 	my $exonoverlap=$genomedir.'/'.$lane.'.'.$type.'.unique.gtf.proj.overlap.total';
@@ -142,7 +143,7 @@ foreach my $group (keys %groups) {
 		  \%gene_coverage,
 		  \%gene_juncs_coverage,
 		  $outfile,
-		  $unique_maps{$group},
+		  $uniquemapsgroup,
 		  $group,
 		  \%gene_lengths);
 }
