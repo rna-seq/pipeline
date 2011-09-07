@@ -194,22 +194,10 @@ sub bam2sequence {
     return($outfn);
 }
 
-sub bam2coords {
-    my $aln=shift; # This should be a Bio::DB::BAM::Alignment object
+sub process_aln {
+    my $aln=shift;
     my $entry={};
-    
-    my @coords;
-    
-    my $paired=$aln->get_tag_values('PAIRED');
-    $entry->{'id'}=$aln->name();
-    # Add the paired end info to the IDs
-    if ($paired) {
-	if ($aln->get_tag_values('SECOND_MATE')) {
-	    $entry->{'id'}.='/2';
-	} else {
-	    $entry->{'id'}.='/1';
-	}
-    }
+
     $entry->{'chr'}=$aln->seq_id();
     $entry->{'start'}=$aln->start();
     $entry->{'end'}=$aln->end();
@@ -222,21 +210,61 @@ sub bam2coords {
     } else {
 	$entry->{'strand'}='.';
     }
-    $entry->{'unique'}=0;
-    $entry->{'matches'}=join(':',
-			     $aln->get_tag_values('H0'),
-			     $aln->get_tag_values('H1'),
-			     $aln->get_tag_values('H2'));
-    # Determine if it is a unique map.
-    if ($entry->{'matches'}=~/^(0:)*1:.*/) {
-	$entry->{'unique'}=1;
-    }
-			     
-    $entry->{'cigar'}=$aln->cigar_str();
+    return($entry);
+}
 
-    if ($entry->{'cigar'} &&
-	$entry->{'cigar'}!~/\*/) {
-	push @coords,$entry;
+sub bam2coords {
+    my $aln=shift; # This should be a Bio::DB::BAM::Alignment object
+    my $entry={};
+    
+    my @coords;
+    my $paired=$aln->get_tag_values('PAIRED');
+
+    my @subaligns=$aln->get_SeqFeatures();
+    # Check if the alignment is spliced
+    foreach my $a (@subaligns) {
+	my $entry=process_aln($a);
+	$entry->{'id'}=$aln->name();
+
+	# Add the paired end info to the IDs
+	if ($paired) {
+	    if ($aln->get_tag_values('SECOND_MATE')) {
+		$entry->{'id'}.='/2';
+	    } else {
+		$entry->{'id'}.='/1';
+	    }
+	}
+	# Set the spliced
+	if (@subaligns >1) {
+	    $entry->{'spliced'}=1;
+	} else {
+	    $entry->{'spliced'}=0;
+	}
+
+	# set the unique
+	$entry->{'unique'}=0;
+	$entry->{'matches'}=join(':',
+				 $aln->get_tag_values('H0'),
+				 $aln->get_tag_values('H1'),
+				 $aln->get_tag_values('H2'));
+	# Determine if it is a unique map.
+	if ($entry->{'matches'}=~/^(0:)*1(:.)*/) {
+	    $entry->{'unique'}=1;
+	} elsif ($entry->{'matches'}) {
+	    # This is a multimap
+	} else {
+	# The tags are not define so we don't know what this is
+#	my $read_id=$entry->{'id'};
+#	print STDERR "No H? tag found for $read_id. Setting as unique, but beware\n";
+#	$entry->{'unique'}=1;
+	}
+			     
+	$entry->{'cigar'}=$aln->cigar_str();
+
+	if ($entry->{'cigar'} &&
+	    $entry->{'cigar'}!~/\*/) {
+	    push @coords,$entry;
+	}
     }
 
     return(\@coords);

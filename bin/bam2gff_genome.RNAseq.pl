@@ -13,7 +13,7 @@ BEGIN {
 }
 
 # Objective
-# This script should parse a BAM file and create a gff filefrom it
+# This script should parse a BAM file and create a gff file from it
 # It will take the read.list file in order to know which are the files to
 # process
 
@@ -30,18 +30,21 @@ use RNAseq_pipeline3 ('get_fh','print_gff');
 use RNAseq_pipeline_settings3 ('read_config_file','read_file_list','get_dbh');
 use RNAseq_GEM3 qw(coords2gtf);
 use Tools::Bam qw(bam2coords);
+use Data::Dumper;
 
 # Declare variables & Get command line options
 my $mismatches;
 my $file_list;
 my $tmpdir;
 my $genomedir;
+my $juncdir;
 
 my %options=%{read_config_file()};
 $mismatches=$options{'MISMATCHES'};
 $file_list=$options{'FILELIST'};
 $tmpdir=$options{'LOCALDIR'};
 $genomedir=$options{'GENOMEDIR'};
+$juncdir=$options{'JUNCTIONSDIR'};
 
 # Get a database connection
 my $dbh=get_dbh();
@@ -58,27 +61,44 @@ foreach my $file (keys %files) {
     my $pair=$files{$file}->[0];
     my $outfileunique=$genomedir.'/'.$pair.'.single.unique.gtf.gz';
     my $outfilemulti=$genomedir.'/'.$pair.'.single.multi.gtf.gz';
+    my $junoutfileunique=$juncdir.'/'.$pair.'.single.unique.gtf.gz';
+    my $junoutfilemulti=$juncdir.'/'.$pair.'.single.multi.gtf.gz';
     my $outuniquefh=get_fh($outfileunique,1);
     my $outmultifh=get_fh($outfilemulti,1);
+    my $outjununiquefh=get_fh($junoutfileunique,1);
+    my $outjunmultifh=get_fh($junoutfilemulti,1);
     my $sam = Bio::DB::Sam->new(-bam  => $tmpdir.'/'.$file,
-				-expand_flags => 1);
+				-expand_flags => 1,
+				-split_splices => 1);
 
     my $all_alignments=$sam->features(-iterator =>1);
 
     while (my $a=$all_alignments->next_seq()) {
+	my @subaligns=$a->get_SeqFeatures();
+
 	my $coords=bam2coords($a);
 	foreach my $coord (@{$coords}) {
 	    my $gtf=coords2gtf($coord,
 			       'BAM');
 	    if ($coord->{'unique'}) {
-		print $outuniquefh $gtf,"\n";
+		if ($coord->{'spliced'}) {
+		    print $outjununiquefh $gtf,"\n";
+		} else {
+		    print $outuniquefh $gtf,"\n";
+		}
 	    } else {
-		print $outmultifh $gtf,"\n";
+		if ($coord->{'spliced'}) {
+		    print $outjunmultifh $gtf,"\n";
+		} else {
+		    print $outmultifh $gtf,"\n";
+		}
 	    }
 	}
     }
     close($outuniquefh);
     close($outmultifh);
+    close($outjununiquefh);
+    close($outjunmultifh);
 }
 
 exit;
