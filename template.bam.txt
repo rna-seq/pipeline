@@ -106,6 +106,7 @@ _seq_files: _ambiguous
 # Create a table that reflects the read_list file
 _dataset: _seq_files
 	build_dataset.RNAseq.pl > _dataset.txt
+	mv build_dataset.RNAseq.log $LOGS
 	all_no_log_table
 
 QC: _dataset

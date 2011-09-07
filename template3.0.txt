@@ -101,6 +101,7 @@ _ambiguous: _qualitiespos
 # Create a table that reflects the read_list file
 _dataset: _ambiguous
 	build_dataset.RNAseq.pl > _dataset.txt
+	mv build_dataset.RNAseq.log $LOGS
 	all_no_log_table
 
 QC: _dataset
