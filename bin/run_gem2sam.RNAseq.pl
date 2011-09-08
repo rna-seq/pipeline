@@ -36,6 +36,7 @@ my $prefix;
 my $tmpdir;
 my $samdir;
 my $file_list;
+my $bindir;
 
 # Read the configuration file
 my %options=%{read_config_file()};
@@ -44,6 +45,10 @@ $tmpdir=$options{'LOCALDIR'};
 $genomefile=$options{'GENOMESEQ'};
 $samdir=$options{'SAMDIR'};
 $file_list=$options{'FILELIST'};
+$bindir=$options{'BIN'};
+
+# Add the bindir to the path
+$ENV{'PATH'}.=":$bindir";
 
 # Connect to the database
 my $dbh=get_dbh();
@@ -121,9 +126,10 @@ sub generate_sorted_bam {
 
     print STDERR "Building sorted BAM file from $samfile\n";
 
-    my $command='samtools view ';
+    # Sam tools outputs many times some of the reads and we do not want that
+    my $command="uniq $samfile | samtools view ";
     $command.='-b -S ';
-    $command.="$samfile |samtools sort - $bamfile";
+    $command.="- |samtools sort - $bamfile";
     run_system_command($command);
 }
 
