@@ -50,6 +50,10 @@ $script=shift || $options{'PREPROCESS'};
 # case where the file is a txt file, as both pairs will appear as the first and
 # second halves of the read.
 
+# Get a log file
+my $log_fh=get_log_fh('preprocess.RNAseq.log',
+		      $debug);
+
 # Check the localdir
 if ($localdir &&
     -e $localdir) {
@@ -68,10 +72,6 @@ unless ($script &&
 
 # Get the files we are going to process
 my %files=%{read_file_list()};
-
-# Get a log file
-my $log_fh=get_log_fh('preprocess.RNAseq.log',
-		      $debug);
 
 foreach my $infile (keys %files) {
     print $log_fh "Processing $infile\n";
