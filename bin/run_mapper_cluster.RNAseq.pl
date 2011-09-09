@@ -225,6 +225,7 @@ export infile=\${infiles[\$SGE_TASK_ID-1]}
 export outfile=\${outfiles[\$SGE_TASK_ID-1]}
 
 echo \$HOSTNAME >&2
+ypwhich >&2
 $bindir/run_mapper.RNAseq.parallel.pl -index $index -infile \$infile -outfile \$outfile -t $threads -mismatches $mismatches > \$infile.mapping.log
 FORMEND
     ;
