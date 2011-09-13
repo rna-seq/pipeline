@@ -137,7 +137,7 @@ sub get_inclusion_exclusion_events {
 			     $junctions),"\n";
 	}
 
-	# Try to free some memmory to prevent escalation;
+	# Try to free some memory to prevent escalation;
 	$genes{$gene}='';
 	$finished++;
 	unless ($finished % 100) {

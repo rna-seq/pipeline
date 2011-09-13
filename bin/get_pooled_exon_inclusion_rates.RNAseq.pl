@@ -241,9 +241,10 @@ sub get_normalization {
     while (my ($lane,$unique)=$sth->fetchrow_array()) {
 	my $group=$lane2group{$lane};
 	$normalization{$group}+=$unique;
-#	print STDERR join("\t",
-#			  $unique,
-#			  $normalization{$group}),"\n"; 
+	print STDERR join("\t",
+			  $group,
+			  $unique,
+			  $normalization{$group}),"\n"; 
    }
 
     # Normalize the counts to counts per million reads
