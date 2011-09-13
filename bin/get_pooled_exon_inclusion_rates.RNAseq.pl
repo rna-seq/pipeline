@@ -26,7 +26,8 @@ BEGIN {
 # lane.
 
 use RNAseq_pipeline3 qw(get_fh get_exon_coverage_1000nt);
-use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list');
+use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list',
+			       'get_lanes');
 use Bio::SeqIO;
 
 # Define some variables
@@ -143,6 +144,7 @@ foreach my $group (keys %groups) {
     # Go through the exclusion file and for each of the exons print the
     # Gene, exon, number of inclusion reads and number of exclusion reads
     my $outfile=$exondir.'/'.$group.'.inclusion.exclusion.pooled.txt';
+    print STDERR $normfactor,"\n";
     process_exons($exclusionfn,
 		  \%juncs_coverage,
 		  \%exons_coverage,
@@ -258,17 +260,6 @@ sub get_normalization {
     return(\%normalization);
 }
 
-sub get_lanes {
-    my $files=shift;
-    my %lanes;
-    
-    foreach my $file (keys %{$files}) {
-	$lanes{$files->{$file}->[0]}{$files->{$file}->[1]}=1;
-    }
-
-    return(\%lanes);
-}
-
 sub get_junctions_table {
     my $dbh=shift;
     my $prefix=shift;
@@ -325,6 +316,7 @@ sub process_exons {
     my $lane=shift;
 
     print STDERR "Collecting events...\n";
+    print STDERR $normfactor,"\n";
 
     my $infh=get_fh($filename);
     my $outfh=get_fh($output,1);
