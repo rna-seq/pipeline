@@ -89,7 +89,7 @@ foreach my $group (keys %groups) {
     my %gene_juncs_coverage;
     my %gene_coverage;
     my $uniquemapsgroup=0;
-    foreach my $lane (@{$groups{$group}}) {
+    foreach my $lane (keys %{$groups{$group}}) {
 	my $type;
 	if (keys %{$lanes{$lane}} == 1) {
 	    $type='single';

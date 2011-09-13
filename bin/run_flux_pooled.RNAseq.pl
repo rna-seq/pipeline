@@ -70,7 +70,7 @@ foreach my $group (keys %groups) {
     }
 
     # Determine if paired
-    foreach my $lane (@{$groups{$group}}) {
+    foreach my $lane (keys %{$groups{$group}}) {
 	if (@{$lanes{$lane}} == 1) {
 	    $type='single';
 	} elsif (@{$lanes{$lane}} == 2) {
