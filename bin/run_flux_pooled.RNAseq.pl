@@ -19,7 +19,7 @@ BEGIN {
 
 use Getopt::Long;
 use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
-use RNAseq_pipeline_settings3 qw(read_config_file read_file_list);
+use RNAseq_pipeline_settings3 qw(read_config_file read_file_list get_groups);
 use Tools::Flux qw(build_parameter_file run_flux);
 
 my $localdir;
@@ -45,7 +45,7 @@ my $log_fh=get_log_fh('run_flux_pooled.RNAseq.log',
 # First get a list of the bed files we are going to process
 my %files=%{read_file_list()};
 my %lanes=%{get_lanes(\%files)};
-my %groups=%{get_groups(\%files)};
+my %groups=%{get_groups()};
 
 # get the necesary directories we are going to use in order to build the command
 # line for the capacitor
@@ -134,16 +134,4 @@ sub get_lanes {
     }
 
     return(\%lanes);
-}
-
-sub get_groups {
-    my $files=shift;
-    my %groups;
-    
-    foreach my $file (keys %{$files}) {
-	my $group=$files->{$file}->[2] || 'All';
-	push @{$groups{$group}},$files->{$file}->[0];
-    }
-
-    return(\%groups);
 }

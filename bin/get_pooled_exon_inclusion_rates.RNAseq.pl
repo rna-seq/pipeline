@@ -27,7 +27,7 @@ BEGIN {
 
 use RNAseq_pipeline3 qw(get_fh get_exon_coverage_1000nt);
 use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list',
-			       'get_lanes');
+			       'get_lanes','get_groups');
 use Bio::SeqIO;
 
 # Define some variables
@@ -70,8 +70,8 @@ my $mappingtable=$prefix.'_genome_mapping';
 						 $table);
 
 my %files=%{read_file_list()};
-my %lanes=%{get_lanes(\%files)};
-my %groups=%{get_groups(\%files)};
+my %lanes=%{get_lanes()};
+my %groups=%{get_groups()};
 
 # Get normalization ratios for each lane
 my %read_no_norm=%{get_normalization($dbh,
@@ -96,7 +96,7 @@ foreach my $group (keys %groups) {
     my %exons_coverage;
     my %juncs_coverage;
     my $normfactor=$read_no_norm{$group};
-    foreach my $lane (@{$groups{$group}}) {
+    foreach my $lane (keys %{$groups{$group}}) {
 	my $type;
 	if (keys %{$lanes{$lane}} == 1) {
 	    $type='single';
@@ -225,7 +225,7 @@ sub get_normalization {
 
     my ($query,$sth,$count);
 
-    print STDERR "Getting normalization rates from $maptable...";
+    print STDERR "Getting normalization rates from $maptable...\n";
     foreach my $file (keys %{$files}) {
 	my $group=$files->{$file}->[2] || 'All';
 	$lane2group{$files->{$file}->[1]}=$group;
@@ -396,16 +396,4 @@ sub get_feature_coverage_junctions {
     }
 
     print STDERR "done\n";
-}
-
-sub get_groups {
-    my $files=shift;
-    my %groups;
-    
-    foreach my $file (keys %{$files}) {
-	my $group=$files->{$file}->[2] || 'All';
-	push @{$groups{$group}},$files->{$file}->[0];
-    }
-
-    return(\%groups);
 }

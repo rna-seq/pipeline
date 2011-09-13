@@ -70,7 +70,7 @@ my $mappingtable=$prefix.'_genome_mapping';
 						 $table);
 
 my %files=%{read_file_list()};
-my %lanes=%{get_lanes(\%files)};
+my %lanes=%{get_lanes()};
 
 
 # Get normalization ratios for each lane

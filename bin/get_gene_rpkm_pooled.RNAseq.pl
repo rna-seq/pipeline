@@ -22,7 +22,8 @@ use Bio::Range;
 use Bio::SeqIO;
 use RNAseq_pipeline3 qw(get_fh parse_gff_line get_feature_overlap);
 use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list',
-			      'get_gene_from_short_junc_sub','get_lanes');
+			      'get_gene_from_short_junc_sub','get_lanes',
+			       'get_groups');
 
 # Declare some variables
 my $prefix;
@@ -394,23 +395,6 @@ sub get_gene_coverage_1000nt {
 
     print STDERR $nolength->[0],"\tFeatures lacked length information\n";
     print STDERR $nolength->[1],"\tWas their length\n";
-}
-
-sub get_groups {
-    my $files=shift;
-    my %groups;
-    my %groups2;
-    
-    foreach my $file (keys %{$files}) {
-	my $group=$files->{$file}->[2] || 'All';
-	$groups{$group}{$files->{$file}->[0]}=1;
-    }
-
-    foreach my $group (keys %groups) {
-	$groups2{$group}=[keys %{$groups{$group}}]
-    }
-
-    return(\%groups2);
 }
 
 sub process_exons {
