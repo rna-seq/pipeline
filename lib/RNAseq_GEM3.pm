@@ -363,7 +363,7 @@ sub trim_reads {
     my $mapped=shift;
     my $unmapped=shift;
     my $trim=shift;
-    my $threshold=25;
+    my $threshold=30;
 
     unless($trim) {
 	$trim=10;

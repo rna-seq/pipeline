@@ -94,8 +94,6 @@ bin/get_unmapped_reads.RNAseq.pl -text
 bin/gzip_files.RNAseq.pl -text
 bin/merge_mappings.RNAseq.new.pl -text
 bin/merge_mappings.RNAseq.pl -text
-bin/merge_mappings.RNAseq.test.pl -text
-bin/merge_mappings.RNAseq.test2.pl -text
 bin/multirun.pl -text
 bin/plot_exon_detection.RNAseq.pl -text
 bin/plot_exon_saturation.RNAseq.pl -text

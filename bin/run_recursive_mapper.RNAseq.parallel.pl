@@ -47,8 +47,8 @@ my $filetype;
 my $mismatches;
 my $readlength;
 my $maxmismatch;
-my $minmapthreshold=10;
-my $trimthreshold=10;
+my $trimthreshold=10; # This is the amount of nt by which the reads are trimmed 
+                      # each round
 my $debug=0;
 
 # Get some options from the command line

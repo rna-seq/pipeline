@@ -35,6 +35,8 @@ BEGIN {
 # meanwhile the files will be processed as single reads and merged at the end
 # with the gem2sam tool (keeping only the unique hits
 
+# The script will separate the reads into unique amd multimapping reads
+
 ### TO DO
 # The script has to be rewritten to take into account the paired end reads.
 
