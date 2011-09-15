@@ -152,7 +152,9 @@ sub print_table_file {
 
 # Get the information on the pair id and the lane id
 ### TO DO
-# These subs should be merged into one that uses the datasets table
+# These subs should be merged into one that uses the datasets table and be the
+# same as get_lanes. for this the naming of the mapping files needs to be
+# based on that of the lane _id, not the original fastq
 sub get_pair_id {
     my $files=shift;
     my %pairs;
@@ -167,13 +169,13 @@ sub get_pair_id {
 }
 
 sub get_lane_id {
-    my $files=shift;
+    my $files=read_file_list();
     my %lanes;
 
     foreach my $file (keys %{$files}) {
 	my $filebase=$file;
 	$filebase=~s/.fa(stq)?$//;
-	push @{$lanes{$files->{$file}->[1]}},$filebase;
+	$lanes{$files->{$file}->[0]}{$files->{$file}->[1]}=$filebase;
     }
 
     return(\%lanes);
@@ -199,13 +201,13 @@ sub get_dataset_id {
 }
 
 sub is_paired {
-    my $pairids=shift;
     my $pair=shift;
+    my $pairids=get_lane_id();
 
     my $paired;
-    if (@{$pairids->{$pair}} == 1) {
+    if (keys %{$pairids->{$pair}} == 1) {
 	$paired='single';
-    } elsif (@{$pairids->{$pair}} == 2) {
+    } elsif (keys %{$pairids->{$pair}} == 2) {
 	$paired='paired';
     } else {
 	die "Incorrect number of pairs\n";
