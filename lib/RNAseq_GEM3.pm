@@ -50,7 +50,7 @@ sub parse_gem_line {
     $line{'id'}=$line[0];
     # Remove spaces in the identifier and substitute them with underscores. This
     # Is done to avoid problems later with programs that do not admit the spaces
-    $line{'id'}=~s/ */_/g;
+    $line{'id'}=~s/ +/_/g;
     $line{'seq'}=$line[1];
     $line{'matches'}=$line[2];
     $line{'hits'}=$line[3];
