@@ -92,7 +92,6 @@ bin/get_split_coverage.RNAseq.pl -text
 bin/get_transcript_lengths.RNAseq.pl -text
 bin/get_unmapped_reads.RNAseq.pl -text
 bin/gzip_files.RNAseq.pl -text
-bin/merge_mappings.RNAseq.new.pl -text
 bin/merge_mappings.RNAseq.pl -text
 bin/multirun.pl -text
 bin/plot_exon_detection.RNAseq.pl -text
