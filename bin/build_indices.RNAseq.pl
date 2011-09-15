@@ -30,18 +30,22 @@ my $genomeindex;
 my $junctionsindex;
 my $transcriptomeindex;
 my $exonsindex;
+my $bindir;
 
 my %options=%{read_config_file()};
 $exonsfile=$options{'EXONSFASTA'};
 $junctionsfile=$options{'JUNCTIONSFASTA'};
 $genomefile=$options{'GENOMESEQ'};
 $transcriptomefile=$options{'TRANSCRIPTOMEFASTA'};
-
+$bindir=$options{'BIN'};
 $database=$options{'DB'};
 
 $genomeindex=$options{'GENOMEINDEX'};
 $junctionsindex=$options{'JUNCTIONSINDEX'};
 $transcriptomeindex=$options{'TRANSCRIPTOMEINDEX'};
+
+# Add the bin directory to the path
+$ENV{'PATH'}.=":$bindir";
 
 unless ($exonsfile && $junctionsfile && $genomefile && $transcriptomefile) {
     die "ERROR:Files for exons, transcript, junctions and genome are needed\n";
