@@ -63,6 +63,7 @@ my %pairids=%{get_lane_id()};
 
 # process each group of files
 foreach my $pair_id (keys %pairids) {
+    print STDERR "Processing\t",$pair_id,"\n";
     # Decide if the reads are paired or not, as that will change how we merge
     # them. This should be done from the read.list.files
     my $paired=is_paired($pair_id);
@@ -104,7 +105,7 @@ foreach my $pair_id (keys %pairids) {
 	my $mergedfn2=$samdir.'/'.$pair_id.'.multi.merged.gem.map.gz';
 	if (-r $mergedfn1) {
 	    print STDERR $mergedfn1,"\tIs present. Skipping...\n";
-#	    next;
+	    next;
 	}
 
 	print STDERR "Processing $paired data for $pair_id\n";
