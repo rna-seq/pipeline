@@ -90,15 +90,17 @@ foreach my $pair_id (keys %pairids) {
 	    $outfh2{$single}=get_fh($mergedfn2,1);
 	}
 
-	$mergers{$paired}->([keys %{$pairids{$pair_id}}],
-			    \%outfh1,
-			    \%outfh2,
-			    $pairids{$pair_id});
-
-	# Close the filehandles
-	foreach my $single (keys %outfh1) {
-	    close($outfh1{$single});
-	    close($outfh2{$single});
+	if (keys %outfh1 && keys %outfh2) {
+	    $mergers{$paired}->([keys %{$pairids{$pair_id}}],
+				\%outfh1,
+				\%outfh2,
+				$pairids{$pair_id});
+	    
+	    # Close the filehandles
+	    foreach my $single (keys %outfh1) {
+		close($outfh1{$single});
+		close($outfh2{$single});
+	    }
 	}
     } elsif ($paired eq 'single') {
 	my $mergedfn1=$samdir.'/'.$pair_id.'.unique.merged.gem.map.gz';
