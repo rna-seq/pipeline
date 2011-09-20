@@ -250,7 +250,7 @@ _recursive_mapping: _split_mapping
 	all_no_log_table
 
 ### TO DO add the recursive mapping to the merged mappings
-_merged_mapping: _split_mapping
+_merged_mapping: _recursive_mapping
 	cluster_run.RNAseq.pl merge_mappings.RNAseq.pl
 	build_mapping_stats.RNAseq.pl `ls $SAMDIR/* | grep 'unique.merged.gem.map'` > _merged_mapping.txt
 	all_no_log_table
