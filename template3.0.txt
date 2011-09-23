@@ -508,7 +508,7 @@ _bed_files: _merged_mapping _recursive_mapping
 _transcript_expression_levels: _junction_classification _bed_files
 	cluster_run.RNAseq.pl run_flux.RNAseq.pl
 	build_transcript_expression_levels.RNAseq.pl > _transcript_expression_levels.txt
-	mv run_flux.RNAseq.log $LOGS
+	mv run_flux.RNAseq.log build_transcript_expression_levels.RNAseq.log $LOGS
 	all_no_log_table
 
 _transcript_expression_levels_pooled: _junction_classification _bed_files _junction_classification
@@ -583,6 +583,7 @@ encode: _summaries _all_junctions_class_pooled mapping _read_classification
 
 _register_results: encode _store_reads _fusion_transcripts
 	build_register_results.RNAseq.pl > _register_results.txt
+	mv build_register_results.RNAseq.log $LOGS
 	all_no_log_table
 
 # Clean up

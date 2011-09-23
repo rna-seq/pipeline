@@ -51,6 +51,16 @@ sub parse_gem_line {
     # Remove spaces in the identifier and substitute them with underscores. This
     # Is done to avoid problems later with programs that do not admit the spaces
     $line{'id'}=~s/ +/_/g;
+
+    # Fix Down syndrome reads problem
+#    if ($line{'id'}=~s/ 1:/_X:/o) {
+#	# Down synbdrome reads
+#	$line{'id'}=~s/$/\/1/o;
+#    } elsif ($line{'id'}=~s/ 2:/_X:/o) {
+#	# Down syndrome reads
+#	$line{'id'}=~s/$/\/2/o;
+#    }
+
     $line{'seq'}=$line[1];
     $line{'matches'}=$line[2];
     $line{'hits'}=$line[3];
