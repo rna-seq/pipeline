@@ -18,11 +18,11 @@ BEGIN {
 use Getopt::Long;
 use RNAseq_pipeline3 qw(get_fh get_files_from_table_sub);
 use RNAseq_pipeline_settings3 ('read_config_file','read_file_list','get_dbh');
+use RNAseq_GEM3 qw(parse_gem_line);
 
 # Get command line options
 my $mismatches;
 my $closest_hit=1;
-my $read_length;
 my $file_list;
 my $multi;
 
@@ -33,7 +33,6 @@ GetOptions('mismatches=i' => \$mismatches,
 my %options=%{read_config_file()};
 $mismatches=$options{'MISMATCHES'} - 1;
 $file_list=$options{'FILELIST'};
-$read_length=$options{'READLENGTH'};
 
 # Get some subroutines
 my $dbh=get_dbh();
@@ -63,6 +62,7 @@ exit;
 sub get_coords {
     my $string=shift;
     my $pos=shift;
+    my $read_length=shift;
     my %hit;
 
     # First we need to parse everything
@@ -80,8 +80,9 @@ sub get_coords {
     if (exists $coord_parser->{$parser_key}){
 	($hit{'up_start'},
 	 $hit{'down_end'})=$coord_parser->{$parser_key}->($up_coords,
-							 $down_coords,
-							 $pos);
+							  $down_coords,
+							  $pos,
+							  $read_length);
     } else {
 	warn "Unknown strand combination $parser_key\n";
     }
@@ -92,6 +93,7 @@ sub get_coords {
 sub check_multi_start {
     my $coord_string=shift;
     my $pos=shift;
+    my $read_length=shift;
     my $down=shift;
     my @ranges;
 
@@ -148,6 +150,7 @@ sub check_multi_start {
 sub check_single_start {
     my $coord_string=shift;
     my $pos=shift;
+    my $read_length=shift;
     my $down=shift;
     my @ranges;
 
@@ -195,16 +198,19 @@ sub get_split_coord_parser {
 	my $up_coord_string=shift;
 	my $down_coord_string=shift;
 	my $pos=shift;
+	my $read_length=shift;
 
 	# Check input
 	# First the up string
 	my $ranges1=check_single_start($up_coord_string,
-					      $pos);
+				       $pos,
+				       $read_length);
 
 	# Check the down string
 	my $ranges2=check_multi_start($down_coord_string,
-					     $pos,
-					     1);
+				      $pos,
+				      $read_length,
+				      1);
 
 	return($ranges1,$ranges2);
     };
@@ -213,16 +219,19 @@ sub get_split_coord_parser {
 	my $up_coord_string=shift;
 	my $down_coord_string=shift;
 	my $pos=shift;
+	my $read_length=shift;
 
 	# Check input
 	# First the up string
 	my $ranges1=check_single_start($up_coord_string,
-					      $pos);
+				       $pos,
+				       $read_length);
 
 	# Check the down string
 	my $ranges2=check_single_start($down_coord_string,
-					      $pos,
-					      1);
+				       $pos,
+				       $read_length,
+				       1);
 
 	return($ranges1,$ranges2);
     };
@@ -231,16 +240,19 @@ sub get_split_coord_parser {
 	my $up_coord_string=shift;
 	my $down_coord_string=shift;
 	my $pos=shift;
+	my $read_length=shift;
 
 	# Check input
 	# First the up string
 	my $ranges1=check_multi_start($up_coord_string,
-				      $pos);
+				      $pos,
+				      $read_length);
 
 	# Check the down string
 	my $ranges2=check_single_start($down_coord_string,
-					      $pos,
-					      1);
+				       $pos,
+				       $read_length,
+				       1);
 
 	return($ranges1,$ranges2);
     };
@@ -249,15 +261,18 @@ sub get_split_coord_parser {
 	my $up_coord_string=shift;
 	my $down_coord_string=shift;
 	my $pos=shift;
+	my $read_length=shift;
 
 	# Check input
 	# First the up string
 	my $ranges1=check_multi_start($up_coord_string,
-				      $pos);
+				      $pos,
+				      $read_length);
 
 	# Check the down string
 	my $ranges2=check_multi_start($down_coord_string,
 				      $pos,
+				      $read_length,
 				      1);
 
 	return($ranges1,$ranges2);
@@ -293,14 +308,12 @@ sub get_split_parser {
 	my $infh=get_fh($infile);
 
 	my %strands;
+	my $read_length;
 	print STDERR 'Parsing...';
 	while (my $line=<$infh>) {
-	    chomp($line);
-	    my @line=split(/\t+/,$line);
-	    unless ($read_length) {
-		$read_length=length($line[1]);
-	    }
-	    my @map=split(':',$line[2]);
+	    my %line=%{parse_gem_line($line)};
+	    $read_length=$line{'length'};
+	    my @map=split(':',$line{'matches'});
 	    if (@map < $mismatches - 1) {
 		$mismatches=@map - 1;
 		warn "File was mapped with $mismatches mismatches, reducing mismatch threshold accordingly \n";
@@ -362,7 +375,7 @@ sub get_split_parser {
 
 	    # If the script reaches this point it has found at least one good
 	    # hit
-	    my @matches=split(',',$line[3]);
+	    my @matches=split(',',$line{'hits'});
 	    if ($matches > @matches) {
 		if (@matches) {
 		    $stats{'missing_close'}++;
@@ -374,19 +387,20 @@ sub get_split_parser {
 	    }
 	    splice(@matches,$matches);
 
-	    # Parse the hit in ths case we are taking only the best one
+	    # Parse the hit in this case we are taking only the best one
 	    if ($matches == 1) {
 		my ($pos,$coord_string)=split('=',$matches[0],2);
 		my %hit=%{get_coords($coord_string,
-				     $pos)};
+				     $pos,
+				     $read_length)};
 		
 		$strands{$hit{'up_strand'}.$hit{'down_strand'}}++;
 		
 		# Print two Gtf entries per split read using the same id to be able
 		# to group them after
 		my $read_id=join('; ',
-				 'ID "'.$line[0].'"',
-				 'Identity "'.$line[2].'"',
+				 'ID "'.$line{'id'}.'"',
+				 'Identity "'.$line{'matches'}.'"',
 				 'Split "'.$pos.'"');
 		
 		# set the strands to + or -
@@ -460,15 +474,16 @@ sub get_split_parser {
 		foreach my $match (@matches) {
 		    my ($pos,$coord_string)=split('=',$match,2);
 		    my %hit=%{get_coords($coord_string,
-					 $pos)};
+					 $pos,
+					 $read_length)};
 		
 		    $strands{$hit{'up_strand'}.$hit{'down_strand'}}++;
 		
 		    # Print two Gtf entries per split read using the same id to be able
 		    # to group them after
 		    my $read_id=join('; ',
-				     'ID "'.$line[0].'"',
-				     'Identity "'.$line[2].'"',
+				     'ID "'.$line{'id'}.'"',
+				     'Identity "'.$line{'matches'}.'"',
 				     'Split "'.$pos.'"');
 		
 		    # set the strands to + or -
