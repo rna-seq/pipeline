@@ -89,7 +89,7 @@ foreach my $group (keys %groups) {
     } else {
 	print $log_fh "Building $infilename\n";
 	my %files;
-	foreach my $lane (@{$groups{$group}}) {
+	foreach my $lane (keys %{$groups{$group}}) {
 	    # Get the files corresponding to the both halves of the reads
 	    my $infilename=$localdir.'/'.$lane.'.combined.bed';
 	    if (-r $infilename) {
