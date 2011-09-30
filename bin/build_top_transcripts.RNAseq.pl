@@ -91,7 +91,7 @@ while (my $line=<$annotfh>) {
     my %line=%{parse_gff_line($line)};
     my $trans_id=$line{'feature'}{'transcript_id'};
 
-    if (defined $expressed{$trans_id}) {
+    if ($trans_id && defined $expressed{$trans_id}) {
 	if ($transinfo{$trans_id}{'chr'}) {
 	    if ($transinfo{$trans_id}{'start'} > $line{'start'}) {
 		$transinfo{$trans_id}{'start'}=$line{'start'};
