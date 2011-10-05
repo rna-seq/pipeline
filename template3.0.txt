@@ -581,18 +581,14 @@ _store_reads: _merged_SAM
 # ENCODE info we should add the transcript expression from the flux
 encode: _summaries _all_junctions_class_pooled mapping _read_classification
 
+# Save the results in the results folder and remove the temporary directory
+# We probably would want to remove more files once we have discussed which ones
+# are worth keeping
 _register_results: encode _store_reads _fusion_transcripts
 	build_register_results.RNAseq.pl > _register_results.txt
 	mv build_register_results.RNAseq.log $LOGS
-	all_no_log_table
-
-# Clean up
-# We need to remove the sequence files from the local directory
-# Also junction mapping files from the local dir
-# Create a rule to remove all the temporary files that may be left around 
-# after a crash
-cleanup: _register_results
 	rm -r $LOCALDIR
+	all_no_log_table
 
 # This rule should execute all the steps in the pipeline
 all: _register_results

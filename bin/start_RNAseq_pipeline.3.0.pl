@@ -399,12 +399,11 @@ add_project($commondb,
 	    $species,
 	    $log_fh);
 
-add_experiment(\%options,
-	       $log_fh);
-
-# Add any additional information to the project and experiment tables
 add_proj_info(\%options,
 	      $log_fh);
+
+add_experiment(\%options,
+	       $log_fh);
 
 add_exp_info(\%options,
 	     $log_fh);

@@ -215,7 +215,9 @@ sub check_base_tables {
 		print $log_fh $table,"\tIs not present\n";
 		my $file_name=$table.'.sql';
 		my $table_fh=get_fh($file_name,1);
+		print $table_fh "SET FOREIGN_KEY_CHECKS=0;\n";
 		print $table_fh $tables{$table},"\n";
+		print $table_fh "SET FOREIGN_KEY_CHECKS=1;\n";
 		close($table_fh);
 		my $command="mysql $database < $file_name";
 		run_system_command($command,
@@ -272,7 +274,10 @@ sub base_table_build {
        source mediumtext NULL,
        index idx_annotation (annotation),
        PRIMARY KEY (annotation_id)
-);',
+#       FOREIGN KEY (species_id) 
+#         REFERENCES species_info(species_id) 
+#         ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=INNODB;',
 		'genome_files' => 'CREATE TABLE IF NOT EXISTS genome_files (
        genome_id mediumint unsigned NOT NULL AUTO_INCREMENT,
        species_id mediumint unsigned NOT NULL REFERENCES species_info(species_id),
@@ -292,13 +297,28 @@ sub base_table_build {
        type varchar(100) NOT NULL,
        location varchar(200) NOT NULL,
        PRIMARY KEY (index_id)
-);',	
+#       FOREIGN KEY (annotation_id) 
+#         REFERENCES annotation_files(annotation_id)
+#         ON UPDATE CASCADE ON DELETE RESTRICT,
+#       FOREIGN KEY (genome_id) 
+#         REFERENCES genome_files(genome_id)
+#         ON UPDATE CASCADE ON DELETE RESTRICT,
+#       FOREIGN KEY (species_id) 
+#         REFERENCES species_info(species_id)
+#         ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=INNODB;',	
 		'exclusion_files' => 'CREATE TABLE IF NOT EXISTS exclusion_files (
        exclusion_id mediumint unsigned NOT NULL AUTO_INCREMENT,
        species_id mediumint unsigned NOT NULL REFERENCES species_info(species_id),
        annotation_id mediumint unsigned NOT NULL REFERENCES annotation_files(annotation_id),
        location varchar(200) NOT NULL,
        PRIMARY KEY (exclusion_id)
+#       FOREIGN KEY (annotation_id) 
+#         REFERENCES annotation_files(annotation_id) 
+#         ON UPDATE CASCADE ON DELETE RESTRICT,
+#       FOREIGN KEY (species_id) 
+#         REFERENCES species_info(species_id) 
+#         ON UPDATE CASCADE ON DELETE RESTRICT
 );',
 		'mappabilities' => 'CREATE TABLE IF NOT EXISTS mappabilities (
        mappability_id mediumint unsigned NOT NULL AUTO_INCREMENT,
@@ -317,7 +337,13 @@ sub base_table_build {
        index idx_genome (genome_id),
        index idx_annotation (annotation_id),
        index idx_type (type)
-);',
+#       FOREIGN KEY (annotation_id)
+#         REFERENCES annotation_files(annotation_id) 
+#         ON UPDATE CASCADE ON DELETE RESTRICT,
+#       FOREIGN KEY (genome_id) 
+#         REFERENCES genome_files(genome_id) 
+#         ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=INNODB;',
 		'fasta_files' => 'CREATE TABLE IF NOT EXISTS fasta_files (
        genome_id mediumint unsigned NOT NULL REFERENCES genome_files(genome_id),
        annotation_id mediumint unsigned NOT NULL REFERENCES annotation_files(annotation_id),
@@ -327,6 +353,12 @@ sub base_table_build {
        index idx_annotation (annotation_id),
        index idx_type (filetype),
        PRIMARY KEY (genome_id,annotation_id,filetype)
+#       FOREIGN KEY (annotation_id) 
+#         REFERENCES annotation_files(annotation_id) 
+#         ON UPDATE CASCADE ON DELETE RESTRICT,
+#       FOREIGN KEY (genome_id) 
+#         REFERENCES genome_files(genome_id) 
+#         ON UPDATE CASCADE ON DELETE RESTRICT
 );',
 		'species_info' => 'CREATE TABLE IF NOT EXISTS species_info (
        species_id mediumint unsigned NOT NULL AUTO_INCREMENT,
@@ -366,150 +398,85 @@ sub get_species_hash {
     return(\%species);
 }
 
-# This subroutine should get or set the genome_id for a certain annotation and
-# species
-sub gset_species_id {
+sub gset_field_id {
     my $dbh=shift;
-    my $species=shift;
-    my $log_fh=shift;
-    my $table='species_info';
-
-    my $species_id;
-    my $sth=check_field_value($dbh,
-			      ['species',$species],
-			      $table,
-			      'species_id');
-
-    my $count=$sth->execute($species);
-
-    print $log_fh "Found $count entries in $table for $species\n";
-    if ($count == 1) {
-	# The entry is present
-	($species_id)=$sth->fetchrow_array();
-    } elsif ($count > 1) {
-	# There is a problem
-	die "Entry $species is present more than once in $table\n";
-    } else {
-	# The entry is absent and we must set it
-	# Get the genus and abbreviation
-	my ($genus,$specific)=split(/\s+/,$species,2);
-	my $abbreviation=join('',
-			      substr($genus,0,1),
-			      substr($specific,0,3));
-
-	# Insert the info into the database
-	my $query;
-	$query ="INSERT INTO $table ";
-	$query.='SET species = ? , genus = ? , abbreviation = ?, sp_alias = ? ';
-	print $log_fh "Executing: $query\n";
-	my $sth2=$dbh->prepare($query);
-	$sth2->execute($species,$genus,$abbreviation,'-');
-
-	# Get the Id of the genome we just inserted
-	$sth->execute($species);
-	($species_id)=$sth->fetchrow_array();
-    }
-    print $log_fh "Species_id: $species_id obtained from $table for $species\n";
-    return($species_id);
-}
-
-sub gset_genome_id {
-    my $dbh=shift;
-    my $file=shift;
+    my $value=shift;
+    my $table=shift; # species_info
+    my $field=shift; # species_id
+    my $type=shift; # species
     my $species=shift;
     my $log_fh=shift;
 
-    my ($version,$source,$gender)=('\N','\N','\N');
-
-    my $table='genome_files';
-    my $genome=$file;
-    $genome=~s/.*\///;
-
-    my $genome_id;
+    my $field_id;
+    my $value2=$value;
+    $value2=~s/.*\///;
     my $sth=check_field_value($dbh,
-			      ['genome',$genome],
+			      [$type,$value2],
 			      $table,
-			      'genome_id');
+			      $field);
 
-    my $count=$sth->execute($genome);
+    my $count=$sth->execute($value2);
 
-    print $log_fh "Found $count entries in $table for $genome\n";
+    print $log_fh "Found $count entries in $table for $value\n";
     if ($count == 1) {
 	# The entry is present
-	($genome_id)=$sth->fetchrow_array();
+	($field_id)=$sth->fetchrow_array();
     } elsif ($count > 1) {
 	# There is a problem
-	die "WARNING: Entry $genome is present more than once in $table\n";
+	die "Entry $value is present more than once in $table\n";
     } else {
-	# First check if the fasta files is ok
-	my $fileok=check_fasta_file($file);
+	if ($type eq 'species') {
+	    # The entry is absent and we must set it
+	    # Get the genus and abbreviation
+	    my ($genus,$specific)=split(/\s+/,$value,2);
+	    my $abbreviation=join('',
+				  substr($genus,0,1),
+				  substr($specific,0,3));
 
-	unless ($fileok) {
-	    die "There is a problem with the genome file, so I'm quitting. Please check it\n";
+	    # Insert the info into the database
+	    my $query;
+	    $query ="INSERT INTO $table ";
+	    $query.='SET species = ? , genus = ? , abbreviation = ?, sp_alias = ? ';
+	    print $log_fh "Executing: $query\n";
+	    my $sth2=$dbh->prepare($query);
+	    $sth2->execute($value,$genus,$abbreviation,'-');
+	} elsif ($type eq 'genome') {
+	    # First check if the fasta files is ok
+	    my $fileok=check_fasta_file($value);
+	    my ($version,$source,$gender)=('\N','\N','\N');
+
+	    unless ($fileok) {
+		die "There is a problem with the genome file, so I'm quitting. Please check it\n";
+	    }
+
+	    # The entry is absent and we must set it
+	    my $query;
+	    $query ="INSERT INTO $table ";
+	    $query.='SET genome= ? , species_id= ? , location= ? ';
+	    print $log_fh "Executing: $query\n";
+	    my $sth2=$dbh->prepare($query);
+	    $sth2->execute($value2,$species,$value);
+	} elsif ($type eq 'annotation') {
+	    # first we will check the file to see if it conforms to the gff
+	    # format
+	    my $fileok=check_gff_file($value);
+	    my ($version,$source)=('\N','\N');
+
+	    # The entry is absent and we must set it
+	    my $query;
+	    $query ="INSERT INTO $table ";
+	    $query.='SET annotation= ? , species_id= ? , location= ? ';
+	    my $sth2=$dbh->prepare($query);
+	    $sth2->execute($value2,$species,$value);
+	} else {
+	    die "Unknown field $value\n";
 	}
-
-	# The entry is absent and we must set it
-	my $query;
-	$query ="INSERT INTO $table ";
-	$query.='SET genome= ? , species_id= ? , location= ? ';
-	print $log_fh "Executing: $query\n";
-	my $sth2=$dbh->prepare($query);
-	$sth2->execute($genome,$species,$file);
-
-	# Get the Id of the genome we just inserted
-	$sth->execute($genome);
-	($genome_id)=$sth->fetchrow_array();
+	# Get the Id of the value we just inserted
+	$sth->execute($value2);
+	($field_id)=$sth->fetchrow_array();
     }
-    print $log_fh "Genome_id: $genome_id obtained from $table for $genome\n";
-    return($genome_id);
-}
-
-# This subroutine should get or set the annotation_id for a certain annotation
-# and species
-sub gset_annotation_id {
-    my $dbh=shift;
-    my $file=shift;
-    my $species=shift;
-    my $log_fh=shift;
-
-    my ($version,$source)=('\N','\N');
-
-    my $table='annotation_files';
-    my $annotation=$file;
-    $annotation=~s/.*\///;
-
-    my $annot_id;
-    my $sth=check_field_value($dbh,
-			      ['annotation',$annotation],
-			      $table,
-			      'annotation_id');
-   
-    my $count=$sth->execute($annotation);
-
-    print $log_fh "Found $count entries in $table for $annotation\n";
-    if ($count == 1) {
-	# The entry is present
-	($annot_id)=$sth->fetchrow_array();
-    } elsif ($count > 1) {
-	# There is a problem
-	die "Entry $annotation is present more than once in $table\n";
-    } else {
-	# first we will check the file to see if it conforms to the gff format
-	check_gff_file($file);
-
-	my $query;
-	# The entry is absent and we must set it
-	$query ="INSERT INTO $table ";
-	$query.='SET annotation= ? , species_id= ? , location= ? ';
-	my $sth2=$dbh->prepare($query);
-	$sth2->execute($annotation,$species,$file);
-
-	# Get the Id of the annotation we just inserted
-	$sth->execute($annotation);
-	($annot_id)=$sth->fetchrow_array();
-    }
-    print $log_fh "Annotation_id: $annot_id obtained from $table for $annotation\n";
-    return($annot_id);
+    print $log_fh "$type: $field_id obtained from $table for $value\n";
+    return($field_id);
 }
 
 # This subroutine will check the tables for available files using the
@@ -531,21 +498,31 @@ sub get_existing_data_subs {
     my $dbh=MySQL_DB_Connect($database);
 
     # Get the genome unique id and the annotation unique id
-    my $species_id=gset_species_id($dbh,
-				   $species,
-				   $log_fh);
-    my $genome_id=gset_genome_id($dbh,
-				 $genome,
-				 $species_id,
+    my $species_id=gset_field_id($dbh,
+				 $species,
+				 'species_info',
+				 'species_id',
+				 'species',
+				 '',
 				 $log_fh);
+    my $genome_id=gset_field_id($dbh,
+				$genome,
+				'genome_files',
+				'genome_id',
+				'genome',
+				$species_id,
+				$log_fh);
 
-    my $annotation_id=gset_annotation_id($dbh,
-					 $annotation,
-					 $species_id,
-					 $log_fh);
+    my $annotation_id=gset_field_id($dbh,
+				    $annotation,
+				    'annotation_files',
+				    'annotation_id',
+				    'annotation',
+				    $species_id,
+				    $log_fh);
 
-    # Get the tables where the files and tables dependent on the genome and
-    # annotation will be stored
+    # Get the tables where the files and tables dependent on the genome
+    # and annotation will be stored
     my $table1='indices';
     my $table2='exclusion_files';
     my $table3='annotation_tables';
@@ -566,11 +543,10 @@ sub get_existing_data_subs {
     $sth1=$dbh->prepare($query1);
 
     # Exclusion query: depends only on annotation
-    my ($query2,$sth2);
-    $query2 ='SELECT location ';
-    $query2.="FROM $table2 ";
-    $query2.='WHERE annotation_id = ?';
-    $sth2=$dbh->prepare($query2);
+    my $sth2=check_field_value($dbh,
+			       ['annotation_id',$annotation],
+			       $table2,
+			       'location');
 
     # Annotation tables: Depend only on annotation
     my ($query3,$sth3);
@@ -594,6 +570,13 @@ sub get_existing_data_subs {
     $sth5=$dbh->prepare($query5);
 
     # Get the indices
+    # Prepare an sth for the indices table
+    my ($ins_query1,$ins_sth1);
+    $ins_query1 ="INSERT INTO $table1 ";
+    $ins_query1.='SET genome_id = ?,annotation_id = ?,species_id = ?,';
+    $ins_query1.='type = ?,location = ?';
+    $ins_sth1=$dbh->prepare($ins_query1);
+
     $guessing_subs{'genomeindex'}=sub {
 	my $filetype=shift;
 	my $present=0;
@@ -616,15 +599,9 @@ sub get_existing_data_subs {
 	} else {
 	    print $log_fh "File not present. Will be built at $location\n";
 	    # The entry is absent and we must set it
-	    my ($ins_query,$ins_sth);
-	    $ins_query ="INSERT INTO $table1 ";
-	    $ins_query.='SET genome_id = ?,annotation_id = ?,species_id = ?,';
-	    $ins_query.='type = ?,location = ?';
-	    print $log_fh "Executing: $ins_query\n";
-	    $ins_sth=$dbh->prepare($ins_query);
-	    $ins_sth->execute($genome_id,0,$species_id,
-			      $filetype,$location);
-	    $ins_sth->finish();
+	    print $log_fh "Executing: $ins_query1 for $location\n";
+	    $ins_sth1->execute($genome_id,0,$species_id,
+			       $filetype,$location);
 	}
 	return($location);
     };
@@ -652,15 +629,9 @@ sub get_existing_data_subs {
 	} else {
 	    print $log_fh "File not present. Will be built at $location\n";
 	    # The entry is absent and we must set it
-	    my ($ins_query,$ins_sth);
-	    $ins_query ="INSERT INTO $table1 ";
-	    $ins_query.='SET genome_id = ?,annotation_id = ?,species_id = ?,';
-	    $ins_query.='type = ?,location = ?';
-	    print $log_fh "Executing: $ins_query\n";
-	    $ins_sth=$dbh->prepare($ins_query);
-	    $ins_sth->execute($genome_id,$annotation_id,$species_id,
-			      $filetype,$location);
-	    $ins_sth->finish();
+	    print $log_fh "Executing: $ins_query1\n";
+	    $ins_sth1->execute($genome_id,$annotation_id,$species_id,
+			       $filetype,$location);
 	}
 	return($location);
     };
@@ -692,15 +663,9 @@ sub get_existing_data_subs {
 	} else {
 	    print $log_fh "File not present. Will be built at $location\n";
 	    # The entry is absent and we must set it
-	    my ($ins_query,$ins_sth);
-	    $ins_query ="INSERT INTO $table1 ";
-	    $ins_query.='SET genome_id = ?,annotation_id = ?,species_id = ?,';
-	    $ins_query.='type = ?,location = ?';
-	    print $log_fh "Executing: $ins_query\n";
-	    $ins_sth=$dbh->prepare($ins_query);
-	    $ins_sth->execute($genome_id,$annotation_id,$species_id,
-			      $filetype,$location);
-	    $ins_sth->finish();
+	    print $log_fh "Executing: $ins_query1 for $location\n";
+	    $ins_sth1->execute($genome_id,$annotation_id,$species_id,
+			       $filetype,$location);
 	}
 	return($location);
     };
@@ -732,15 +697,9 @@ sub get_existing_data_subs {
 	} else {
 	    print $log_fh "File not present. Will be built at $location\n";
 	    # The entry is absent and we must set it
-	    my ($ins_query,$ins_sth);
-	    $ins_query ="INSERT INTO $table1 ";
-	    $ins_query.='SET genome_id = ?,annotation_id = ?,species_id = ?,';
-	    $ins_query.='type = ?,location = ?';
-	    print $log_fh "Executing: $ins_query\n";
-	    $ins_sth=$dbh->prepare($ins_query);
-	    $ins_sth->execute($genome_id,$annotation_id,$species_id,
-			      $filetype,$location);
-	    $ins_sth->finish();
+	    print $log_fh "Executing: $ins_query1\n";
+	    $ins_sth1->execute($genome_id,$annotation_id,$species_id,
+			       $filetype,$location);
 	}
 	return($location);
     };
@@ -783,6 +742,13 @@ sub get_existing_data_subs {
 
     # Set or get the information on the naming of the annotation tables that
     # correspond to the genome and annotation we are looking at.
+    # Get the common sth for this table
+    my ($ins_query3,$ins_sth3);
+    $ins_query3 ="INSERT INTO $table3 ";
+    $ins_query3.='SET genome_id = ?,annotation_id = ?,';
+    $ins_query3.='type = ?,table_name = ?';
+    $ins_sth3=$dbh->prepare($ins_query3);
+
     $guessing_subs{'junctionstable'}=sub {
 	my $filetype=shift;
 	my $present=0;
@@ -809,15 +775,9 @@ sub get_existing_data_subs {
 	} else {
 	    print $log_fh "Table not present. Will be built at $location\n";
 	    # The entry is absent and we must set it
-	    my ($ins_query,$ins_sth);
-	    $ins_query ="INSERT INTO $table3 ";
-	    $ins_query.='SET genome_id = ?,annotation_id = ?,';
-	    $ins_query.='type = ?,table_name = ?';
-	    print $log_fh "Executing: $ins_query\n";
-	    $ins_sth=$dbh->prepare($ins_query);
-	    $ins_sth->execute($genome_id,$annotation_id,
-			      $filetype,$location);
-	    $ins_sth->finish();
+	    print $log_fh "Executing: $ins_query3\n";
+	    $ins_sth3->execute($genome_id,$annotation_id,
+			       $filetype,$location);
 	}
 	return($location);
     };
@@ -848,15 +808,9 @@ sub get_existing_data_subs {
 	} else {
 	    print $log_fh "Table not present. Will be built at $location\n";
 	    # The entry is absent and we must set it
-	    my ($ins_query,$ins_sth);
-	    $ins_query ="INSERT INTO $table3 ";
-	    $ins_query.='SET genome_id = ?,annotation_id = ?,';
-	    $ins_query.='type = ?,table_name = ?';
-	    print $log_fh "Executing: $ins_query\n";
-	    $ins_sth=$dbh->prepare($ins_query);
-	    $ins_sth->execute($genome_id,$annotation_id,
-			      $filetype,$location);
-	    $ins_sth->finish();
+	    print $log_fh "Executing: $ins_query3\n";
+	    $ins_sth3->execute($genome_id,$annotation_id,
+			       $filetype,$location);
 	}
 	return($location);
     };
@@ -887,15 +841,9 @@ sub get_existing_data_subs {
 	} else {
 	    print $log_fh "Table not present. Will be built at $location\n";
 	    # The entry is absent and we must set it
-	    my ($ins_query,$ins_sth);
-	    $ins_query ="INSERT INTO $table3 ";
-	    $ins_query.='SET genome_id = ?,annotation_id = ?,';
-	    $ins_query.='type = ?,table_name = ?';
-	    print $log_fh "Executing: $ins_query\n";
-	    $ins_sth=$dbh->prepare($ins_query);
-	    $ins_sth->execute($genome_id,$annotation_id,
-			      $filetype,$location);
-	    $ins_sth->finish();
+	    print $log_fh "Executing: $ins_query3\n";
+	    $ins_sth3->execute($genome_id,$annotation_id,
+			       $filetype,$location);
 	}
 	return($location);
     };
@@ -926,15 +874,9 @@ sub get_existing_data_subs {
 	} else {
 	    print $log_fh "Table not present. Will be built at $location\n";
 	    # The entry is absent and we must set it
-	    my ($ins_query,$ins_sth);
-	    $ins_query ="INSERT INTO $table3 ";
-	    $ins_query.='SET genome_id = ?,annotation_id = ?,';
-	    $ins_query.='type = ?,table_name = ?';
-	    print $log_fh "Executing: $ins_query\n";
-	    $ins_sth=$dbh->prepare($ins_query);
-	    $ins_sth->execute($genome_id,$annotation_id,
-			      $filetype,$location);
-	    $ins_sth->finish();
+	    print $log_fh "Executing: $ins_query3\n";
+	    $ins_sth3->execute($genome_id,$annotation_id,
+			       $filetype,$location);
 	}
 	return($location);
     };
@@ -965,20 +907,21 @@ sub get_existing_data_subs {
 	} else {
 	    print $log_fh "Table not present. Will be built at $location\n";
 	    # The entry is absent and we must set it
-	    my ($ins_query,$ins_sth);
-	    $ins_query ="INSERT INTO $table3 ";
-	    $ins_query.='SET genome_id = ?,annotation_id = ?,';
-	    $ins_query.='type = ?,table_name = ?';
-	    print $log_fh "Executing: $ins_query\n";
-	    $ins_sth=$dbh->prepare($ins_query);
-	    $ins_sth->execute($genome_id,$annotation_id,
-			      $filetype,$location);
-	    $ins_sth->finish();
+	    print $log_fh "Executing: $ins_query3\n";
+	    $ins_sth3->execute($genome_id,$annotation_id,
+			       $filetype,$location);
 	}
 	return($location);
     };
 
     # Get the locations of the files for building the indices
+    # Get a comon stk for the fasta files
+    my ($ins_query5,$ins_sth5);
+    $ins_query5 ="INSERT INTO $table5 ";
+    $ins_query5.='SET genome_id = ?,annotation_id = ?,';
+    $ins_query5.='filetype = ?,file_name = ?';
+    $ins_sth5=$dbh->prepare($ins_query5);
+
     $guessing_subs{'exonsfasta'}=sub {
 	my $filetype=shift;
 	my $present=0;
@@ -1003,15 +946,9 @@ sub get_existing_data_subs {
 	} else {
 	    print $log_fh "File not present. Will be built at $location\n";
 	    # The entry is absent and we must set it
-	    my ($ins_query,$ins_sth);
-	    $ins_query ="INSERT INTO $table5 ";
-	    $ins_query.='SET genome_id = ?,annotation_id = ?,';
-	    $ins_query.='filetype = ?,file_name = ?';
-	    print $log_fh "Executing: $ins_query\n";
-	    $ins_sth=$dbh->prepare($ins_query);
-	    $ins_sth->execute($genome_id,$annotation_id,
-			      $filetype,$location);
-	    $ins_sth->finish();
+	    print $log_fh "Executing: $ins_query5 for $location\n";
+	    $ins_sth5->execute($genome_id,$annotation_id,
+			       $filetype,$location);
 	}
 	return($location);
     };
@@ -1040,15 +977,9 @@ sub get_existing_data_subs {
 	} else {
 	    print $log_fh "File not present. Will be built at $location\n";
 	    # The entry is absent and we must set it
-	    my ($ins_query,$ins_sth);
-	    $ins_query ="INSERT INTO $table5 ";
-	    $ins_query.='SET genome_id = ?,annotation_id = ?,';
-	    $ins_query.='filetype = ?,file_name = ?';
-	    print $log_fh "Executing: $ins_query\n";
-	    $ins_sth=$dbh->prepare($ins_query);
-	    $ins_sth->execute($genome_id,$annotation_id,
-			      $filetype,$location);
-	    $ins_sth->finish();
+	    print $log_fh "Executing: $ins_query5\n";
+	    $ins_sth5->execute($genome_id,$annotation_id,
+			       $filetype,$location);
 	}
 	return($location);
     };
@@ -1076,15 +1007,9 @@ sub get_existing_data_subs {
 	} else {
 	    print $log_fh "File not present. Will be built at $location\n";
 	    # The entry is absent and we must set it
-	    my ($ins_query,$ins_sth);
-	    $ins_query ="INSERT INTO $table5 ";
-	    $ins_query.='SET genome_id = ?,annotation_id = ?,';
-	    $ins_query.='filetype = ?,file_name = ?';
-	    print $log_fh "Executing: $ins_query\n";
-	    $ins_sth=$dbh->prepare($ins_query);
-	    $ins_sth->execute($genome_id,$annotation_id,
-			      $filetype,$location);
-	    $ins_sth->finish();
+	    print $log_fh "Executing: $ins_query5\n";
+	    $ins_sth5->execute($genome_id,$annotation_id,
+			       $filetype,$location);
 	}
 	return($location);
     };
@@ -2027,6 +1952,7 @@ sub add_project {
 	$sth=$dbh->prepare($query);
 	$sth->execute($species,$project);
     }
+    return();
 }
 
 # Add the experiment information making sure the project id is present in the
@@ -2057,18 +1983,28 @@ sub add_experiment {
 
     my $dbh=MySQL_DB_Connect($database);
 
-    my $species_id=gset_species_id($dbh,
-				   $species,
-				   $log_fh);
-    my $genome_id=gset_genome_id($dbh,
-				 $genome,
-				 $species_id,
+    my $species_id=gset_field_id($dbh,
+				 $species,
+				 'species_info',
+				 'species_id',
+				 'species',
+				 '',
 				 $log_fh);
+    my $genome_id=gset_field_id($dbh,
+				$genome,
+				'genome_files',
+				'genome_id',
+				'genome',
+				$species_id,
+				$log_fh);
 
-    my $annotation_id=gset_annotation_id($dbh,
-					 $annotation,
-					 $species_id,
-					 $log_fh);
+    my $annotation_id=gset_field_id($dbh,
+				    $annotation,
+				    'annotation_files',
+				    'annotation_id',
+				    'annotation',
+				    $species_id,
+				    $log_fh);
 
     print $log_fh "Checking for the presence of $exp_id in the database...\n";
     my $table='experiments';
@@ -2084,7 +2020,7 @@ sub add_experiment {
     if ($count == 1) {
 	print $log_fh "$exp_id is already present in the database for $project_id\n";
 	print STDERR "$exp_id is already present as part of $project_id. Are you
-sure you want to continue?(y/N)";
+sure you want to overrite the previous information?(y/N)";
 	my $yes=<STDIN>;
 	chomp($yes);
 	if ($yes=~/^y/i){
@@ -2147,7 +2083,7 @@ sub add_proj_info {
 
     my $overwrite=0;
     if ($count == 1) {
-	print STDERR "$proj_id already has a description. Do you want to averwrite it?(y/n)\n";
+	print STDERR "$proj_id already has a description. Do you want to overwrite it?(y/n)\n";
 	my $reply=<STDIN>;
 	chomp($reply);
 	if ($reply=~/^y/i) {
@@ -2201,6 +2137,7 @@ sub add_exp_info {
     my $table='experiments';
     my ($query,$sth,$count);
     
+    my $overwrite_all=0;
     foreach my $key (keys %vals) {
 	my $value=$vals{$key};
 	if ($value) {
@@ -2216,7 +2153,7 @@ sub add_exp_info {
 	$sth=$dbh->prepare($query);
 	$count=$sth->execute($proj_id,$exp_id);
 	
-	my $overwrite=0;
+	my $overwrite=$overwrite_all;
 	if ($count == 1) {
 	    my ($existing)=$sth->fetchrow_array() || '';
 	    # If the keys are already the same or if the key is not provided
@@ -2224,15 +2161,20 @@ sub add_exp_info {
 	    unless ($value) {next;}
 	    if ($existing eq $value) {next;}
 
-	    print STDERR "$exp_id from $proj_id may already have a $key. Do you want to overwrite $existing with $value?(y/n)\n";
+	    print STDERR "$exp_id from $proj_id may already have a $key. Do you want to overwrite $existing with $value?(y/n/all)\n";
 	    my $reply=<STDIN>;
 	    chomp($reply);
 	    if ($reply=~/^y/i) {
 		$overwrite=1;
-		$query ="UPDATE $table ";
-		$query.="SET $key = ? ";
-		$query.='WHERE project_id = ? and experiment_id = ?';
+	    } elsif ($reply=~/^all$/i) {
+		$overwrite=1;
+		$overwrite_all=1;
+	    } else {
+		next;
 	    }
+	    $query ="UPDATE $table ";
+	    $query.="SET $key = ? ";
+	    $query.='WHERE project_id = ? and experiment_id = ?';
 	} elsif ($count > 1) {
 	    die "Project $proj_id with experiment $exp_id combination is present many times. This should not happen\n";
 	} else {
