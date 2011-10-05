@@ -83,7 +83,8 @@ sub get_parsing_subs {
 	    chomp($line);
 
 	    # Decide which line we are in
-	    if ($line=~s/^@//) {
+	    if (($line_type == 0) &&
+		$line=~s/^@//) {
 		%sequence=('id' => $line);
 		$line_type=1;
 		next;
@@ -113,6 +114,7 @@ sub get_parsing_subs {
 	    print "$trunc_seq\n";
 	    print "+\n";
 	    print "$trunc_qual\n";
+	    $line_type=0;
 	}
 	close($infh);
 
