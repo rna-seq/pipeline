@@ -52,6 +52,10 @@ sub parse_gem_line {
     # Is done to avoid problems later with programs that do not admit the spaces
     $line{'id'}=~s/ +/_/g;
 
+    # Fix the identifiers if they do not contain the standard /1 /2 ending
+    $line{'id'}=~s/\|p1$/\/1/o;
+    $line{'id'}=~s/\|p2$/\/2/o;
+
     # Fix Down syndrome reads problem
 #    if ($line{'id'}=~s/ 1:/_X:/o) {
 #	# Down synbdrome reads
