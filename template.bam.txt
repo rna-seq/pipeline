@@ -295,7 +295,7 @@ _split_mapping_breakdown: _initial_clusters
 	get_split_coverage.RNAseq.pl -t 3 > _split_mapping_breakdown.txt
 	all_no_log_table
 
-# Here we will take all the maps that split to jucntions or splitmaps and
+# Here we will take all the maps that split to junctions or splitmaps and
 # put them into one file counting the number of reads mapping to each
 # independently of the strand
 #_all_junctions_class: _split_mapping_breakdown
