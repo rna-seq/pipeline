@@ -25,7 +25,7 @@ use Exporter;
 	    'get_trans_expression_data','get_junc_expression_data',
 	    'get_desc_from_gene_sub','get_chr_from_gene_sub',
 	    'get_type_from_gene_sub','get_exp_info_sub',
-	    'set_exp_info_sub');
+	    'set_exp_info_sub','get_unique_maps');
 
 use strict;
 use warnings;
@@ -2066,6 +2066,46 @@ sub set_exp_info_sub {
 	print STDERR $query,"\n";
     };
     return($set_exp_info)
+}
+
+sub get_unique_maps {
+    my $dbh=shift;
+    my $maptable=shift;
+    my $files=shift;
+    my $mapper=shift;
+
+    my %unique_maps;
+    my %pair2group;
+
+    my ($query,$sth,$count);
+
+    print STDERR "Getting unique mappings from $maptable...\n";
+    foreach my $file (keys %{$files}) {
+	my $group=$files->{$file}->[2] || 'All';
+	$pair2group{$files->{$file}->[0]}=$group;
+    }
+
+    $query ='SELECT filename, sum(uniqueMaps) ';
+    $query.="FROM $maptable ";
+    $query.='GROUP BY filename'; 
+    $sth=$dbh->prepare($query);
+    $count=$sth->execute();
+
+    print STDERR $count,"\tgroups of reads detected in $maptable\n";
+
+    while (my ($pair,$unique)=$sth->fetchrow_array()) {
+	my $group=$pair2group{$pair};
+	$unique_maps{$group}+=$unique;
+    }
+    print STDERR "done\n";
+
+    foreach my $group (keys %unique_maps) {
+	print STDERR join("\t",
+			  $group,
+			  $unique_maps{$group}),"\n";
+    }
+
+    return(\%unique_maps);
 }
 
 1;
