@@ -13,14 +13,13 @@ BEGIN {
 }
 
 # Objective
-# This script should take a file resulting form running the overlap script and
-# extracting the total overlap reads. It will calculate the RPKM for each of
-# the exons in the file and it will generate a file with the resulting rpkm
-# for all the groups in the dataset
+# This script should take a bam file and calculate from the aligned reads
+# the rpkm at the exon level
 
 use Bio::Range;
 use RNAseq_pipeline3 qw(get_fh parse_gff_line get_exon_coverage_1000nt);
-use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list');
+use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list',
+			       'get_unique_maps');
 
 # Declare some variables
 my $prefix;
@@ -51,7 +50,7 @@ my %lanes=%{get_lanes(\%files)};
 my %groups=%{get_groups(\%files)};
 
 # Get unique maps for each lane
-my $mappingtable=$prefix.'_genome_mapping';
+my $mappingtable=$prefix.'_unique_maps_genome';
 my %unique_maps=%{get_unique_maps($dbh,
 				  $mappingtable,
 				  \%files,
@@ -95,47 +94,6 @@ foreach my $group (keys %groups) {
 }
 
 exit;
-
-sub get_unique_maps {
-    my $dbh=shift;
-    my $maptable=shift;
-    my $files=shift;
-    my $mapper=shift;
-
-    my %unique_maps;
-    my %lane2group;
-
-    my ($query,$sth,$count);
-
-    print STDERR "Getting unique mappings from $maptable...";
-    foreach my $file (keys %{$files}) {
-	my $group=$files->{$file}->[2] || 'All';
-	$lane2group{$files->{$file}->[1]}=$group;
-    }
-
-    $query ='SELECT LaneName, uniqueReads ';
-    $query.="FROM $maptable";
-    $sth=$dbh->prepare($query);
-    $count=$sth->execute();
-
-    unless ($count == keys %{$files}) {
-	die "Wrong number of mapped readsd\n";
-    }
-
-    while (my ($lane,$unique)=$sth->fetchrow_array()) {
-	my $group=$lane2group{$lane};
-	$unique_maps{$group}+=$unique;
-    }
-    print STDERR "done\n";
-
-    foreach my $lane (keys %unique_maps) {
-	print STDERR join("\t",
-			  $lane,
-			  $unique_maps{$lane}),"\n";
-    }
-
-    return(\%unique_maps);
-}
 
 sub get_exon_list {
     my $dbh=shift;

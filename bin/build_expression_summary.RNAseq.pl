@@ -17,7 +17,7 @@ BEGIN {
 # from the annotated features what fractions are detected in each lane and the
 # total
 
-use RNAseq_pipeline3 qw(get_fh parse_gff_line);
+use RNAseq_pipeline3 qw(get_fh parse_gff_line check_table_existence);
 use RNAseq_pipeline_settings3 ('read_config_file','get_dataset_id',
 			       'get_dbh');
 
@@ -61,9 +61,9 @@ my @lanes=sort keys %lanes;
 # Get the detected features for each of the lanes
 for (my $i=0;$i<@lanes;$i++) {
     my $gene_no=get_detected_genes($gene_rpkm_table,
-				   $dbh,
-				   $lanes[$i],
-				   $threshold) || 0;
+				    $dbh,
+				    $lanes[$i],
+				    $threshold) || 0;
     my $trans_no=get_detected_transcripts($trans_rpkm_table,
 					  $dbh,
 					  $lanes[$i],
@@ -94,7 +94,7 @@ $distribution{'total'}=[$total_gene_no,
 			$total_trans_no,
 			$total_exon_no];
 
-# get the total number of genes transcripts and exons from the exclass table
+# get the total number of genes transcripts and exons in the annotation
 my %features;
 $features{'genes'}=get_gene_number($dbhcommon,
 				   $exonclasstab);
@@ -105,9 +105,9 @@ $features{'exons'}=get_exon_number($dbhcommon,
 
 # print out the results
 my $taboutfh=get_fh($expression_summary_table.'.txt',1);
-my $gene_frac=($distribution{'total'}[0] * 100) / $features{'genes'};
-my $trans_frac=($distribution{'total'}[1] * 100) / $features{'transcripts'};
-my $exons_frac=($distribution{'total'}[2] * 100) / $features{'exons'};
+my $gene_frac=($distribution{'total'}[0] * 100) / $features{'genes'} || '-';
+my $trans_frac=($distribution{'total'}[1] * 100) / $features{'transcripts'} || '-';
+my $exons_frac=($distribution{'total'}[2] * 100) / $features{'exons'} || '-';
 print $taboutfh join("\t",
 		     'Genes',
 		     $features{'genes'},
@@ -133,6 +133,7 @@ build_db_table($dbh,
 	       $expression_summary_table,
 	       \@lanes,
 	       \%lanes);
+exit;
 
 ### TO DO
 # Turn this into a subroutine
@@ -167,8 +168,11 @@ sub build_db_table {
     foreach my $lane (@{$lanes}) {
 	my $lane_id=$lane2id->{$lane};
 	$lane_id=$lane;
-	$query.="$lane mediumint unsigned NOT NULL,";
-	$query.="INDEX idx_${lane} ($lane),";
+	if ($lane_id=~/^\d*\.\d*$/) {
+	    $lane_id='l'.$lane_id;
+	}
+	$query.="$lane_id mediumint unsigned NOT NULL,";
+	$query.="INDEX idx_${lane_id} ($lane_id),";
     }
     $query.='INDEX idx_type (type)';
     $query.=');';
@@ -182,12 +186,16 @@ sub get_exon_number {
     my $dbh=shift;
     my $table=shift;
 
-    my ($query,$sth);
-    $query ='SELECT count(DISTINCT exon_id) ';
-    $query.="FROM $table";
-    $sth=$dbh->prepare($query);
-    $sth->execute();
-    my ($exon_number)=$sth->fetchrow_array();
+    my $exon_number=0;
+
+    if (check_table_existence($dbh,$table)) {
+	my ($query,$sth);
+	$query ='SELECT count(DISTINCT exon_id) ';
+	$query.="FROM $table";
+	$sth=$dbh->prepare($query);
+	$sth->execute();
+	($exon_number)=$sth->fetchrow_array();
+    }
 
     return($exon_number);
 }
@@ -196,12 +204,16 @@ sub get_trans_number {
     my $dbh=shift;
     my $table=shift;
 
-    my ($query,$sth);
-    $query ='SELECT count(DISTINCT transcript_id) ';
-    $query.="FROM $table";
-    $sth=$dbh->prepare($query);
-    $sth->execute();
-    my ($trans_number)=$sth->fetchrow_array();
+    my $trans_number=0;
+
+    if (check_table_existence($dbh,$table)) {
+	my ($query,$sth);
+	$query ='SELECT count(DISTINCT transcript_id) ';
+	$query.="FROM $table";
+	$sth=$dbh->prepare($query);
+	$sth->execute();
+	($trans_number)=$sth->fetchrow_array();
+    }
 
     return($trans_number);
 }
@@ -209,13 +221,17 @@ sub get_trans_number {
 sub get_gene_number {
     my $dbh=shift;
     my $table=shift;
-    
-    my ($query,$sth);
-    $query ='SELECT count(DISTINCT gene_id) ';
-    $query.="FROM $table";
-    $sth=$dbh->prepare($query);
-    $sth->execute();
-    my ($gene_number)=$sth->fetchrow_array();
+
+    my $gene_number=0;
+
+    if (check_table_existence($dbh,$table))  {
+	my ($query,$sth);
+	$query ='SELECT count(DISTINCT gene_id) ';
+	$query.="FROM $table";
+	$sth=$dbh->prepare($query);
+	$sth->execute();
+	($gene_number)=$sth->fetchrow_array();
+    }
     
     return($gene_number);
 }
@@ -226,21 +242,23 @@ sub get_detected_genes {
     my $lane=shift;
     my $threshold=shift || 1;
     
-    my ($query,$sth);
-    
-    $query ='SELECT count(DISTINCT gene_id) ';
-    $query.="FROM $table ";
-    if ($lane) {
-	$query.='WHERE LaneName = ?';
+    my $detected=0;
+
+    if (check_table_existence($dbh,$table)) {
+	my ($query,$sth);
+	$query ='SELECT count(DISTINCT gene_id) ';
+	$query.="FROM $table ";
+	if ($lane) {
+	    $query.='WHERE LaneName = ?';
+	}
+	$sth=$dbh->prepare($query);
+	if ($lane) {
+	    $sth->execute($lane);
+	} else {
+	    $sth->execute();
+	}
+	($detected)=$sth->fetchrow_array();
     }
-    $sth=$dbh->prepare($query);
-    if ($lane) {
-	$sth->execute($lane);
-    } else {
-	$sth->execute();
-    }
-    
-    my ($detected)=$sth->fetchrow_array();
     
     return($detected)
 }
@@ -251,21 +269,23 @@ sub get_detected_transcripts {
     my $lane=shift;
     my $threshold=shift || 1;
     
-    my ($query,$sth);
-    
-    $query ='SELECT count(DISTINCT transcript_id) ';
-    $query.="FROM $table ";
-    if ($lane) {
-	$query.='WHERE lane_id = ?';
+    my $detected=0;
+
+    if (check_table_existence($dbh,$table)) {
+	my ($query,$sth);
+	$query ='SELECT count(DISTINCT transcript_id) ';
+	$query.="FROM $table ";
+	if ($lane) {
+	    $query.='WHERE lane_id = ?';
+	}
+	$sth=$dbh->prepare($query);
+	if ($lane) {
+	    $sth->execute($lane);
+	} else {
+	    $sth->execute();
+	}
+	($detected)=$sth->fetchrow_array();
     }
-    $sth=$dbh->prepare($query);
-    if ($lane) {
-	$sth->execute($lane);
-    } else {
-	$sth->execute();
-    }
-    
-    my ($detected)=$sth->fetchrow_array();
     
     return($detected)
 }
@@ -276,21 +296,23 @@ sub get_detected_exons {
     my $lane=shift;
     my $threshold=shift || 1;
     
-    my ($query,$sth);
-    
-    $query ='SELECT count(DISTINCT exon_id) ';
-    $query.="FROM $table ";
-    if ($lane) {
-	$query.='WHERE LaneName = ?';
-    }
-    $sth=$dbh->prepare($query);
-    if ($lane) {
-	$sth->execute($lane);
-    } else {
-	$sth->execute();
-    }
+    my $detected=0;
 
-    my ($detected)=$sth->fetchrow_array();
+    if (check_table_existence($dbh,$table)) {
+	my ($query,$sth);
+	$query ='SELECT count(DISTINCT exon_id) ';
+	$query.="FROM $table ";
+	if ($lane) {
+	    $query.='WHERE LaneName = ?';
+	}
+	$sth=$dbh->prepare($query);
+	if ($lane) {
+	    $sth->execute($lane);
+	} else {
+	    $sth->execute();
+	}
+	($detected)=$sth->fetchrow_array();
+    }
     
     return($detected)
 }

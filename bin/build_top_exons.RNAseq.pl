@@ -21,7 +21,7 @@ BEGIN {
 # the necessary information for the exon from the annotation, for all those
 # exons that are detected in at least one condition
 
-use RNAseq_pipeline3 qw(get_fh parse_gff_line);
+use RNAseq_pipeline3 qw(get_fh parse_gff_line check_table_existence);
 use RNAseq_pipeline_settings3 ('read_config_file','get_dataset_id',
 			       'get_dbh');
 
@@ -182,18 +182,19 @@ sub get_exon_expression {
     my $lane=shift;
     my $threshold=shift || 1;
 
-    my ($query,$sth);
-
-    $query ='SELECT exon_id, RPKM ';
-    $query.="FROM $table ";
-    $query.='WHERE LaneName = ?';
-    $sth=$dbh->prepare($query);
-    $sth->execute($lane);
-
-    while (my ($exon,$rpkm,$lane)=$sth->fetchrow_array()) {
-	my $expression=int($rpkm + 0.5);
-	if ($expression >= $threshold) {
-	    $exons->{$exon}->[$index]=$expression
+    if (check_table_existence($dbh,$table)) {
+	my ($query,$sth);
+	$query ='SELECT exon_id, RPKM ';
+	$query.="FROM $table ";
+	$query.='WHERE LaneName = ?';
+	$sth=$dbh->prepare($query);
+	$sth->execute($lane);
+	
+	while (my ($exon,$rpkm,$lane)=$sth->fetchrow_array()) {
+	    my $expression=int($rpkm + 0.5);
+	    if ($expression >= $threshold) {
+		$exons->{$exon}->[$index]=$expression
+	    }
 	}
     }
 }

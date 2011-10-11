@@ -92,7 +92,7 @@ my %junclengths=%{get_junction_length($juncfile,
 
 # Read and process the files
 foreach my $lane (keys %lanes) {
-    my $normfactor=$read_no_norm{$lane};
+    my $normfactor=1000000/ $read_no_norm{$lane};
     print STDERR $normfactor,"\n";
     my $type;
     if (keys %{$lanes{$lane}} == 1) {
@@ -242,14 +242,7 @@ sub get_normalization {
 	$normalization{$pair}+=$unique;
     }
 
-    # Normalize the counts to counts per million reads
-    my $max = 1000000;
-
     foreach my $pair (keys %normalization) {
-	print STDERR join("\t",
-			  $pair,
-			  $normalization{$pair}),"\n";
-	$normalization{$pair}=$max / $normalization{$pair};
 	print STDERR join("\t",
 			  $pair,
 			  $normalization{$pair}),"\n";

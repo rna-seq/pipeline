@@ -22,7 +22,7 @@ BEGIN {
 # genes that are detected in at least one condition
 ### TO DO join the subroutines from build_top(genes,trans,exons) into one
 
-use RNAseq_pipeline3 qw(get_fh parse_gff_line);
+use RNAseq_pipeline3 qw(get_fh parse_gff_line check_table_existence);
 use RNAseq_pipeline_settings3 ('read_config_file','get_dataset_id',
 			       'get_dbh');
 
@@ -239,25 +239,25 @@ sub get_trans_number_sub {
     my $table=shift;
 
     my %cache;
-    my ($query,$sth);
 
+    my ($query,$sth);
     $query ='SELECT count(DISTINCT transcript_id) ';
     $query.="FROM $table ";
     $query.='WHERE gene_id = ?';
     $query.='GROUP BY gene_id';
     $sth=$dbh->prepare($query);
-
+	
     my $trans_number=sub{
 	my $gene_id=shift;
-
+	
 	unless ($cache{$gene_id}) {
 	    my $count=$sth->execute($gene_id);
 	    if ($count == 1) {
 		($cache{$gene_id})=$sth->fetchrow_array();
-	    } else {
-		warn "Incorrect hits for $gene_id\n";
-		$cache{$gene_id}=0;
-	    }
+		} else {
+		    warn "Incorrect hits for $gene_id\n";
+		    $cache{$gene_id}=0;
+		}
 	}
 
 	return($cache{$gene_id});
@@ -276,18 +276,20 @@ sub get_gene_expression {
 
     print STDERR "Getting gene expression from $lane...\n";
 
-    my ($query,$sth);
-    $query ='SELECT gene_id, RPKM ';
-    $query.="FROM $table ";
-    $query.='WHERE LaneName = ?';
+    if (check_table_existence($dbh,$table)) {
+	my ($query,$sth);
+	$query ='SELECT gene_id, RPKM ';
+	$query.="FROM $table ";
+	$query.='WHERE LaneName = ?';
 #    $query.=' limit 2';
-    $sth=$dbh->prepare($query);
-    $sth->execute($lane);
+	$sth=$dbh->prepare($query);
+	$sth->execute($lane);
 
-    while (my ($gene,$rpkm)=$sth->fetchrow_array()) {
-	my $expression=int($rpkm + 0.5);
-	if ($expression >= $threshold) {
-	    $genes->{$gene}->[$index]=$expression
+	while (my ($gene,$rpkm)=$sth->fetchrow_array()) {
+	    my $expression=int($rpkm + 0.5);
+	    if ($expression >= $threshold) {
+		$genes->{$gene}->[$index]=$expression
+	    }
 	}
     }
 

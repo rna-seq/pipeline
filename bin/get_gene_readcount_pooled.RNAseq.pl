@@ -72,10 +72,6 @@ my %groups=%{get_groups(\%files)};
 
 # Get unique maps for each lane
 my $mappingtable=$prefix.'_genome_mapping';
-my %unique_maps=%{get_unique_maps($dbh,
-				  $mappingtable,
-				  \%files,
-				  $mapper)};
 
 # Read and process the overlap files
 foreach my $group (keys %groups) {
@@ -98,8 +94,6 @@ foreach my $group (keys %groups) {
 	} else {
 	    die "Unknown type $lane\n";
 	}
-	
-	$unique_maps{$group}+=$unique_maps{$lane};
 	
 	# Get the projected exon overlap information
 	my $exonoverlap=$genomedir.'/'.$lane.'.'.$type.'.unique.gtf.proj.overlap.total';
@@ -238,46 +232,6 @@ sub get_projected_length {
 	close($projfh);
     }
     print STDERR "done\n";
-}
-
-sub get_unique_maps {
-    my $dbh=shift;
-    my $maptable=shift;
-    my $files=shift;
-    my $mapper=shift;
-
-    my %unique_maps;
-    my %lane2pair;
-
-    my ($query,$sth,$count);
-
-    print STDERR "Getting unique mappings from $maptable...";
-    foreach my $file (keys %{$files}) {
-	$lane2pair{$files->{$file}->[1]}=$files->{$file}->[0];
-    }
-
-    $query ='SELECT LaneName, uniqueReads ';
-    $query.="FROM $maptable";
-    $sth=$dbh->prepare($query);
-    $count=$sth->execute();
-
-    unless ($count == keys %{$files}) {
-	die "Wrong number of mapped readsd\n";
-    }
-
-    while (my ($lane,$unique)=$sth->fetchrow_array()) {
-	my $pair=$lane2pair{$lane};
-	$unique_maps{$pair}+=$unique;
-    }
-    print STDERR "done\n";
-
-    foreach my $lane (keys %unique_maps) {
-	print STDERR join("\t",
-			  $lane,
-			  $unique_maps{$lane}),"\n";
-    }
-
-    return(\%unique_maps);
 }
 
 sub get_gene_coverage {

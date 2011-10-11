@@ -21,7 +21,7 @@ BEGIN {
 # the necessary information for the transcript from the annotation, for all 
 # transcripts detected in at least one condition
 
-use RNAseq_pipeline3 qw(get_fh parse_gff_line);
+use RNAseq_pipeline3 qw(get_fh parse_gff_line check_table_existence);
 use RNAseq_pipeline_settings3 ('read_config_file','get_dataset_id',
 			       'get_dbh');
 
@@ -233,18 +233,20 @@ sub get_trans_expression {
     my $lane=shift;
     my $threshold=shift || 1;
 
-    my ($query,$sth);
-
-    $query ='SELECT transcript_id, rpkm ';
-    $query.="FROM $table ";
-    $query.='WHERE lane_id = ?';
-    $sth=$dbh->prepare($query);
-    $sth->execute($lane);
-
-    while (my ($trans_id,$rpkm,$lane)=$sth->fetchrow_array()) {
-	my $expression=int($rpkm + 0.5);
-	if ($expression >= $threshold) {
-	    $trans->{$trans_id}->[$index]=$expression
+    if (check_table_existence($dbh,$table)) {
+	my ($query,$sth);
+	
+	$query ='SELECT transcript_id, rpkm ';
+	$query.="FROM $table ";
+	$query.='WHERE lane_id = ?';
+	$sth=$dbh->prepare($query);
+	$sth->execute($lane);
+	
+	while (my ($trans_id,$rpkm,$lane)=$sth->fetchrow_array()) {
+	    my $expression=int($rpkm + 0.5);
+	    if ($expression >= $threshold) {
+		$trans->{$trans_id}->[$index]=$expression
+	    }
 	}
     }
 }

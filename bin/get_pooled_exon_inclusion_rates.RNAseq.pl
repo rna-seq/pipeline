@@ -27,7 +27,7 @@ BEGIN {
 
 use RNAseq_pipeline3 qw(get_fh get_exon_coverage_1000nt);
 use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list',
-			       'get_lanes','get_groups');
+			       'get_lanes','get_groups','get_unique_maps');
 use Bio::SeqIO;
 
 # Define some variables
@@ -65,7 +65,7 @@ my $dbhcommon=get_dbh(1);
 # Get some subroutines
 my $table=get_junctions_table($dbh,
 			      $prefix);
-my $mappingtable=$prefix.'_genome_mapping';
+my $mappingtable=$prefix.'_unique_maps_genome';
 *get_inclusion_exons=get_inclusion_junctions_sub($dbhcommon,
 						 $table);
 
@@ -74,11 +74,11 @@ my %lanes=%{get_lanes()};
 my %groups=%{get_groups()};
 
 # Get normalization ratios for each lane
-my %read_no_norm=%{get_normalization($dbh,
-				     $mappingtable,
-				     \%files,
-				     \%groups,
-				     $mapper)};
+my %read_no_norm=%{get_unique_maps($dbh,
+				   $mappingtable,
+				   \%files,
+				   \%groups,
+				   $mapper)};
 
 foreach my $pair (keys %read_no_norm) {
     my $read_norm=sprintf "%.3f",$read_no_norm{$pair};
@@ -95,7 +95,7 @@ my %junclengths=%{get_junction_length($juncfile,
 foreach my $group (keys %groups) {
     my %exons_coverage;
     my %juncs_coverage;
-    my $normfactor=$read_no_norm{$group};
+    my $normfactor=1000000 / $read_no_norm{$group};
     foreach my $lane (keys %{$groups{$group}}) {
 	my $type;
 	if (keys %{$lanes{$lane}} == 1) {
@@ -211,53 +211,6 @@ sub get_junc_id_from_long_id {
     my $short_id=join('_',$chr,$start,'splice',$end);
 
     return($short_id);
-}
-
-sub get_normalization {
-    my $dbh=shift;
-    my $maptable=shift;
-    my $files=shift;
-    my $groups=shift;
-    my $mapper=shift;
-
-    my %normalization;
-    my %lane2group;
-
-    my ($query,$sth,$count);
-
-    print STDERR "Getting normalization rates from $maptable...\n";
-    foreach my $file (keys %{$files}) {
-	my $group=$files->{$file}->[2] || 'All';
-	$lane2group{$files->{$file}->[1]}=$group;
-    }
-
-    $query ='SELECT LaneName, uniqueReads ';
-    $query.="FROM $maptable";
-    $sth=$dbh->prepare($query);
-    $count=$sth->execute();
-
-    unless ($count == keys %files) {
-	die "Wrong number of mapped reads\n";
-    }
-
-    while (my ($lane,$unique)=$sth->fetchrow_array()) {
-	my $group=$lane2group{$lane};
-	$normalization{$group}+=$unique;
-	print STDERR join("\t",
-			  $group,
-			  $unique,
-			  $normalization{$group}),"\n"; 
-   }
-
-    # Normalize the counts to counts per million reads
-    my $max = 1000000;
-  
-    foreach my $group (keys %{$groups}) {
-	$normalization{$group}=$max / $normalization{$group};
-    }
-    print STDERR "done\n";
-
-    return(\%normalization);
 }
 
 sub get_junctions_table {
@@ -379,7 +332,7 @@ sub get_feature_coverage_junctions {
     my $features=shift;
     my $lengths=shift;
 
-    print STDERR "Getting mappings from $infn...";
+    print STDERR "Getting mappings from $infn...\n";
 
     my $infh=get_fh($infn);
 
@@ -389,7 +342,10 @@ sub get_feature_coverage_junctions {
 	# Normalize to reads per 1000 nt
 	my $junclength=$lengths->{$feature};
 	unless ($junclength) {
+	    # Skip those junctions that are not in the annotation and do not
+	    # have information on their length
 	    warn "No length for $feature\n";
+	    next;
 	}
 	$coverage=$coverage * (1000 /$junclength);
 	$features->{$feature}+=$coverage;

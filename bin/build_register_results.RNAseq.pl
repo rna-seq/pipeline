@@ -16,7 +16,7 @@ BEGIN {
 # folder and gzip any file that is not gzipped
 
 # Load some modules
-use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command get_md5sum);
+use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command get_md5sum check_table_existence);
 use RNAseq_pipeline_settings3 ('read_config_file','read_file_list','get_dbh',
 			       'get_exp_info_sub');
 use Bio::SeqIO;
@@ -80,7 +80,7 @@ get_bed_files(\@files,
 
 # Print out the results
 my ($globalmd5)=@{get_exp_info($proj_id,
-			     $exp_id)};
+			       $exp_id)};
 
 my $resultsdir=$project.'/results';
 foreach my $file (@files) {
@@ -110,16 +110,18 @@ sub get_merged_mapping {
 
     my $table=$prefix.'_merged_mapping';
     
-    my ($query,$sth);
-    $query ='SELECT filename ';
-    $query.="FROM $table ";
-    $sth=$dbh->prepare($query);
-    $sth->execute();
+    if (check_table_existence($dbh,$table)) {
+	my ($query,$sth);
+	$query ='SELECT filename ';
+	$query.="FROM $table ";
+	$sth=$dbh->prepare($query);
+	$sth->execute();
 
-    while (my ($filename)=$sth->fetchrow_array()) {
-	my $filepath=$project.'/SAM/'.$filename;
-	my ($file,$md5sum)=get_md5sum($filepath);
-	push @{$files},['gem.mapping',$filename,$md5sum,$filepath];
+	while (my ($filename)=$sth->fetchrow_array()) {
+	    my $filepath=$project.'/SAM/'.$filename;
+	    my ($file,$md5sum)=get_md5sum($filepath);
+	    push @{$files},['gem.mapping',$filename,$md5sum,$filepath];
+	}
     }
 }
 

@@ -219,6 +219,9 @@ _transcriptome_mapping: _dataset _indices
 ### Build SAM/BAM files from the mappings
 # These files are already present, and we just need to link them to the correct 
 # locations
+_merged_SAM: _dataset
+	link_sam.RNAseq.pl > _merged_SAM.txt
+	all_no_log_table
 
 mapping: _transcriptome_mapping
 
@@ -258,23 +261,9 @@ _unique_maps_transcripts: _transcriptome_mapping
 	cd $TRANSDIR; gzip_files.RNAseq.pl gem.map
 	all_no_log_table
 
-# This has to be extracted from the BAM in the unique_maps genome step above and
-# loaded in here
-#_unique_maps_junctions: _junctions_mapping
-#	cluster_run.RNAseq.pl gem2gff_junctions.RNAseq.pl -multi
-#	plot_gff_junctions_distribution.RNAseq.pl
-#        mysql $DB < $TABLES/$(echo $PREFIX)_junction_maps_class.sql
-#        mysqlimport -L $DB _junction_maps_class.txt
-#        gzip -9 _junction_maps_class.txt
-#        mv _junction_maps_class.txt.gz $TAB_DAT
-#	mv *.gtf.gz $JUNCTIONSDIR
-#	mv *.ps $GRAPHS
-#	cd $JUNCTIONSDIR; gzip_files.RNAseq.pl gem.map
-#	all_no_log_table
-
-#_novel_junctions_summary: _unique_maps_junctions
-#	build_novel_junctions_summary.pl > _novel_junctions_summary.txt
-#	all_no_log_table
+_novel_junctions_summary: _unique_maps_genome
+	build_novel_junctions_summary.pl > _novel_junctions_summary.txt
+	all_no_log_table
 
 ### Build clusters of reads
 # Here we have to add a step to plot the length distribution and number of reads
@@ -292,21 +281,16 @@ _initial_clusters: _unique_maps_genome _unique_maps_transcripts
 # halves hit the same fragment when all the splits are projected, and far,which
 # means both splits hit two different projected fragments.
 _split_mapping_breakdown: _initial_clusters
-	get_split_coverage.RNAseq.pl -t 3 > _split_mapping_breakdown.txt
+	get_split_coverage_bam.RNAseq.pl -t 3 > _split_mapping_breakdown.txt
 	all_no_log_table
 
 # Here we will take all the maps that split to junctions or splitmaps and
 # put them into one file counting the number of reads mapping to each
 # independently of the strand
-#_all_junctions_class: _split_mapping_breakdown
-#	cluster_run.RNAseq.pl get_junction_classification_all.RNAseq.pl
-#	cat $JUNCTIONSDIR/*.all.junc.class > _all_junctions_class.txt
-#	all_no_log_table
-
-#_all_junctions_class_pooled: _split_mapping_breakdown
-#	cluster_run.RNAseq.pl get_junction_classification_all_pooled.RNAseq.pl
-#	cat $JUNCTIONSDIR/*.all.junc.class.pooled > _all_junctions_class_pooled.txt
-#	all_no_log_table
+_all_junctions_class_pooled: _split_mapping_breakdown
+	cluster_run.RNAseq.pl get_junction_classification_all_pooled.RNAseq.pl
+	cat $JUNCTIONSDIR/*.all.junc.class.pooled > _all_junctions_class_pooled.txt
+	all_no_log_table
 
 ############
 ### Get information on the read coverage for different features
@@ -321,12 +305,12 @@ _split_mapping_breakdown: _initial_clusters
 
 # TO DO we have to insert the number of detected genes here as well as the gene
 # saturation
-#_proj_coverage: _junction_classification _unique_maps_genome
-#	get_proj_overlaps_cluster.RNAseq.pl
-#	cd $GENOMEDIR; for file in `ls *proj.overlap.gz | sed 's/\/.*\///' | sed 's/.gz$//'`; do get_proj_total_inclusion.RNAseq.pl $file.gz > $file.total; done
-#	plot_proj_detection.RNAseq.pl; mv $PREFIX.Proj.*.ps $PREFIX.Proj.*.jpeg $GRAPHS
-#	cd $GENOMEDIR; wc -l *.proj.overlap.total |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _proj_coverage.txt; mv _proj_coverage.txt $PROJECT
-#	all_no_log_table
+_proj_coverage: _junction_classification _unique_maps_genome
+	get_proj_overlaps_cluster.RNAseq.pl
+	cd $GENOMEDIR; for file in `ls *proj.overlap.gz | sed 's/\/.*\///' | sed 's/.gz$//'`; do get_proj_total_inclusion.RNAseq.pl $file.gz > $file.total; done
+	plot_proj_detection.RNAseq.pl; mv $PREFIX.Proj.*.ps $PREFIX.Proj.*.jpeg $GRAPHS
+	cd $GENOMEDIR; wc -l *.proj.overlap.total |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _proj_coverage.txt; mv _proj_coverage.txt $PROJECT
+	all_no_log_table
 
 # This has to be fixed so the get_exon_total_inclusion script does not take the
 # files from the command line
@@ -338,27 +322,22 @@ _exon_coverage: _junction_classification _unique_maps_genome
 	cd $EXONDIR; wc -l *.overlap.total |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _exon_coverage.txt; mv _exon_coverage.txt $PROJECT
 	all_no_log_table
 
-#_junction_coverage: _junction_classification _unique_maps_junctions
-#	for file in `ls $JUNCTIONSDIR/*.unique.gtf.gz | sed 's/\/.*\///'| sed 's/.gtf.gz//'`; do get_junction_total_inclusion.RNAseq.pl $JUNCTIONSDIR/$file.gtf.gz > $file.overlap.total; done
-#	wc -l *.overlap.total |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _junction_coverage.txt;
-#	mv *.overlap.total $JUNCTIONSDIR
-#	get_junction_read_contributions.RNAseq.pl
-#	plot_junction_detection.RNAseq.pl; mv $PREFIX.Junctions.*.ps $GRAPHS
-#	plot_junction_saturation.RNAseq.pl; mv Junction.saturation.ps $GRAPHS
-#	all_no_log_table
+_junction_coverage: _junction_classification _unique_maps_genome
+	for file in `ls $JUNCTIONSDIR/*.unique.gtf.gz | sed 's/\/.*\///'| sed 's/.gtf.gz//'`; do get_junction_total_inclusion.RNAseq.pl $JUNCTIONSDIR/$file.gtf.gz > $file.overlap.total; done
+	wc -l *.overlap.total |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _junction_coverage.txt;
+	mv *.overlap.total $JUNCTIONSDIR
+	get_junction_read_contributions.RNAseq.pl
+	plot_junction_detection.RNAseq.pl; mv $PREFIX.Junctions.*.ps $GRAPHS
+	plot_junction_saturation.RNAseq.pl; mv Junction.saturation.ps $GRAPHS
+	all_no_log_table
 
-#_splicing_summary: _junction_coverage _split_mapping_breakdown
-#	get_splicing_summary.RNAseq.pl > _splicing_summary.txt
-#	all_no_log_table
+_splicing_summary: _junction_coverage _split_mapping_breakdown
+	get_splicing_summary.RNAseq.pl > _splicing_summary.txt
+	all_no_log_table
 
 ################
 # Exon RPKM info
-_exon_RPKM: _exon_coverage _junction_coverage
-	cluster_run.RNAseq.pl get_exon_rpkm.RNAseq.pl
-	zcat $EXONDIR/*.exon.rpkm.txt.gz > _exon_RPKM.txt
-	all_no_log_table
-
-_exon_RPKM_pooled: _exon_coverage _junction_coverage
+_exon_RPKM_pooled: _exon_coverage
 	cluster_run.RNAseq.pl get_exon_rpkm_pooled.RNAseq.pl
 	zcat $EXONDIR/*.exon.rpkm.pooled.txt.gz > _exon_RPKM_pooled.txt
 	all_no_log_table
@@ -370,11 +349,10 @@ _exon_readcount_pooled: _exon_RPKM_pooled
 
 ################
 # Gene RPKM info
-_gene_RPKM: _proj_coverage _junction_coverage
-	cluster_run.RNAseq.pl get_gene_rpkm.RNAseq.pl
-	zcat $GENOMEDIR/*.gene.rpkm.txt.gz > _gene_RPKM.txt
-	all_no_log_table
-
+#_gene_RPKM: _proj_coverage
+#	cluster_run.RNAseq.pl get_gene_rpkm.RNAseq.pl
+#	zcat $GENOMEDIR/*.gene.rpkm.txt.gz > _gene_RPKM.txt
+#	all_no_log_table
 _gene_RPKM_pooled: _proj_coverage _junction_coverage
 	cluster_run.RNAseq.pl get_gene_rpkm_pooled.RNAseq.pl
 	zcat $GENOMEDIR/*.gene.rpkm.pooled.txt.gz > _gene_RPKM_pooled.txt
@@ -390,7 +368,7 @@ _detected_genes: _gene_RPKM_pooled _gene_readcount_pooled
 	mv build_detected_genes.RNAseq.log $LOGS
 	all_no_log_table
 
-_gene_RPKM_dist: _gene_RPKM _detected_genes
+_gene_RPKM_dist: _gene_RPKM_pooled _detected_genes
 	build_gene_rpkm_dist.RNAseq.pl > _gene_RPKM_dist.txt
 	all_no_log_table
 
@@ -410,13 +388,8 @@ _read_classification: _unique_maps_genome
 ##########
 # Get info on the exons exclusion
 # Calculate for each exon in the genome an inclusion and exclusion rate
-_exon_inclusion: _exon_coverage _junction_coverage
-	cluster_run.RNAseq.pl build_inclusion_exclusion_table.RNAseq.pl
-	cluster_run.RNAseq.pl get_exon_inclusion_exclusion_rates.RNAseq.pl
-	cat $EXONDIR/*.inclusion.exclusion.txt > _exon_inclusion.txt
-	all_no_log_table
-
 _exon_inclusion_pooled: _exon_coverage _junction_coverage
+	cluster_run.RNAseq.pl build_inclusion_exclusion_table.RNAseq.pl
 	cluster_run.RNAseq.pl get_pooled_exon_inclusion_rates.RNAseq.pl
 	cat $EXONDIR/*.inclusion.exclusion.pooled.txt > _exon_inclusion_pooled.txt
 	all_no_log_table
@@ -430,7 +403,7 @@ _inclusion_correlation: _exon_inclusion_reads
 	build_inclusion_correlation.RNAseq.pl |sort |uniq > _inclusion_correlation.txt
 	all_no_log_table
 
-_inclusion_dist: _exon_inclusion _inclusion_correlation
+_inclusion_dist: _exon_inclusion_pooled _inclusion_correlation
 	build_inclusion_dist.RNAseq.pl > _inclusion_dist.txt
 	all_no_log_table
 
@@ -445,9 +418,9 @@ _EJEI: _junction_coverage
 ####################################
 # Get the transcript expression info
 # First build some bed files
-### TO DO we need to add to these files the ones from the split mapping and
-# from the recursive mapping
-_bed_files: _merged_mapping _recursive_mapping
+# TO DO we need to extract this information from the sam files or from the
+# gtf files
+_bed_files: _dataset
 	cluster_run.RNAseq.pl gem2bed_combined_cluster.RNAseq.pl
 	wc -l $LOCALDIR/*.combined.bed |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _bed_files.txt;
 	all_no_log_table
@@ -483,7 +456,7 @@ _exon_RPKM_pooled_flux: _transcript_expression_levels_pooled
 
 # #####################
 # Get fusion transcripts
-_fusion_transcripts: _transcriptome_mapping _gene_RPKM
+_fusion_transcripts: _transcriptome_mapping _gene_RPKM_pooled
 	cluster_run.RNAseq.pl get_fusion_transcripts.RNAseq.pl
 	zcat $TRANSDIR/*.trans.fusions.txt.gz > _fusion_transcripts.txt
 	mv get_fusion_transcripts.RNAseq.log $LOGS
@@ -495,7 +468,7 @@ _fusion_transcripts: _transcriptome_mapping _gene_RPKM
 # a summary of the detected junctions. this table will contain the completion
 # status of these two steps (it is only here to run the two scripts as they
 # both generate their own tables ad load them
-_summaries: _exon_RPKM_pooled _gene_RPKM_dist _inclusion_dist _detected_transcripts _splicing_summary _novel_junctions_summary _exon_RPKM
+_summaries: _exon_RPKM_pooled _gene_RPKM_dist _inclusion_dist _splicing_summary _novel_junctions_summary
 	build_expression_summary.RNAseq.pl > _summaries.txt
 	build_top_genes.RNAseq.pl >> _summaries.txt
 	build_top_transcripts.RNAseq.pl >> _summaries.txt
@@ -532,19 +505,11 @@ encode: _summaries _all_junctions_class_pooled mapping _read_classification
 
 _register_results: encode _store_reads _fusion_transcripts
 	build_register_results.RNAseq.pl > _register_results.txt
+	rm -r $LOCALDIR
 	all_no_log_table
 
 # This rule should execute all the steps in the pipeline
 all: _register_results
-
-# Clean up
-# We need to remove the sequence files from the local directory
-# Also junction mapping files from the local dir
-# Create a rule to remove all the temporary files that may be left around 
-# after a crash
-cleanup: @
-	rm -r $LOCALDIR
-
 
 # ####
 ## Test rules

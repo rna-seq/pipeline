@@ -111,9 +111,15 @@ sub cluster_split_files {
 	my $infilename1=$splitdir.'/'.$lane.'.'.$type.'.unique.gtf.gz';
 	my $infilename2=$splitdir.'/'.$lane.'.'.$type.'.multi.gtf.gz';
 
-	unless (-r $infilename1) {die "$infilename1 is not readable\n";}
+	unless (-r $infilename1) {
+	    warn "$infilename1 is not readable\n";
+	    return();
+	}
 	print STDERR "Collecting $infilename1\n";
-	unless (-r $infilename2) {die "$infilename2 is not readable\n";}
+	unless (-r $infilename2) {
+	    warn "$infilename2 is not readable\n";
+	return();
+	}
 	print STDERR "Collecting $infilename2\n";
 
 	push @uniquefiles, $infilename1;

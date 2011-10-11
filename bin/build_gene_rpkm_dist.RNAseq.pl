@@ -16,7 +16,7 @@ BEGIN {
 # This scritp will take information from the tables containing the RNAseq data
 # and the RNAseq pooled data and it will build the distribution of the RPKMs
 
-use RNAseq_pipeline3 qw(get_fh);
+use RNAseq_pipeline3 qw(get_fh check_table_existence);
 use RNAseq_pipeline_settings3 ('get_dbh','read_config_file');
 
 # Declare some variables
@@ -28,23 +28,28 @@ $prefix=$options{'PREFIX'};
 
 # Get the table names we need
 my $rpkm=$prefix.'_gene_RPKM';
-#my $rpkm_pooled=$prefix.'_gene_RPKM_pooled';
+my $rpkm_pooled=$prefix.'_gene_RPKM_pooled';
 
 # Get the information for the histogram
 my %hist;
 my $dbh=get_dbh();
-get_info_from_table($dbh,
-		    $rpkm,
-		    %hist);
 
-# We do not need the pooled RPKM any longer, as we are not grouping different
-# types of samples now
-#get_info_from_table($dbh,
-#		    $rpkm_pooled,
-#		    %hist);
+# Check if the tables exist and use the first one we find (we will probably not
+# neer the unpooled soon as we are no longer mixing samples usually)
+if (check_table_existence($dbh,$rpkm)) {
+    get_info_from_table($dbh,
+			$rpkm,
+			%hist);
+} elsif (check_table_existence($dbh,$rpkm_pooled)) {
+    get_info_from_table($dbh,
+			$rpkm_pooled,
+			%hist);
+} else {
+    die "No suitable gene RPKM table found\n";
+}
 
 # Print out the result
-foreach my $value (keys %hist) {
+foreach my $value (sort {$a <=> $b} keys %hist) {
     foreach my $set (keys %{$hist{$value}}) {
 	print join("\t",
 		   $hist{$value}{$set},

@@ -77,6 +77,9 @@ foreach my $infile (keys %files) {
 
     # Calculate the md5sum of the zipped files
     my $readpath=$readdir.'/'.$infile.'.gz';
+    if ($infile=~/bam$/) {
+	$readpath=$filepath;
+    }
     if (-r $readpath) {
 	my ($file,$sum)=get_md5sum($readpath);
 	$sums{$infile}{'zipped'}=[$file,$sum];

@@ -46,7 +46,8 @@ foreach my $type (keys %files) {
     print STDERR "Processing $infilename\n";
 
     unless (-r $infilename) {
-	die "$infilename is not readable\n";
+	warn "$infilename is not readable\n";
+	next;
     }
 
     build_distribution($infilename,

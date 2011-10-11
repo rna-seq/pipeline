@@ -23,7 +23,7 @@ use Bio::SeqIO;
 use RNAseq_pipeline3 qw(get_fh parse_gff_line get_feature_overlap);
 use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list',
 			      'get_gene_from_short_junc_sub','get_lanes',
-			       'get_groups');
+			       'get_groups','get_unique_maps');
 
 # Declare some variables
 my $prefix;
@@ -78,7 +78,7 @@ my %lanes=%{get_lanes()};
 my %groups=%{get_groups(\%files)};
 
 # Get unique maps for each lane
-my $mappingtable=$prefix.'_genome_mapping';
+my $mappingtable=$prefix.'_unique_maps_genome';
 my %unique_maps=%{get_unique_maps($dbh,
 				  $mappingtable,
 				  \%files,
@@ -88,7 +88,7 @@ my %unique_maps=%{get_unique_maps($dbh,
 foreach my $group (keys %groups) {
     my %gene_juncs_coverage;
     my %gene_coverage;
-    my $uniquemapsgroup=0;
+    my $uniquemapsgroup=$unique_maps{$group};
     foreach my $lane (keys %{$groups{$group}}) {
 	my $type;
 	if (keys %{$lanes{$lane}} == 1) {
@@ -98,8 +98,6 @@ foreach my $group (keys %groups) {
 	} else {
 	    die "Unknown type $lane\n";
 	}
-	
-	$uniquemapsgroup+=$unique_maps{$lane};
 	
 	# Get the projected exon overlap information
 	my $exonoverlap=$genomedir.'/'.$lane.'.'.$type.'.unique.gtf.proj.overlap.total';
@@ -319,46 +317,6 @@ sub get_projected_length {
 	close($projfh);
     }
     print STDERR "done\n";
-}
-
-sub get_unique_maps {
-    my $dbh=shift;
-    my $maptable=shift;
-    my $files=shift;
-    my $mapper=shift;
-
-    my %unique_maps;
-    my %lane2pair;
-
-    my ($query,$sth,$count);
-
-    print STDERR "Getting unique mappings from $maptable...";
-    foreach my $file (keys %{$files}) {
-	$lane2pair{$files->{$file}->[1]}=$files->{$file}->[0];
-    }
-
-    $query ='SELECT LaneName, uniqueReads ';
-    $query.="FROM $maptable";
-    $sth=$dbh->prepare($query);
-    $count=$sth->execute();
-
-    unless ($count == keys %{$files}) {
-	die "Wrong number of mapped readsd\n";
-    }
-
-    while (my ($lane,$unique)=$sth->fetchrow_array()) {
-	my $pair=$lane2pair{$lane};
-	$unique_maps{$pair}+=$unique;
-    }
-    print STDERR "done\n";
-
-    foreach my $lane (keys %unique_maps) {
-	print STDERR join("\t",
-			  $lane,
-			  $unique_maps{$lane}),"\n";
-    }
-
-    return(\%unique_maps);
 }
 
 sub get_gene_coverage_1000nt {

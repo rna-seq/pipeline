@@ -16,7 +16,7 @@ BEGIN {
 # This scritp will take information from the tables containing the inclusion
 # data and it will build the distribution of the inclsuion levels
 
-use RNAseq_pipeline3 qw(get_fh);
+use RNAseq_pipeline3 qw(get_fh check_table_existence);
 use RNAseq_pipeline_settings3 ('get_dbh','read_config_file');
 
 # Declare some variables
@@ -33,12 +33,17 @@ my $incl_pooled=$prefix.'_exon_inclusion_pooled';
 # Get the information for the histogram
 my %hist;
 my $dbh=get_dbh();
-get_info_from_table($dbh,
-		    $incl,
-		    %hist);
-get_info_from_table($dbh,
-		    $incl_pooled,
-		    %hist);
+if (check_table_existence($dbh,$incl)) {
+    get_info_from_table($dbh,
+			$incl,
+			%hist);
+} elsif (check_table_existence($dbh,$incl_pooled)) {
+    get_info_from_table($dbh,
+			$incl_pooled,
+			%hist);
+} else {
+    die "No suitable exon inclusion table found\n";
+}
 
 # Print out the result
 foreach my $value (keys %hist) {
