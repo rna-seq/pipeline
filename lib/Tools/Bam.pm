@@ -213,18 +213,22 @@ sub process_aln {
     return($entry);
 }
 
+# Use a different iterator from the main one when using this, as if trying to
+# the same one it does not work (also this new one can be called without
+# expansion of flags or splices
 sub bam2coords {
     my $aln=shift; # This should be a Bio::DB::BAM::Alignment object
-    my $global=shift; # This should be a 
+    my $global=shift; # This should be a different iterator from the main one
     my $entry={};
     
     my @coords;
     my $paired=$aln->get_tag_values('PAIRED');
 
     my @subaligns=$aln->get_SeqFeatures();
+
     # Check if the alignment is spliced
     if (@subaligns) {
-	foreach my $a (@subaligns) {
+	while (my $a=shift(@subaligns)) {
 	    my $entry=process_aln($a);
 	    $entry->{'id'}=$aln->name();
 	    
@@ -254,9 +258,6 @@ sub bam2coords {
 	    } elsif ($global) {
 		$entry->{'unique'}=check_unique($aln,
 						$global);
-		unless($entry->{'unique'}) {
-		    print STDERR $entry->{'id'},"\n";
-		}
 	    } else {
 		# The tags are not defined so we don't know what this is
 		my $read_id=$entry->{'id'};
@@ -264,7 +265,7 @@ sub bam2coords {
 		$entry->{'unique'}=1;
 	    }
 	    
-	    # Determine if it is spliced
+	    # Add the entry if it has a match
 	    $entry->{'cigar'}=$aln->cigar_str();
 	    if ($entry->{'cigar'} &&
 		$entry->{'cigar'}!~/\*/) {
@@ -301,9 +302,6 @@ sub bam2coords {
 	} elsif ($global) {
 	    $entry->{'unique'}=check_unique($aln,
 					    $global);
-	    unless($entry->{'unique'}) {
-		print STDERR $entry->{'id'},"\n";
-	    }
 	} else {
 	    # The tags are not defined so we don't know what this is
 	    my $read_id=$entry->{'id'};
@@ -318,19 +316,21 @@ sub bam2coords {
 	    push @coords,$entry;
 	}
     }
-
     return(\@coords);
 }
 
 sub check_unique {
     my $aln=shift;
     my $global=shift;
+
     my $seq=$aln->query->dna();
-    my @locations=$global->features(-name => $aln->{'name'});
+    my $seq_id=$aln->name();
+    my $iterator=$global->features(-name => $seq_id,
+				   -iterator => 1);
     my %hits;
     $hits{$seq}=0;
     my $unique=1;
-    foreach my $align (@locations) {
+    while (my $align=$iterator->next_seq()) {
 	my $sequence=$align->query->dna();
 	$hits{$sequence}++;
 	if ($hits{$seq} > 1) {

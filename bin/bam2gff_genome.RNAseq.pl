@@ -71,13 +71,14 @@ foreach my $file (keys %files) {
 				-expand_flags => 1,
 				-split_splices => 1);
 
+    my $sam2 = Bio::DB::Sam->new(-bam  => $tmpdir.'/'.$file);
+
     my $all_alignments=$sam->features(-iterator =>1);
 
+    my $count=0;
     while (my $a=$all_alignments->next_seq()) {
-	my @subaligns=$a->get_SeqFeatures();
-
 	my $coords=bam2coords($a,
-			      $sam);
+			      $sam2);
 	foreach my $coord (@{$coords}) {
 	    my $gtf=coords2gtf($coord,
 			       'BAM');
@@ -95,6 +96,7 @@ foreach my $file (keys %files) {
 		}
 	    }
 	}
+	$count++
     }
     close($outuniquefh);
     close($outmultifh);
