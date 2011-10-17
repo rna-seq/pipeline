@@ -215,6 +215,7 @@ sub process_aln {
 
 sub bam2coords {
     my $aln=shift; # This should be a Bio::DB::BAM::Alignment object
+    my $global=shift; # This should be a 
     my $entry={};
     
     my @coords;
@@ -250,10 +251,16 @@ sub bam2coords {
 	    } elsif ($entry->{'matches'}) {
 		# This is a multimap
 		$entry->{'unique'}=0;
+	    } elsif ($global) {
+		$entry->{'unique'}=check_unique($aln,
+						$global);
+		unless($entry->{'unique'}) {
+		    print STDERR $entry->{'id'},"\n";
+		}
 	    } else {
 		# The tags are not defined so we don't know what this is
 		my $read_id=$entry->{'id'};
-#		print STDERR "No H? tag found for $read_id. Setting as unique, but beware\n";
+		print STDERR "No H? tag found for $read_id. Setting as unique, but beware\n";
 		$entry->{'unique'}=1;
 	    }
 	    
@@ -291,10 +298,16 @@ sub bam2coords {
 	} elsif ($entry->{'matches'}) {
 	    # This is a multimap
 	    $entry->{'unique'}=0;
+	} elsif ($global) {
+	    $entry->{'unique'}=check_unique($aln,
+					    $global);
+	    unless($entry->{'unique'}) {
+		print STDERR $entry->{'id'},"\n";
+	    }
 	} else {
 	    # The tags are not defined so we don't know what this is
 	    my $read_id=$entry->{'id'};
-#	    print STDERR "No H? tag found for $read_id. Setting as unique, but beware\n";
+	    print STDERR "No H? tag found for $read_id and I have no reference alignment. Setting as unique, but beware\n";
 	    $entry->{'unique'}=1;
 	}
 	    
@@ -307,5 +320,24 @@ sub bam2coords {
     }
 
     return(\@coords);
+}
+
+sub check_unique {
+    my $aln=shift;
+    my $global=shift;
+    my $seq=$aln->query->dna();
+    my @locations=$global->features(-name => $aln->{'name'});
+    my %hits;
+    $hits{$seq}=0;
+    my $unique=1;
+    foreach my $align (@locations) {
+	my $sequence=$align->query->dna();
+	$hits{$sequence}++;
+	if ($hits{$seq} > 1) {
+	    $unique=0;
+	    last;
+	}
+    }
+    return($unique)
 }
 1;

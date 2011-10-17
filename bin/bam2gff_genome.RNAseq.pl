@@ -76,7 +76,8 @@ foreach my $file (keys %files) {
     while (my $a=$all_alignments->next_seq()) {
 	my @subaligns=$a->get_SeqFeatures();
 
-	my $coords=bam2coords($a);
+	my $coords=bam2coords($a,
+			      $sam);
 	foreach my $coord (@{$coords}) {
 	    my $gtf=coords2gtf($coord,
 			       'BAM');
