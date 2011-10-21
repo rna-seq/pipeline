@@ -20,14 +20,14 @@ BEGIN {
 # We have to be able to decide what table to get the data from (pooled or not)
 # And also we have to be able to select genes that are expressed 
 
-use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
-use RNAseq_pipeline_settings3 qw(get_dbh read_config_file);
+use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command get_list);
+use RNAseq_pipeline_settings3 qw(get_dbh read_config_file get_gene_info_sub);
 use RNAseq_pipeline_stats3 qw(log10);
 use RNAseq_pipeline_comp3 ('get_tables','check_tables','get_labels_sub',
 			   'get_samples');
 use Getopt::Long;
 
-# Declare som variables
+# Declare some variables
 my $nolabels;
 my $dbh;
 my $dbhcommon;
@@ -36,16 +36,13 @@ my $debug=1;
 my $breakdown=0;
 my $tabsuffix='all_junctions_class_pooled';
 my $limit;
+my $subset;
 
 # Get command line options
 GetOptions('nolabels|n' => \$nolabels,
 	   'debug|d' => \$debug,
-	   'breakdown|b' => \$breakdown,
+	   'subset|s=s' => \$subset,
 	   'limit|l=s' => \$limit);
-
-if ($breakdown) {
-    $tabsuffix='all_junctions_class';
-}
 
 # read the config file
 my %options=%{read_config_file()};
@@ -62,6 +59,9 @@ $dbhcommon=get_dbh(1);
 # Get subroutines
 *get_labels=get_labels_sub($dbhcommon);
 *junc2gene=get_gene_from_short_junc_sub($dbhcommon);
+*gene2chr=get_gene_info_sub('chr');
+*gene2desc=get_gene_info_sub('description');
+*gene2type=get_gene_info_sub('type');
 
 # Get the tables belonging to the project
 my %tables=%{get_tables($dbhcommon,
@@ -72,6 +72,14 @@ my %tables=%{get_tables($dbhcommon,
 # Remove any tables that do not exist
 check_tables($dbh,
 	     \%tables);
+
+# If a subset has been provided remove any tables that are not included in the
+# subset
+if ($subset && -r $subset) {
+    my %subset=%{get_list($subset)};
+    remove_tables(\%tables,
+		  \%subset);
+}
 
 # For each of tables extract the splice site support of interest and get for
 # each of the tables the different samples present in them
@@ -87,8 +95,7 @@ foreach my $experiment (@experiments) {
     my $data=get_splicing_data($dbh,
 			       $table,
 			       \%all_genes,
-			       $sample,
-			       $breakdown);
+			       $sample);
     if ($data) {
 	push @values, [$experiment,$data];
     } else {
@@ -127,11 +134,21 @@ foreach my $gene (keys %all_genes) {
 	}
 	push @row,$value;
     }
+
     unless ($no_print) {
 	my $gene_id=join('_',@{junc2gene($gene)});
-	print $tmpfh join("\t",
-			  $gene_id.'_'.$gene,
-			  @row),"\n";
+	my $desc=gene2desc($gene_id) || '';
+	if (gene2chr($gene_id)=~/chrM/o) {
+	    next;
+	} elsif ($desc=~/ribosom(e|al)/io) {
+	    next;
+	} elsif (gene2type($gene_id)=~/^rRNA/o) {
+	    next;
+	} else {
+	    print $tmpfh join("\t",
+			      $gene,
+			      @row),"\n";
+	}
     }
 }
 close($tmpfh);
@@ -143,18 +160,13 @@ sub get_splicing_data {
     my $table=shift;
     my $all=shift;
     my $sample=shift;
-    my $breakdown=shift;
 
     my %expression;
 
     my ($query,$sth,$count);
     $query ='SELECT chr1, start, chr2, end, support ';
     $query.="FROM $table ";
-    if ($breakdown) {
-	$query.='WHERE LaneName = ?';
-    } else {
-	$query.='WHERE sample = ?';
-    }
+    $query.='WHERE sample = ?';
     $query.=' AND junc_type not like "split%"';
     $sth=$dbh->prepare($query);
     $count=$sth->execute($sample);
