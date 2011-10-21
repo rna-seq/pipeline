@@ -119,7 +119,9 @@ foreach my $experiment (@experiments) {
 # Print the detected reads for each junction in each of the tables into a
 # temporary file
 my $tmpfn="Junctions.$project.txt";
+my $fusionsfn="Fusions.$project.txt";
 my $tmpfh=get_fh($tmpfn,1);
+my $fusionsfh=get_fh($fusionsfn,1);
 print $tmpfh join("\t",@experiments),"\n";
 foreach my $gene (keys %all_genes) {
     my @row;
@@ -129,14 +131,17 @@ foreach my $gene (keys %all_genes) {
 	if ($exp->[1] &&
 	    ($exp->[1]->{$gene})) {
 	    $value=$exp->[1]->{$gene};
-	} else {
-#	    $no_print=1;
 	}
 	push @row,$value;
     }
 
-    unless ($no_print) {
-	my $gene_id=join('_',@{junc2gene($gene)});
+    my @junctions=@{junc2gene($gene)};
+    my $gene_id=join('_',@junctions);
+    if (@junctions > 1) {
+	print $fusionsfh join("\t",
+			      $gene,
+			      @row),"\n";
+    } else {
 	my $desc=gene2desc($gene_id) || '';
 	if (gene2chr($gene_id)=~/chrM/o) {
 	    next;
@@ -152,6 +157,7 @@ foreach my $gene (keys %all_genes) {
     }
 }
 close($tmpfh);
+close($fusionsfh);
 
 exit;
 
@@ -172,9 +178,9 @@ sub get_splicing_data {
     $count=$sth->execute($sample);
     
     if ($count && ($count > 1)) {
-	print STDERR $count,"\tGenes are detected in $table\n";
+	print STDERR $count,"\tJunctions are detected in $table\n";
     } else {
-	die "No genes present in $table\n";
+	die "No junctions present in $table\n";
     }
 
     # get all the necessary tables
