@@ -141,7 +141,7 @@ foreach my $gene (keys %all_genes) {
     if (@junctions > 1) {
 	my @gene_names;
 	foreach my $junc (@junctions) {
-	    my ($frag)=@{junct2gene($junc)};
+	    my ($frag)=@{junc2gene($junc)};
 	    push @gene_names, $frag;
 	}
 	$gene_id=join('_',@gene_names);
