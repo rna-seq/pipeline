@@ -21,7 +21,8 @@ BEGIN {
 # And also we have to be able to select genes that are expressed 
 
 use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command get_list);
-use RNAseq_pipeline_settings3 qw(get_dbh read_config_file get_gene_info_sub);
+use RNAseq_pipeline_settings3 ('get_dbh','read_config_file','get_gene_info_sub',
+			       'get_gene_from_short_junc_sub');
 use RNAseq_pipeline_stats3 qw(log10);
 use RNAseq_pipeline_comp3 ('get_tables','check_tables','get_labels_sub',
 			   'get_samples','remove_tables');
@@ -58,7 +59,7 @@ $dbhcommon=get_dbh(1);
 
 # Get subroutines
 *get_labels=get_labels_sub($dbhcommon);
-*junc2gene=get_gene_from_short_junc_sub($dbhcommon);
+*junc2gene=get_gene_from_short_junc_sub();
 *gene2chr=get_gene_info_sub('chr');
 *gene2desc=get_gene_info_sub('description');
 *gene2type=get_gene_info_sub('type');
@@ -201,7 +202,7 @@ sub get_splicing_data {
 
 # This sub should take a short junction_id and extract the gene it belongs to
 # exon junction belongs
-sub get_gene_from_short_junc_sub {
+sub get_gene_from_short_junc_sub2 {
     my %options=%{read_config_file()};
     my $dbh=shift;
     my $table=$options{'JUNCTIONSTABLE'};
