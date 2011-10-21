@@ -141,6 +141,7 @@ foreach my $gene (keys %all_genes) {
     my @junctions=@{junc2gene($gene)};
     my $gene_id=join('_',@junctions);
     if (@junctions > 1) {
+	print STDERR @junction,"\n";
 	my @exons=@{$all_genes{$gene}};
 	my @gene_names;
 	foreach my $exon (@exons) {
@@ -155,7 +156,7 @@ foreach my $gene (keys %all_genes) {
 		}
 		if (keys %genes > 1) {
 		    print $log_fh "More than one gene corresponds to $exon\n";
-		    print $log_fh keys %genes,"\n";
+		    print $log_fh join("\t",keys %genes),"\n";
 		} else {
 		    push @gene_names, keys %genes;
 		}
