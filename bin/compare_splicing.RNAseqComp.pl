@@ -139,8 +139,14 @@ foreach my $gene (keys %all_genes) {
     my @junctions=@{junc2gene($gene)};
     my $gene_id=join('_',@junctions);
     if (@junctions > 1) {
+	my @gene_names;
+	foreach my $junc (@junctions) {
+	    my ($frag)=@{junct2gene($junc)};
+	    push @gene_names, $frag;
+	}
+	$gene_id=join('_',@gene_names);
 	print $fusionsfh join("\t",
-			      $gene,
+			      $gene_id.'_'.$gene,
 			      @row),"\n";
     } else {
 	my $desc=gene2desc($gene_id) || '';
