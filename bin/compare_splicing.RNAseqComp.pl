@@ -126,6 +126,7 @@ my $fusionsfn="Fusions.$project.txt";
 my $tmpfh=get_fh($tmpfn,1);
 my $fusionsfh=get_fh($fusionsfn,1);
 print $tmpfh join("\t",@experiments),"\n";
+print $fusionsfh join("\t",@experiments),"\n";
 foreach my $gene (keys %all_genes) {
     my @row;
     my $no_print=0;
