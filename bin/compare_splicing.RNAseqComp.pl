@@ -163,7 +163,6 @@ foreach my $gene (keys %all_genes) {
 		}
 	    }
 	}
-	$gene_id=join('_',keys %genes);
 	if (@gene_names > 1) {
 	    print $fusionsfh join("\t",
 				  $gene_id.'_'.$gene,
