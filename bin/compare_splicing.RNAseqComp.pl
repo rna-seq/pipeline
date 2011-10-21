@@ -154,6 +154,7 @@ foreach my $gene (keys %all_genes) {
 		    $genes{$gene_name}++;
 		}
 		if (keys %genes > 1) {
+		    print STDERR join("\t",keys %genes),"\n";
 		    die "More than one gene correspond to $exon\n";
 		} else {
 		    push @gene_names, keys %genes;
