@@ -152,7 +152,7 @@ foreach my $gene (keys %all_genes) {
 	    next;
 	} else {
 	    print $tmpfh join("\t",
-			      $gene,
+			      $gene_id.'_'.$gene,
 			      @row),"\n";
 	}
     }
@@ -197,43 +197,4 @@ sub get_splicing_data {
     }
 
     return(\%expression);
-}
-
-
-# This sub should take a short junction_id and extract the gene it belongs to
-# exon junction belongs
-sub get_gene_from_short_junc_sub2 {
-    my %options=%{read_config_file()};
-    my $dbh=shift;
-    my $table=$options{'JUNCTIONSTABLE'};
-
-    # For saving time, as the junctions table is huge
-    my %cache;
-
-    my ($query,$sth,$count);
-
-    $query ='SELECT DISTINCT gene_id ';
-    $query.="FROM $table ";
-    $query.='WHERE chr = ? AND start = ? AND end = ?';
-    $sth=$dbh->prepare($query);
-
-    my $subroutine=sub {
-	my $junc=shift;
-	### TO DO fix for problematic chromosomes
-	my ($chr,$start,$end)=split('_',$junc);
-
-	unless ($cache{$junc}) {
-	    $count=$sth->execute($chr,$start,$end);
-
-	    if ($count == 0) {
-		die "No gene in $table corresponds to $junc\n";
-	    } else {
-		while (my ($gene)=$sth->fetchrow_array()) {
-		    push @{$cache{$junc}}, $gene;
-		}
-	    }
-	}
-	return($cache{$junc});
-    };
-    return($subroutine);
 }
