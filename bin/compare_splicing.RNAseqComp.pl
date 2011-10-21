@@ -22,7 +22,8 @@ BEGIN {
 
 use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command get_list);
 use RNAseq_pipeline_settings3 ('get_dbh','read_config_file','get_gene_info_sub',
-			       'get_gene_from_short_junc_sub');
+			       'get_gene_from_short_junc_sub',
+			       'get_gene_from_exon_sub');
 use RNAseq_pipeline_stats3 qw(log10);
 use RNAseq_pipeline_comp3 ('get_tables','check_tables','get_labels_sub',
 			   'get_samples','remove_tables');
@@ -60,6 +61,7 @@ $dbhcommon=get_dbh(1);
 # Get subroutines
 *get_labels=get_labels_sub($dbhcommon);
 *junc2gene=get_gene_from_short_junc_sub();
+*ex2gene=get_gene_from_exon_sub();
 *gene2chr=get_gene_info_sub('chr');
 *gene2desc=get_gene_info_sub('description');
 *gene2type=get_gene_info_sub('type');
@@ -139,10 +141,24 @@ foreach my $gene (keys %all_genes) {
     my @junctions=@{junc2gene($gene)};
     my $gene_id=join('_',@junctions);
     if (@junctions > 1) {
+	my @exons=@{$all_genes{$gene}};
 	my @gene_names;
-	foreach my $junc (@junctions) {
-	    my ($frag)=@{junc2gene($junc)};
-	    push @gene_names, $frag;
+	foreach my $exon (@exons) {
+	    if ($exon=~/^-$/) {
+		push @gene_names, 'Unknown';
+	    } else {
+		my @exons=split(';',$exon);
+		my %genes;
+		foreach my $frag (@exons) {
+		    my $gene_name=ex2gene($frag);
+		    $genes{$gene_name}++;
+		}
+		if (keys %genes > 1) {
+		    die "More than one gene correspond to $exon\n";
+		} else {
+		    push @gene_names, keys %genes;
+		}
+	    }
 	}
 	$gene_id=join('_',@gene_names);
 	print $fusionsfh join("\t",
@@ -177,7 +193,7 @@ sub get_splicing_data {
     my %expression;
 
     my ($query,$sth,$count);
-    $query ='SELECT chr1, start, chr2, end, support ';
+    $query ='SELECT chr1, start, chr2, end, support, exons1, exons2 ';
     $query.="FROM $table ";
     $query.='WHERE sample = ?';
     $query.=' AND junc_type not like "split%"';
@@ -191,7 +207,7 @@ sub get_splicing_data {
     }
 
     # get all the necessary tables
-    while (my ($chr1,$start,$chr2,$end,$support)=$sth->fetchrow_array()) {
+    while (my ($chr1,$start,$chr2,$end,$support,$ex1,$ex2)=$sth->fetchrow_array()) {
 	my $splice_id=join('_',
 			   $chr1,$start,$end);
 	if ($chr1 ne $chr2) {
@@ -199,7 +215,7 @@ sub get_splicing_data {
 			    $chr1,$start,$chr2,$end);
 	}
 	$expression{$splice_id}=$support;
-	$all->{$splice_id}=1;
+	$all->{$splice_id}=[$ex1,$ex2];
     }
 
     return(\%expression);
