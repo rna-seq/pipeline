@@ -167,14 +167,20 @@ foreach my $gene (keys %all_genes) {
 			      $gene_id.'_'.$gene,
 			      @row),"\n";
     } else {
-	my $desc=gene2desc($gene_id) || '';
-	if (gene2chr($gene_id)=~/chrM/o) {
-	    next;
-	} elsif ($desc=~/ribosom(e|al)/io) {
-	    next;
-	} elsif (gene2type($gene_id)=~/^rRNA/o) {
-	    next;
-	} else {
+	my $print=0;
+	foreach my $gene_id (@junctions) {
+	    my $desc=gene2desc($gene_id) || '';
+	    if (gene2chr($gene_id)=~/chrM/o) {
+		next;
+	    } elsif ($desc=~/ribosom(e|al)/io) {
+		next;
+	    } elsif (gene2type($gene_id)=~/^rRNA/o) {
+		next;
+	    } else {
+		$print=1;
+	    }
+	}
+	if ($print) {
 	    print $tmpfh join("\t",
 			      $gene_id.'_'.$gene,
 			      @row),"\n";
