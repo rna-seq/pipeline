@@ -207,7 +207,7 @@ sub get_splicing_data {
     $query ='SELECT chr1, start, chr2, end, support, exons1, exons2 ';
     $query.="FROM $table ";
     $query.='WHERE sample = ?';
-    $query.=' AND junc_type not like "split%"';
+#    $query.=' AND junc_type not like "split%"';
     $sth=$dbh->prepare($query);
     $count=$sth->execute($sample);
     
