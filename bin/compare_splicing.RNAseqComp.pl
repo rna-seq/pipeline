@@ -150,7 +150,7 @@ foreach my $gene (keys %all_genes) {
 		my @exons=split(';',$exon);
 		my %genes;
 		foreach my $frag (@exons) {
-		    my $gene_name=ex2gene($frag);
+		    my ($gene_name)=@{ex2gene($frag)};
 		    $genes{$gene_name}++;
 		}
 		if (keys %genes > 1) {
