@@ -152,7 +152,7 @@ close($tmpfh);
 
 # Plot the correlation graph if we have more than 2 samples
 if (@experiments > 2) {
-    my $outfn=$project.".clusters";
+    my $outfn=$project.".ReadCount.clusters";
     plot_graphs_R($tmpfn,
 		  $outfn);
 } else {
