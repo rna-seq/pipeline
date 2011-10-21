@@ -24,7 +24,7 @@ use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command get_list);
 use RNAseq_pipeline_settings3 qw(get_dbh read_config_file get_gene_info_sub);
 use RNAseq_pipeline_stats3 qw(log10);
 use RNAseq_pipeline_comp3 ('get_tables','check_tables','get_labels_sub',
-			   'get_samples');
+			   'get_samples','remove_tables');
 use Getopt::Long;
 
 # Declare some variables
