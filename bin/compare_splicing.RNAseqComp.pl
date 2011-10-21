@@ -161,7 +161,8 @@ foreach my $gene (keys %all_genes) {
 		}
 	    }
 	}
-	if (@gene_names > 1) {
+	if (@gene_names) {
+	    $gene_id=join('_',sort @gene_names);
 	    print $fusionsfh join("\t",
 				  $gene_id.'_'.$gene,
 				  @row),"\n";
@@ -206,6 +207,7 @@ sub get_splicing_data {
     $query.="FROM $table ";
     $query.='WHERE sample = ?';
 #    $query.=' AND junc_type not like "split%"';
+#    $query.=' limit 100';
     $sth=$dbh->prepare($query);
     $count=$sth->execute($sample);
     
