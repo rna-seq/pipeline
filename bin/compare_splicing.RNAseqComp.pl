@@ -145,7 +145,7 @@ foreach my $gene (keys %all_genes) {
 	my @exons=@{$all_genes{$gene}};
 	my @gene_names;
 	foreach my $exon (@exons) {
-	    if ($exon=~/^-$/) {
+	    if ($exon=~/-/) {
 		push @gene_names, 'Unknown';
 	    } else {
 		my @exons=split(';',$exon);
@@ -178,6 +178,7 @@ foreach my $gene (keys %all_genes) {
 		next;
 	    } else {
 		$print=1;
+		last;
 	    }
 	}
 	if ($print) {
