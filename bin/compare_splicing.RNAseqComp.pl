@@ -140,6 +140,7 @@ foreach my $gene (keys %all_genes) {
 
     my @junctions=@{junc2gene($gene)};
     my $gene_id=join('_',@junctions);
+    print STDERR $gene_id,"\n";
     if ($gene_id eq 'Unknown') {
 	print STDERR @junctions,"\n";
 	my @exons=@{$all_genes{$gene}};
@@ -162,10 +163,12 @@ foreach my $gene (keys %all_genes) {
 		}
 	    }
 	}
-	$gene_id=join('_',@gene_names);
-	print $fusionsfh join("\t",
-			      $gene_id.'_'.$gene,
-			      @row),"\n";
+	$gene_id=join('_',keys %genes);
+	if (@gene_names > 1) {
+	    print $fusionsfh join("\t",
+				  $gene_id.'_'.$gene,
+				  @row),"\n";
+	}
     } else {
 	my $print=0;
 	foreach my $gene_id (@junctions) {
