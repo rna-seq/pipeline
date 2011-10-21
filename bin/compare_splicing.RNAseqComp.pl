@@ -140,7 +140,7 @@ foreach my $gene (keys %all_genes) {
 
     my @junctions=@{junc2gene($gene)};
     my $gene_id=join('_',@junctions);
-    if (@junctions > 1) {
+    if ($gene_id eq 'Unknown') {
 	print STDERR @junctions,"\n";
 	my @exons=@{$all_genes{$gene}};
 	my @gene_names;
