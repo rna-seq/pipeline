@@ -395,7 +395,7 @@ sub process_paired_reads {
     my $infn2=shift;
     my $outfn=shift;
     my $tmpdir=shift;
-    my ($order1,$order2);
+    my ($order1,$order2)=(1,2);
 
     # First remove the paired information from the reads and check which is the
     # correct order of the files
