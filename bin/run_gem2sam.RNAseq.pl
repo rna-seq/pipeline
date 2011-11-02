@@ -68,6 +68,9 @@ my %lane_files=%{get_lane_files(\%files)};
 
 # Process the files
 foreach my $pair (keys %lane_files) {
+    # Add a check to make sure the file is actually present and die if not
+    
+
     my $samfn=$tmpdir.'/'.$pair.'.merged.sam';
     my $bamfn=$samdir.'/'.$pair.'.merged';
     print STDERR "Processing $pair\n";
@@ -245,7 +248,6 @@ sub generate_sam_header {
 	my @line=split("\t",$line);
 
 	# Filter for negative insert lengths
-#	print STDERR $line[5],"\n";
 	if ($line[5]) {
 	    if ($line[5]=~/-/o) {
 		$invalid++;
@@ -395,7 +397,7 @@ sub process_paired_reads {
     my $infn2=shift;
     my $outfn=shift;
     my $tmpdir=shift;
-    my ($order1,$order2)=(1,2);
+    my ($order1,$order2);
 
     # First remove the paired information from the reads and check which is the
     # correct order of the files
@@ -414,7 +416,7 @@ sub process_paired_reads {
 	$command.="-i $infn1tmp ";
 	$command.="-ii $infn2tmp ";
     } else {
-	print STDERR "Read 1 seems to be in $infn1 and read 2 in $infn1tmp.\nI'll invert the order of the files before running gem-2-sam\n";
+	print STDERR "Read 1 seems to be in $infn1tmp and read 2 in $infn2tmp.\nI'll invert the order of the files before running gem-2-sam\n";
 	$command.="-i $infn2tmp ";
 	$command.="-ii $infn1tmp ";
     }
@@ -425,7 +427,7 @@ sub process_paired_reads {
 
     # clean up
     $command="rm $infn1tmp $infn2tmp";
-#    run_system_command($command);
+    run_system_command($command);
 }
 
 sub process_single_reads {
