@@ -23,7 +23,7 @@ use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
 use RNAseq_pipeline_settings3 qw(get_dbh read_config_file);
 use RNAseq_pipeline_stats3 qw(log10);
 use RNAseq_pipeline_comp3 ('get_tables','check_tables','get_labels_sub',
-			   'get_samples');
+			   'get_samples','remove_tables');
 use Getopt::Long;
 
 # Declare some variables
@@ -32,26 +32,22 @@ my $dbh;
 my $dbhcommon;
 my $project;
 my $debug=1;
-my $breakdown;
 my $tabsuffix='transcript_expression_levels_pooled';
 my $fraction='';
+my $subset;
 
 # Get command line options
 GetOptions('nolabels|n' => \$nolabels,
 	   'debug|d' => \$debug,
 	   'limit|l=s' => \$fraction,
-	   'breakdown|b' => \$breakdown);
-
-if ($breakdown) {
-    $tabsuffix='gene_RPKM';
-}
+	   'subset|s=s' => \$subset);
 
 # read the config file
 my %options=%{read_config_file()};
 $project=$options{'PROJECTID'};
 
 # get a log file
-my $log_fh=get_log_fh('compare_gene_RPKM.RNAseqComp.log',
+my $log_fh=get_log_fh('compare_trnascript_RPKM.RNAseqComp.log',
 		      $debug);
 
 # First connect to the database
@@ -71,11 +67,18 @@ my %tables=%{get_tables($dbhcommon,
 check_tables($dbh,
 	     \%tables);
 
+# If a subset has been provided remove any tables that are not included in the
+# subset
+if ($subset && -r $subset) {
+    my %subset=%{get_list($subset)};
+    remove_tables(\%tables,
+		  \%subset);
+}
+
 # For each of tables extract the RPKMs of interest and get for each of the
 # tables the different samples present in them
 my %samples=%{get_samples(\%tables,
-			  $dbh,
-			  $breakdown)};
+			  $dbh)};
 my @experiments=sort {$a cmp $b} keys %samples;
 my @values;
 my %all_genes;
@@ -85,8 +88,7 @@ foreach my $experiment (@experiments) {
     my $data=get_RPKM_data($dbh,
 			   $table,
 			   \%all_genes,
-			   $sample,
-			   $breakdown);
+			   $sample);
     if ($data) {
 	push @values, [$experiment,$data];
     } else {
@@ -149,18 +151,14 @@ sub get_RPKM_data {
     my $table=shift;
     my $all=shift;
     my $sample=shift;
-    my $breakdown=shift;
 
     my %expression;
 
     my ($query,$sth,$count);
     $query ='SELECT transcript_id, rpkm ';
     $query.="FROM $table ";
-    if ($breakdown) {
-	$query.='WHERE LaneName = ?';
-    } else {
-	$query.='WHERE sample = ?';
-    }
+    $query.='WHERE sample = ?';
+
     $sth=$dbh->prepare($query);
     $count=$sth->execute($sample);
     
