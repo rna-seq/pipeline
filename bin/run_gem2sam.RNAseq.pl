@@ -436,12 +436,20 @@ sub process_single_reads {
 
     my $command;
 
+    # Unzip to a temporary file
+    my $tmpfile=$infn.'.tmp';
+    $tmpfile=~s/.*\///o;
+    $tmpfile=$tmpdir.'/'.$tmpfile;
+
+    $command="gunzip $infn -c > $tmpfile";
+    run_system_command($command);
+
     $command ='gem-2-sam ';
-    $command.="-i $infn ";
+    $command.="-i $tmpfile ";
     $command.="-o $outfn > $outfn.log";
     run_system_command($command);
     
     # clean up
-    $command="rm $infn";
+    $command="rm $tmpfile";
     run_system_command($command);
 }

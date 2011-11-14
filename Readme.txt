@@ -1,3 +1,8 @@
+Copyright (C) 2011 Centre for Genomic Regulation (CRG)
+
+Author: David Gonzalez Knowles david.gonzalez@crg.eu
+	Maik Röder maik.roeder@crg.es
+
 = RNASeq Pipeline =
 
 = Dependencies =
