@@ -1,5 +1,12 @@
 package RNAseq_pipeline3;
-# DGK 2008-2009 CRG
+
+#  GRAPE
+#  Copyright (C) 2008-2011 Centre for Genomic Regulation (CRG)
+#
+#  This file is part of GRAPE.
+#
+#  Author: David Gonzalez
+#
 
 # Export subroutines to caller namespace
 # Must be done before strict is used

@@ -1,5 +1,13 @@
 package RNAseq_pipeline_stats3;
 
+#  GRAPE
+#  Copyright (C) 2008-2011 Centre for Genomic Regulation (CRG)
+#
+#  This file is part of GRAPE.
+#
+#  Author: David Gonzalez
+#
+
 # Export subroutines to caller namespace
 use Exporter;
 @ISA=('Exporter');

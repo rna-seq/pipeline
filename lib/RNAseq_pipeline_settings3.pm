@@ -1,5 +1,13 @@
 package RNAseq_pipeline_settings3;
 
+#  GRAPE
+#  Copyright (C) 2011 Centre for Genomic Regulation (CRG)
+#
+#  This file is part of GRAPE.
+#
+#  Author: David Gonzalez
+#
+
 # Export to caller namespace
 # Must be done before strict is used
 use Exporter;

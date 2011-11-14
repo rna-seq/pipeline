@@ -1,5 +1,13 @@
 package Tools::Bam;
 
+#  GRAPE
+#  Copyright (C) 2008-2011 Centre for Genomic Regulation (CRG)
+#
+#  This file is part of GRAPE.
+#
+#  Author: David Gonzalez
+#
+
 # Export to caller namespace
 # Must be done before strict is used
 use Exporter;
@@ -109,6 +117,7 @@ sub process_bam_file {
 		$ntpos->{$laneid}->{$pos}->[0]++;
 	    } else {
 		$ntpos->{$laneid}->{$pos}->[$ntindex{$nucleotides[$i]}]++;
+		$ntpos->{$laneid}->{$pos}->[0]+=0;
 	    }
 	}
     }

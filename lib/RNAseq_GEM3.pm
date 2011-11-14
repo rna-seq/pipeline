@@ -1,5 +1,13 @@
 package RNAseq_GEM3;
 
+#  GRAPE
+#  Copyright (C) 2011 Centre for Genomic Regulation (CRG)
+#
+#  This file is part of GRAPE.
+#
+#  Author: David Gonzalez
+#
+
 # This package contains subroutines useful to parse GEM as well as otput
 # Different formats
 
