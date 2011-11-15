@@ -412,7 +412,9 @@ sub process_paired_reads {
     my $command;
 
     $command ='gem-2-sam ';
-    if ($order2 > $order1) {
+    if ($order1 &&
+	$order2 &&
+	($order2 > $order1)) {
 	$command.="-i $infn1tmp ";
 	$command.="-ii $infn2tmp ";
     } else {
