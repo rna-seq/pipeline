@@ -21,7 +21,7 @@ use warnings;
 #    You should have received a copy of the GNU General Public License
 #    along with GRAPE.  If not, see <http://www.gnu.org/licenses/>.
 
-# Author : David Gonzalez, david.gonzalez@crg.eu
+#    Author : David Gonzalez, david.gonzalez@crg.eu
 
 # Objective
 # This script should prepare everything for the execution of the RNAseq
