@@ -284,7 +284,7 @@ sub generate_sam_header {
 		next;
 	    } elsif ($line[5]=~/^\d+M\d+N\d+M$/o) {
 		my @coords=split(/N/,$line[5]);
-		my $gap=$line[0];
+		my $gap=$coords[0];
 		$gap=~s/.+[^\d]//o;
 		$gap=~s/N//o;
 		if ($gap && $gap > 10000) {
