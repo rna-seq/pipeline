@@ -108,7 +108,7 @@ sub build_transcriptome {
 	# we cannot define the strand here using the gene because there may
 	# (althought there should not) be cases where different annotated
 	# transcripts belong to diffferent strands. If this is the case the gene
-	# strand will be set to 0 and the if we use it to get the exon id this
+	# strand will be set to 0 and then if we use it to get the exon id this
 	# id will belong to an unitialized element
 	foreach my $trans ($genes->{$gene}->{'gene'}->transcripts()) {
 	    my @exons=$trans->exons_ordered();

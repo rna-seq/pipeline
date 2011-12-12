@@ -167,7 +167,7 @@ sub get_exon_seq_sub {
 		return();
 	    }
 
-	    # Attemt to retrieve the sequence removing the initial chr
+	    # Attempt to retrieve the sequence removing the initial chr
 	    # If the initial multifasta for the genome did not have these
 	    # tags the script will not find them if not.
 	    my $chr2=$chr;
