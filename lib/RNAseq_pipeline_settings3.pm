@@ -1755,7 +1755,11 @@ sub get_exon_readcount_data {
 
     print STDERR "WARNING: This script is only extracting the information from internal exons\n";
     my ($query,$sth,$count);
-    $query ='SELECT exon_id, ExIncl ';
+    if ($table=~/exon_inclusion_pooled/) {
+	$query ='SELECT exon_id, ExIncl ';
+    } elsif ($table=~/exon_RPKM_pooled/) {
+	$query ='SELECT exon_id, RPKM ';
+    }
     $query.="FROM $table ";
     $sth=$dbh->prepare($query);
     $count=$sth->execute();

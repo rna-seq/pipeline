@@ -61,6 +61,7 @@ $dbhcommon=get_dbh(1);
 *get_labels=get_labels_sub($dbhcommon);
 *gene2desc=get_gene_info_sub('description');
 *gene2type=get_gene_info_sub('type');
+*gene2chr=get_gene_info_sub('chr');
 *exon2gene=get_gene_from_exon_sub();
 
 # Get the tables belonging to the project
@@ -84,7 +85,7 @@ my %all_genes;
 foreach my $experiment (@experiments) {
     my ($table,$sample)=split('_sample_',$experiment);
     print $log_fh "Extracting $sample, data from $table\n";
-    my $data=get_gene_readcount_data($dbh,
+    my $data=get_exon_readcount_data($dbh,
 				     $table,
 				     \%all_genes,
 				     $sample,
@@ -108,7 +109,14 @@ my $tmpfn="Exon.ReadCount.$project.txt";
 my $tmpfh=get_fh($tmpfn,1);
 print $tmpfh join("\t",@experiments),"\n";
 foreach my $exon (keys %all_genes) {
-    my $gene=exon2gene($exon);
+    my @genes=@{exon2gene($exon)};
+    my $gene='';
+    if (@genes == 1) {
+	($gene)=@genes;
+    } else {
+	die "More than one gene found for $exon\n";
+    }
+
     my @row;
     my $no_print=0;
     foreach my $exp (@values) {
