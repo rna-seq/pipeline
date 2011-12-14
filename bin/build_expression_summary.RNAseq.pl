@@ -152,7 +152,6 @@ build_db_table($dbh,
 	       $expression_summary_table,
 	       \@lanes,
 	       \%lanes);
-exit;
 
 ### TO DO
 # Turn this into a subroutine
