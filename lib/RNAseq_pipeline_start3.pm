@@ -270,6 +270,7 @@ sub base_table_build {
        genome_assembly varchar(45) NULL,
        paired bit(1) DEFAULT 1, 
        lab varchar(45) NULL,
+       project_id mediumint unsigned DEFAULT(1),
        PRIMARY KEY (project_id,experiment_id)
 );',
 		'annotation_files' => 'CREATE TABLE IF NOT EXISTS annotation_files (
@@ -375,7 +376,14 @@ sub base_table_build {
        abbreviation varchar(20) NOT NULL,
        PRIMARY KEY (species_id),
        index idx_alias (sp_alias)
-);');
+);',
+		'protocol_info' => 'CREATE TABLE IF NOT EXISTS protocol_info (
+       protocol_id mediumint unsigned NOT NULL AUTO_INCREMENT,
+       abbreviation varchar(20) NOT NULL,
+       description varchar(100) NOT NULL,
+       PRIMARY KEY (protocol_id)
+);'
+);
     return(\%tables);
 }
 

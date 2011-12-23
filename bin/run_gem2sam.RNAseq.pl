@@ -32,6 +32,8 @@ BEGIN {
     unshift @INC, "$libdir";
 }
 
+use Tools::Bam ('generate_bam_index','generate_sorted_bam');
+
 # Objective
 # This script should take the gem-2-sam program and run it in the pipeline.
 # As the program is in test phase currently, it will generate the header first
@@ -130,31 +132,6 @@ foreach my $pair (keys %lane_files) {
 
 
 exit;
-
-sub generate_bam_index {
-    my $bamfile=shift;
-
-    my $command='samtools index ';
-    $command.="$bamfile.bam";
-    run_system_command($command);
-}
-
-sub generate_sorted_bam {
-    my $samfile=shift;
-    my $bamfile=shift;
-
-    my $tmpbam=$bamfile;
-    $tmpbam=~s/.*\///o;
-    $tmpbam=$$.'.'.$tmpbam;
-
-    print STDERR "Building sorted BAM file from $samfile\n";
-
-    # Sam tools outputs many times some of the reads and we do not want that
-    my $command="uniq $samfile | samtools view ";
-    $command.='-b -S ';
-    $command.="- |samtools sort - $bamfile";
-    run_system_command($command);
-}
 
 sub generate_merged_sorted_bam {
     my $samfile=shift;

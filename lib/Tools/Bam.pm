@@ -12,7 +12,8 @@ package Tools::Bam;
 # Must be done before strict is used
 use Exporter;
 @ISA=('Exporter');
-@EXPORT_OK=('process_bam_file','bam2sequence','bam2coords');
+@EXPORT_OK=('process_bam_file','bam2sequence','bam2coords',
+	    'generate_bam_index','generate_sorted_bam');
 
 use strict;
 use warnings;
@@ -24,6 +25,31 @@ use RNAseq_pipeline3 qw(get_fh run_system_command);
 use Bio::DB::Sam;
 use Bio::SeqIO;
 use Bio::Seq::Quality;
+
+sub generate_sorted_bam {
+    my $samfile=shift;
+    my $bamfile=shift;
+
+    my $tmpbam=$bamfile;
+    $tmpbam=~s/.*\///o;
+    $tmpbam=$$.'.'.$tmpbam;
+
+    print STDERR "Building sorted BAM file from $samfile\n";
+
+    # Sam tools outputs many times some of the reads and we do not want that
+    my $command="uniq $samfile | samtools view ";
+    $command.='-b -S ';
+    $command.="- |samtools sort - $bamfile";
+    run_system_command($command);
+}
+
+sub generate_bam_index {
+    my $bamfile=shift;
+
+    my $command='samtools index ';
+    $command.="$bamfile.bam";
+    run_system_command($command);
+}
 
 sub process_bam_file {
     my $infn=shift;
