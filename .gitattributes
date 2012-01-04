@@ -59,6 +59,7 @@ bin/extract_mapping_info.RNAseqComp.pl -text
 bin/extract_read_files.RNAseqComp.pl -text
 bin/extract_read_stats_info.RNAseqComp.pl -text
 bin/extract_reads_info.RNAseqComp.pl -text
+bin/filterbam.4cufflinks.pl -text
 bin/filterbam.preprocess.pl -text
 bin/gem2bed_combined_cluster.RNAseq.pl -text
 bin/gem2gff_genome.RNAseq.pl -text
