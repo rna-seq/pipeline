@@ -2241,7 +2241,7 @@ sub clear_dirs {
     my $localdir=${$options->{'localdir'}};
     print STDERR "Setting localdir as: $localdir\n";
     my @directories=('mysql',
-		     'GEMIndices',
+#		     'GEMIndices',
 		     'genome',
 		     'transcriptome',
 		     'junctions',
