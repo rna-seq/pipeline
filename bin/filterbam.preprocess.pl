@@ -46,6 +46,7 @@ use Data::Dumper;
 # Declare variables & Get command line options
 my $infile;
 my $tmpdir;
+my $add_cuff=1;
 
 my %options=%{read_config_file()};
 $tmpdir=$options{'LOCALDIR'};
@@ -62,7 +63,8 @@ print STDERR "Extracting uniquely mapping reads acordig to the alignmnent\n";
 
 # produce a sam file sorted by read_id, pipe it into the script and print out
 # only those cases where the read id appears only once.
-my $outfile=filterbam($infile);
+my $outfile=filterbam($infile,
+		      $tmpdir);
 
 # Get the header from the original bam file
 my $headerfile=get_header($infile);
@@ -111,11 +113,12 @@ sub get_header {
 sub filterbam {
     my $infile=shift;
     my $outfile=$infile;
+    my $tmpdir=shift || '/tmp';
 
     $outfile=~s/.*\///;
     $outfile=$$.'.'.$outfile;
 
-    my $command="samtools view $infile| sort -k1,1|";
+    my $command="samtools view $infile| sort -T $tmpdir -k1,1|";
     print STDERR $command,"\n";
 
     my $infh;
@@ -127,10 +130,26 @@ sub filterbam {
     my @lines=();
 
     while (my $line=<$infh>) {
-
+	chomp($line);
 	my @line=split("\t",$line);
 
 	my $read_id=$line[0];
+	my $flag=$line[1];
+	my $cigar=$line[5];
+	my $flags=$line[11];
+	my $cuff_flag='XS:A:+';
+	if ($flag & 16) {
+	    $cuff_flag='XS:A:-';
+	}
+	if ($flags) {
+	    $flags=join(' ',$flags,$cuff_flag);
+	} else {
+	    $flags=$cuff_flag;
+	}
+	if ($add_cuff) {
+	    $line=join("\t",@line[0..10],$flags);
+	}
+	$line.="\n";
 
 	# If the last previous read is differnt check if it is unique
 	# If it is unique print it
