@@ -76,7 +76,7 @@ my $bamfile=build_output_bam($headerfile,
 
 # Clean up
 my $command="rm $headerfile $outfile";
-#run_system_command($command);
+run_system_command($command);
 
 exit;
 
