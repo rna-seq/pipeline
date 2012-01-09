@@ -57,13 +57,15 @@ my $project;
 my $debug=1;
 my $tabsuffix='all_junctions_class_pooled';
 my $limit;
+my $threshold=1; # Minimum support required
 my $subset;
 
 # Get command line options
 GetOptions('nolabels|n' => \$nolabels,
 	   'debug|d' => \$debug,
 	   'subset|s=s' => \$subset,
-	   'limit|l=s' => \$limit);
+	   'limit|l=s' => \$limit,
+	   'threshold|t=i' => \$threshold);
 
 # read the config file
 my %options=%{read_config_file()};
@@ -117,7 +119,8 @@ foreach my $experiment (@experiments) {
     my $data=get_splicing_data($dbh,
 			       $table,
 			       \%all_genes,
-			       $sample);
+			       $sample,
+			       $threshold);
     if ($data) {
 	push @values, [$experiment,$data];
     } else {
@@ -221,7 +224,7 @@ sub get_splicing_data {
     my $sample=shift;
     # Default limit set to 2 in order to prevent the huge datasets from eating
     # up RAM
-    my $limit=shift || 2;
+    my $limit=shift || 1;
 
     my %expression;
 
