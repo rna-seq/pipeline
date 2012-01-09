@@ -55,7 +55,6 @@ my $dbh;
 my $dbhcommon;
 my $project;
 my $debug=1;
-my $breakdown=0;
 my $tabsuffix='all_junctions_class_pooled';
 my $limit;
 my $subset;
@@ -108,7 +107,7 @@ if ($subset && -r $subset) {
 # each of the tables the different samples present in them
 my %samples=%{get_samples(\%tables,
 			  $dbh,
-			  $breakdown)};
+			  0)};
 my @experiments=sort {$a cmp $b} keys %samples;
 my @values;
 my %all_genes;
@@ -220,17 +219,20 @@ sub get_splicing_data {
     my $table=shift;
     my $all=shift;
     my $sample=shift;
+    # Default limit set to 2 in order to prevent the huge datasets from eating
+    # up RAM
+    my $limit=shift || 2;
 
     my %expression;
 
     my ($query,$sth,$count);
     $query ='SELECT chr1, start, chr2, end, support, exons1, exons2 ';
     $query.="FROM $table ";
-    $query.='WHERE sample = ?';
+    $query.='WHERE sample = ? and support >= ?';
 #    $query.=' AND junc_type not like "split%"';
 #    $query.=' limit 100';
     $sth=$dbh->prepare($query);
-    $count=$sth->execute($sample);
+    $count=$sth->execute($sample,$limit);
     
     if ($count && ($count > 1)) {
 	print STDERR $count,"\tJunctions are detected in $table\n";
