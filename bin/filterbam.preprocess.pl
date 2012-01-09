@@ -130,38 +130,23 @@ sub filterbam {
     my @lines=();
 
     while (my $line=<$infh>) {
-	chomp($line);
 	my @line=split("\t",$line);
 
 	my $read_id=$line[0];
 	my $flag=$line[1];
 	my $cigar=$line[5];
-	my $flags=$line[11];
-	my $cuff_flag='XS:A:+';
-	if ($flag & 16) {
-	    $cuff_flag='XS:A:-';
-	}
-	if ($flags) {
-	    $flags=join(' ',$flags,$cuff_flag);
-	} else {
-	    $flags=$cuff_flag;
-	}
-	if ($add_cuff) {
-	    $line=join("\t",@line[0..10],$flags);
-	}
-	$line.="\n";
+#	my $flags=$line[11];
+#	chomp($flags);
 
 	# If the last previous read is differnt check if it is unique
 	# If it is unique print it
 	if ($read_id ne $old_read_id) {
-	    if (@lines == 1) {
-		
+	    if (@lines == 1) {		
 		print $outfh @lines;
 	    }
 	    $old_read_id=$read_id;
 	    @lines=();
 	}
-#	print $line;
 	push @lines,$line;
     }
 
