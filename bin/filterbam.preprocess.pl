@@ -89,7 +89,7 @@ sub build_output_bam {
     $bamfile=~s/.*\///;
 
     my $command="cat $header $samfile | samtools view -S -b - |samtools sort - $bamfile";
-    run_system_command($command);
+#    run_system_command($command);
 
     
 }
@@ -133,12 +133,10 @@ sub filterbam {
 	my @line=split("\t",$line);
 
 	my $read_id=$line[0];
-	my $flag=$line[1];
-	my $cigar=$line[5];
 #	my $flags=$line[11];
 #	chomp($flags);
 
-	# If the last previous read is differnt check if it is unique
+	# If the last previous read is different check if it is unique
 	# If it is unique print it
 	if ($read_id ne $old_read_id) {
 	    if (@lines == 1) {		
