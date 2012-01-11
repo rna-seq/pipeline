@@ -89,7 +89,7 @@ sub build_output_bam {
     $bamfile=~s/.*\///;
 
     my $command="cat $header $samfile | samtools view -S -b - |samtools sort - $bamfile";
-#    run_system_command($command);
+    run_system_command($command);
 
     
 }
