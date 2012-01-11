@@ -59,13 +59,16 @@ my $tabsuffix='all_junctions_class_pooled';
 my $limit;
 my $threshold=1; # Minimum support required
 my $subset;
+my $samplesthreshold=3; # Minimum samples in which a junction must be present in
+                 # order to consider it
 
 # Get command line options
 GetOptions('nolabels|n' => \$nolabels,
 	   'debug|d' => \$debug,
 	   'subset|s=s' => \$subset,
 	   'limit|l=s' => \$limit,
-	   'threshold|t=i' => \$threshold);
+	   'threshold|t=i' => \$threshold,
+	   'samples=i' => \$samplesthreshold,);
 
 # read the config file
 my %options=%{read_config_file()};
@@ -163,8 +166,8 @@ foreach my $gene (keys %all_genes) {
 	push @row,$value;
     }
 
-    # Skip those cases present in only one sample
-    if ($total==1) {
+    # Skip those cases present in lesss than $threshold samples
+    if ($total < $samplesthreshold) {
 	next;
     }
 
