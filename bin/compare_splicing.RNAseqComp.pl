@@ -152,13 +152,20 @@ print $fusionsfh join("\t",@experiments),"\n";
 foreach my $gene (keys %all_genes) {
     my @row;
     my $no_print=0;
+    my $total=0;
     foreach my $exp (@values) {
 	my $value=0;
 	if ($exp->[1] &&
 	    ($exp->[1]->{$gene})) {
 	    $value=$exp->[1]->{$gene};
+	    $total++;
 	}
 	push @row,$value;
+    }
+
+    # Skip those cases present in only one sample
+    if ($total==1) {
+	next;
     }
 
     my @junctions=@{junc2gene($gene)};
