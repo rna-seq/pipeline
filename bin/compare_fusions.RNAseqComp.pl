@@ -81,8 +81,6 @@ $dbhcommon=get_dbh(1);
 
 # Get subroutines
 *get_labels=get_labels_sub($dbhcommon);
-*junc2gene=get_gene_from_short_junc_sub();
-*ex2gene=get_gene_from_exon_sub();
 *gene2chr=get_gene_info_sub('chr');
 *gene2desc=get_gene_info_sub('description');
 *gene2type=get_gene_info_sub('type');
@@ -195,7 +193,7 @@ sub get_fusion_data {
     my %expression;
 
     my ($query,$sth,$count);
-    $query ='SELECT gene1, gene2, chr1, chr2, genomic1mapstart, genmic2mapstart ';
+    $query ='SELECT gene1, gene2, chr1, chr2, genomic1mapstart, genomic2mapstart ';
     $query.="FROM $table ";
     $query.='WHERE LaneName = ?';
 #    $query.=' AND junc_type not like "split%"';
