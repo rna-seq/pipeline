@@ -59,8 +59,8 @@ my $tabsuffix='all_junctions_class_pooled';
 my $limit;
 my $threshold=1; # Minimum support required
 my $subset;
-my $samplesthreshold=3; # Minimum samples in which a junction must be present in
-                 # order to consider it
+my $samplesthreshold=1; # Minimum samples in which a junction must be present in
+                        # order to consider it
 
 # Get command line options
 GetOptions('nolabels|n' => \$nolabels,
