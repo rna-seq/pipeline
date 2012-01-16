@@ -176,7 +176,8 @@ sub get_samples {
 	my $table=$tables->{$exp};
 	
 	if ($breakdown ||
-	    ($table=~/readcount_pooled$/)) {
+	    ($table=~/readcount_pooled$/) ||
+	    ($table=~/fusion_transcripts$/)) {
 	    $query ='SELECT distinct LaneName ';
 	} else {
 	    $query ='SELECT distinct sample ';
