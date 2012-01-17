@@ -158,7 +158,7 @@ foreach my $gene (keys %all_genes) {
     }
 
     my @gene_names=@{$all_genes{$gene}};
-    my $gene_name=join('_',sort @gene_names);
+    my $gene_name=join('_',@gene_names);
     my $print=0;
 
     foreach my $gene_id (@gene_names) {
