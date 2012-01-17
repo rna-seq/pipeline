@@ -176,7 +176,7 @@ foreach my $gene (keys %all_genes) {
     }
     if ($print) {
 	print $tmpfh join("\t",
-			  $gene_name.'_'.$all_genes{$gene_name},
+			  $gene_name.'_'.$gene,
 			  @row),"\n";
     }
 }
