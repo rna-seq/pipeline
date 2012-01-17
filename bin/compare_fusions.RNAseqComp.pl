@@ -157,7 +157,7 @@ foreach my $gene (keys %all_genes) {
 	push @row,$value;
     }
 
-    my @gene_names=split('_',$gene);
+    my @gene_names=@{$all_genes{$gene}};
     my $gene_name=join('_',sort @gene_names);
     my $print=0;
 
@@ -212,7 +212,7 @@ sub get_fusion_data {
 	my $splice_id=join('_',
 			   $chr1,$start1,$chr2,$start2);
 	$expression{$splice_id}++;
-	$all->{$splice_id}=join('_',sort ($gene1,$gene2));
+	$all->{$splice_id}=[$gene1,$gene2];
     }
 
     return(\%expression);
