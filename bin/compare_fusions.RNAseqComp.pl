@@ -176,7 +176,7 @@ foreach my $gene (keys %all_genes) {
     }
     if ($print) {
 	print $tmpfh join("\t",
-			  $gene_name.'_'.$gene,
+			  $gene_name.'_'.$data{$gene_name},
 			  @row),"\n";
     }
 }
@@ -210,9 +210,9 @@ sub get_fusion_data {
     # get all the necessary tables
     while (my ($gene1,$gene2,$chr1,$chr2,$start1,$start2)=$sth->fetchrow_array()) {
 	my $splice_id=join('_',
-			   sort($gene1,$gene2));
+			   $chr1,$start1,$crh2,$start2);
 	$expression{$splice_id}++;
-	$all->{$splice_id}=[$chr1,$start1,$chr2,$start2];
+	$all->{$splice_id}=join('_',sort ($gene1,$gene2));
     }
 
     return(\%expression);
