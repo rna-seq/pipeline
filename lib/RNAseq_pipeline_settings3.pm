@@ -33,7 +33,8 @@ use Exporter;
 	    'get_trans_expression_data','get_junc_expression_data',
 	    'get_desc_from_gene_sub','get_chr_from_gene_sub',
 	    'get_type_from_gene_sub','get_exp_info_sub',
-	    'set_exp_info_sub','get_unique_maps');
+	    'set_exp_info_sub','get_unique_maps','process_exons',
+	    'get_gene_coverage_1000nt');
 
 use strict;
 use warnings;
@@ -2118,6 +2119,90 @@ sub get_unique_maps {
     }
 
     return(\%unique_maps);
+}
+
+sub process_exons {
+    my $genelist=shift;
+    my $exoncoverage=shift;
+    my $junccoverage=shift;
+    my $output=shift;
+    my $uniquemaps=shift;
+    my $lane=shift;
+    my $gene_lengths=shift;
+
+    print STDERR "Collecting events...\n";
+
+    my $outfh=get_fh($output,1);
+
+    foreach my $gene (keys %{$genelist}) {
+	my $rpkm=0;
+	# add coverage from projected exons
+	if ($exoncoverage->{$gene}) {
+	    $rpkm+=$exoncoverage->{$gene};
+	}
+
+	# add coverage from junctions
+	if ($junccoverage->{$gene}) {
+	    $rpkm+=$junccoverage->{$gene};
+	}
+
+	# Normalize by read number
+	my $length=$gene_lengths->{$gene};
+	if ($length) {
+	    $rpkm=sprintf "%.3f",($rpkm * 1000000) / ($uniquemaps * $length);
+	} else {
+	    print STDERR "No length for $gene,skipping\n";
+	    next;
+	}
+	
+	# Print results only if they are positive
+	if ($rpkm > 0) { 
+	    print $outfh join("\t",
+			      $gene,
+			      $rpkm,
+			      $lane),"\n";
+	}
+    }
+    close($outfh);
+
+    print STDERR "\rDone\n";
+}
+
+sub get_gene_coverage_1000nt {
+    my $infn=shift;
+    my $features=shift;
+    my $readlength=shift;
+    my $min_read_length=shift;
+
+    print STDERR "Getting mappings from $infn...";
+
+    my $infh=get_fh($infn);
+
+    my $nolength=[0,0];
+    while (my $line=<$infh>) {
+	chomp($line);
+	my ($gene,$coverage,$length)=split("\t",$line);
+
+	# Skip those projected exons that are too short to be detected  with
+	# the longest read length in the experiment
+	if ($min_read_length &&
+	    ($length < $min_read_length)) {
+	    next;
+	}
+
+	# Normalize reads per 1000 nt (the length will be divided later
+	if ($coverage) {
+	    $coverage=($coverage * 1000);
+	    $features->{$gene}+=$coverage;
+	} else {
+	    $nolength->[0]++;
+	    $nolength->[1]+=$coverage;
+	}
+    }
+    print STDERR "done\n";
+
+    print STDERR $nolength->[0],"\tFeatures lacked length information\n";
+    print STDERR $nolength->[1],"\tWas their length\n";
 }
 
 1;

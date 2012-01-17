@@ -42,7 +42,8 @@ use Bio::Range;
 use Bio::SeqIO;
 use RNAseq_pipeline3 qw(get_fh parse_gff_line get_feature_overlap);
 use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list',
-			      'get_gene_from_short_junc_sub','get_lanes');
+			       'get_gene_from_short_junc_sub','get_lanes',
+			       'process_exons','get_gene_coverage_1000nt');
 
 # Declare some variables
 my $prefix;
@@ -154,7 +155,8 @@ foreach my $lane (keys %lanes) {
     my %gene_coverage;
     get_gene_coverage_1000nt($exonoverlap,
 			     \%gene_coverage,
-			     $readlength);
+			     $readlength,
+			     $min_read_length);
 
     # For each of the exons in the exon list print the RPKM by normalizing the
     # reads per 1000 bases by the number of uniquely mapped reads
@@ -246,7 +248,6 @@ sub get_feature_coverage_junctions {
 
     print STDERR "done\n";
 }
-
 
 # This will get all the exons from the annotation file
 sub get_exon_list_from_gtf {
@@ -421,7 +422,7 @@ sub get_unique_maps {
     $count=$sth->execute();
 
     unless ($count == keys %{$files}) {
-	die "Wrong number of mapped readsd\n";
+	die "Wrong number of mapped reads\n";
     }
 
     while (my ($lane,$unique)=$sth->fetchrow_array()) {
@@ -437,87 +438,4 @@ sub get_unique_maps {
     }
 
     return(\%unique_maps);
-}
-
-sub get_gene_coverage_1000nt {
-    my $infn=shift;
-    my $features=shift;
-    my $readlength=shift;
-
-    print STDERR "Getting mappings from $infn...";
-
-    my $infh=get_fh($infn);
-
-    my $nolength=[0,0];
-    while (my $line=<$infh>) {
-	chomp($line);
-	my ($gene,$coverage,$length)=split("\t",$line);
-
-	# Skip those projected exons that are too short to be detected  with
-	# the longest read length in the experiment
-	if ($min_read_length &&
-	    ($length < $min_read_length)) {
-	    next;
-	}
-
-	# Normalize reads per 1000 nt (the length will be divided later
-	if ($coverage) {
-	    $coverage=($coverage * 1000);
-	    $features->{$gene}+=$coverage;
-	} else {
-	    $nolength->[0]++;
-	    $nolength->[1]+=$coverage;
-	}
-    }
-    print STDERR "done\n";
-
-    print STDERR $nolength->[0],"\tFeatures lacked length information\n";
-    print STDERR $nolength->[1],"\tWas their length\n";
-}
-
-sub process_exons {
-    my $genelist=shift;
-    my $exoncoverage=shift;
-    my $junccoverage=shift;
-    my $output=shift;
-    my $uniquemaps=shift;
-    my $lane=shift;
-    my $gene_lengths=shift;
-
-    print STDERR "Collecting events...\n";
-
-    my $outfh=get_fh($output,1);
-
-    foreach my $gene (keys %{$genelist}) {
-	my $rpkm=0;
-	# add coverage from projected exons
-	if ($exoncoverage->{$gene}) {
-	    $rpkm+=$exoncoverage->{$gene};
-	}
-
-	# add coverage from junctions
-	if ($junccoverage->{$gene}) {
-	    $rpkm+=$junccoverage->{$gene};
-	}
-
-	# Normalize by read number
-	my $length=$gene_lengths->{$gene};
-	if ($length) {
-	    $rpkm=sprintf "%.3f",($rpkm * 1000000) / ($uniquemaps * $length);
-	} else {
-	    print STDERR "No length for $gene,skipping\n";
-	    next;
-	}
-	
-	# Print results only if they are positive
-	if ($rpkm > 0) { 
-	    print $outfh join("\t",
-			      $gene,
-			      $rpkm,
-			      $lane),"\n";
-	}
-    }
-    close($outfh);
-
-    print STDERR "\rDone\n";
 }
