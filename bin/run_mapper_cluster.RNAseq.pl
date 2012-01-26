@@ -229,7 +229,8 @@ sub build_run_mapper_submission {
 # Set the array jobs
 #\$ -t 1-$filenum
 
-# Request 8 cpus this cannot be done, but we can request memmory
+# Request 8 cpus and request memmory (if configured)
+#\$ -pe smp $threads
 #\$ -l h_vmem=16G
 
 # Write in to the current working directory
