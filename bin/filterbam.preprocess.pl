@@ -112,14 +112,17 @@ sub get_header {
 
 sub filterbam {
     my $infile=shift;
-    my $outfile=$infile;
     my $tmpdir=shift || '/tmp';
+
+    my $outfile=$infile;
 
     $outfile=~s/.*\///;
     $outfile=$$.'.'.$outfile;
 
+    print STDERR "Sorting SAM\n";
     my $command="samtools view $infile| sort -T $tmpdir -k1,1|";
     print STDERR $command,"\n";
+    print STDERR "done\n";
 
     my $infh;
     open($infh,$command);
@@ -128,9 +131,15 @@ sub filterbam {
 
     my $old_read_id='';
     my @lines=();
+    my $linecount=0;
+    my $uniquecount=0;
+    my $multicount=0;
+
+    print STDERR "Filtering sorted SAM\n";
 
     while (my $line=<$infh>) {
 	my @line=split("\t",$line);
+	$linecount++;
 
 	my $read_id=$line[0];
 #	my $flags=$line[11];
@@ -141,6 +150,9 @@ sub filterbam {
 	if ($read_id ne $old_read_id) {
 	    if (@lines == 1) {		
 		print $outfh @lines;
+		$uniquecount++;
+	    } else {
+		$multicount+=@lines;
 	    }
 	    $old_read_id=$read_id;
 	    @lines=();
@@ -151,9 +163,16 @@ sub filterbam {
     # Print the last record
     if (@lines == 1) {
 	print $outfh @lines;
+	$uniquecount++;
+    } else {
+	$multicount+=@lines;
     }
     close($outfh);
     close($infh);
+
+    print STDERR $linecount,"\tHits processed\n";
+    print STDERR $uniquecount,"\tUnique\n";
+    print STDERR $multicount,"\tMultimaps\n";
 
     return($outfile);
 }
