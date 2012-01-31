@@ -532,6 +532,8 @@ _exon_RPKM_pooled_flux: _transcript_expression_levels_pooled
 	get_exon_rpkm_pooled_flux.RNAseq.pl > _exon_RPKM_pooled_flux.txt
 	all_no_log_table
 
+RPKMs_flux: _gene_RPKM_pooled_flux _exon_RPKM_pooled_flux
+
 # #####################
 # Get fusion transcripts
 _fusion_transcripts: _transcriptome_mapping _gene_RPKM
@@ -579,7 +581,7 @@ _store_reads: _merged_SAM
 	all_no_log_table
 
 # ENCODE info we should add the transcript expression from the flux
-encode: _summaries _all_junctions_class_pooled mapping _read_classification
+encode: _summaries _all_junctions_class_pooled mapping _read_classification RPKMs_flux
 
 # Save the results in the results folder and remove the temporary directory
 # We probably would want to remove more files once we have discussed which ones
