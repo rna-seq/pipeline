@@ -120,7 +120,7 @@ sub filterbam {
     $outfile=$$.'.'.$outfile;
 
     print STDERR "Sorting SAM\n";
-    my $command="samtools view $infile| sort -T $tmpdir -k1,1|";
+    my $command="samtools view $infile| sort -T $tmpdir -k1,1| uniq|";
     print STDERR $command,"\n";
     print STDERR "done\n";
 
@@ -141,18 +141,21 @@ sub filterbam {
 	my @line=split("\t",$line);
 	$linecount++;
 
-	my $read_id=$line[0];
+	my $read_id=$line[0].'_'.$line[3];
 #	my $flags=$line[11];
 #	chomp($flags);
 
 	# If the last previous read is different check if it is unique
 	# If it is unique print it
 	if ($read_id ne $old_read_id) {
-	    if (@lines == 1) {		
+	    if ( @lines && 
+		 (@lines == 1)) {		
 		print $outfh @lines;
 		$uniquecount++;
 	    } else {
 		$multicount+=@lines;
+		print STDERR $read_id,"\t$multicount\n";
+		<STDIN>;
 	    }
 	    $old_read_id=$read_id;
 	    @lines=();
