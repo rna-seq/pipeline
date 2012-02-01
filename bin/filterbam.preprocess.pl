@@ -154,8 +154,8 @@ sub filterbam {
 		$uniquecount++;
 	    } else {
 		$multicount+=@lines;
-		print STDERR $read_id,"\t$multicount\n";
-		<STDIN>;
+#		print STDERR $read_id,"\t$multicount\n";
+#		<STDIN>;
 	    }
 	    $old_read_id=$read_id;
 	    @lines=();
