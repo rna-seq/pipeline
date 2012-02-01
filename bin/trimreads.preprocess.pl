@@ -40,6 +40,7 @@ use Bio::SeqIO;
 use Getopt::Long;
 use RNAseq_pipeline3 qw(get_fh);
 use RNAseq_pipeline_settings3 ('read_config_file');
+use Bio::SeqIO::fastq;
 
 my %options=%{read_config_file()};
 
@@ -54,7 +55,8 @@ if ($qualities eq 'ignore') {
     $format='fasta';
 }
 
-my %parsers=%{get_parsing_subs($length)};
+my %parsers=%{get_parsing_subs($length,
+			       $qualities)};
 $infile=shift;
 unless($infile) {
     die "No input file provided\n";
@@ -77,6 +79,7 @@ exit;
 
 sub get_parsing_subs {
     my $read_length=shift;
+    my $format=shift;
     my %parsing_subs;
 
     $parsing_subs{'fasta'}=sub {
@@ -92,7 +95,31 @@ sub get_parsing_subs {
 	}
 	$infh->close();
     };
+
     $parsing_subs{'fastq'}=sub {
+	my $infn=shift;
+
+	if ($format eq 'phred') {
+	    $format='fastq';
+	} else {
+	    $format='fastq-illumina';
+	}
+
+	my $in=Bio::SeqIO->new(-format    => $format,
+				 -file      => $infn);
+
+	my $out = Bio::SeqIO->new(-format    => $format,
+				  -fh => \*STDOUT);
+
+	while (my $seq = $in->next_seq) {
+	    my $trimmed=$seq->trunc(1,$read_length);
+	    $out->write_seq($trimmed);
+	}
+
+	return();
+    };
+
+    $parsing_subs{'fastq2'}=sub {
 	my $infn=shift;
 
 	my $infh=get_fh($infn);
