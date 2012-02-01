@@ -205,7 +205,7 @@ foreach my $lane (keys %lanes) {
 
 	    # We will first check the number of mismatches. However this is
 	    # not sufficient to discriminate the problematic cases so even
-	    # if it is the same we will after check the actuoal substitutions,
+	    # if it is the same we will after check the actual substitutions,
 	    # however if here we see differences we can save the other check
 
 	    # First get the genomic hit
