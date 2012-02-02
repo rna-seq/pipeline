@@ -119,53 +119,5 @@ sub get_parsing_subs {
 	return();
     };
 
-    $parsing_subs{'fastq2'}=sub {
-	my $infn=shift;
-
-	my $infh=get_fh($infn);
-
-	my $line_type=0;
-	my %sequence;
-	while (my $line=<$infh>) {
-	    chomp($line);
-
-	    # Decide which line we are in
-	    if (($line_type != 1) &&
-		$line=~s/^@//) {
-		%sequence=('id' => $line);
-		$line_type=1;
-		next;
-	    } elsif ($line=~/^\+/) {
-		$line_type=2;
-		next;
-	    }
-	    
-	    if ($line_type == 1) {
-		$sequence{'seq'}=$line;
-		next;
-	    } elsif ($line_type == 2) {
-		$sequence{'qual'}=$line;
-	    } else {
-		warn "Shouldn't be here\n";
-	    }
-	    
-	    my $seq=$sequence{'seq'};
-
-	    # Truncate the sequence
-	    my $trunc_seq=substr($seq,0,$read_length);
-	    my $trunc_qual=substr($sequence{'qual'},0,$read_length);
-	    unless(length($trunc_seq) == length($trunc_qual)) {
-		warn "Problem with $sequence{'id'}\n";
-	    }
-	    print '@',$sequence{'id'},"\n";
-	    print "$trunc_seq\n";
-	    print "+\n";
-	    print "$trunc_qual\n";
-	}
-	close($infh);
-
-	return();
-    };
-
     return(\%parsing_subs);
 }
