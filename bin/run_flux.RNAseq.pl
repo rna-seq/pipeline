@@ -57,7 +57,7 @@ my $debug=0;
 my %options=%{read_config_file()};
 $localdir=$options{'LOCALDIR'};
 $prefix=$options{'PREFIX'};
-$exonfile=$options{'EXONDIR'}.'/'.$prefix.'.exon.gtf';
+$exonfile=$options{'PROJECT'}.'/'.$options{'EXONDIR'}.'/'.$prefix.'.exon.gtf';
 $bindir=$options{'BIN'};
 $tmpdir=$options{'LOCALDIR'};
 
