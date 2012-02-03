@@ -12,8 +12,8 @@ package Tools::Bam;
 # Must be done before strict is used
 use Exporter;
 @ISA=('Exporter');
-@EXPORT_OK=('process_bam_file','bam2sequence','bam2coords',
-	    'generate_bam_index','generate_sorted_bam');
+@EXPORT_OK=('process_bam_file','bam2sequence','bam2coords','check_mate_pair',
+	    'generate_bam_index','generate_sorted_bam','add_tag');
 
 use strict;
 use warnings;
@@ -41,6 +41,27 @@ sub generate_sorted_bam {
     $command.='-b -S ';
     $command.="- |samtools sort - $bamfile";
     run_system_command($command);
+}
+
+sub add_tag {
+    my $line=shift;
+    my $tag=shift;
+    my @tag=split(':',$tag);
+    my $tag_prefix=join(':',@tag[0,1]);
+
+    chomp($line);
+    my @line=split("\t",$line);
+    my $flags=$line[11];
+    if ($flags) {
+	unless ($flags=~/$tag_prefix/) {
+	    $line[11]=join(' ',$flags,$tag);
+	}
+    } else {
+	$line[11]=$tag;
+    }
+    $line=join("\t",@line);
+
+    return($line);
 }
 
 sub generate_bam_index {
@@ -375,4 +396,24 @@ sub check_unique {
     }
     return($unique)
 }
+
+# This should help determine if a read is unique and what we see are the two
+# mates with the same ID
+sub check_mate_pair {
+    my $mate1=shift;
+    my $mate2=shift;
+    my @mate1=split("\t",$mate1);
+    my @mate2=split("\t",$mate2);
+
+    my $pairing_ok=0;
+
+    if (($mate1[3] == $mate2[7]) &&
+	($mate1[7] == $mate2[3]) &&
+	(abs($mate1[8])== abs($mate2[8]))) {
+	$pairing_ok=1;
+    }
+
+    return($pairing_ok);
+}
+
 1;

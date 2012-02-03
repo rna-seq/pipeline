@@ -375,6 +375,10 @@ sub remove_pair_info {
 #	    $line[4]=~s/chrMT:/chrM:/og;
 #	}
 
+	# Keep only the best match for each entry
+	my ($best_hit)=split(',',$line[-1]);
+	$line[-1]=$best_hit;
+
 	print $outfh join("\t",
 			  @line),"\n";
 	$count++;

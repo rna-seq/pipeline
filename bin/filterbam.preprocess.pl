@@ -40,7 +40,7 @@ use Getopt::Long;
 use Bio::DB::Sam;
 use RNAseq_pipeline3 ('get_fh','run_system_command');
 use RNAseq_pipeline_settings3 ('read_config_file');
-#use Tools::Bam ('generate_sorted_bam');
+use Tools::Bam ('add_tag','check_mate_pair');
 use Data::Dumper;
 
 # Declare variables & Get command line options
@@ -120,7 +120,7 @@ sub filterbam {
     $outfile=$$.'.'.$outfile;
 
     print STDERR "Sorting SAM\n";
-    my $command="samtools view $infile| sort -T $tmpdir -k1,1| uniq|";
+    my $command="samtools view $infile| sort -T $tmpdir -k1,1 -k10,10| uniq|";
     print STDERR $command,"\n";
     print STDERR "done\n";
 
@@ -134,29 +134,39 @@ sub filterbam {
     my $linecount=0;
     my $uniquecount=0;
     my $multicount=0;
+    my $flags='';
+    my @line;
 
     print STDERR "Filtering sorted SAM\n";
 
     while (my $line=<$infh>) {
-	my @line=split("\t",$line);
+	chomp($line);
+	@line=split("\t",$line);
 	$linecount++;
 
-	my $read_id=$line[0].'_'.$line[3];
-#	my $flags=$line[11];
-#	chomp($flags);
-
+	my $read_id=$line[0].'_'.$line[9].'_'.$line[10];
 	# If the last previous read is different check if it is unique
 	# If it is unique print it
 	if ($read_id ne $old_read_id) {
 	    if ( @lines && 
-		 (@lines == 1)) {		
-		print $outfh @lines;
+		 (@lines == 1)) {	
 		$uniquecount++;
 	    } else {
 		$multicount+=@lines;
 #		print STDERR $read_id,"\t$multicount\n";
+#		print STDERR @lines;
 #		<STDIN>;
 	    }
+
+
+	    foreach my $line (@lines) {
+		my $hits=@lines;
+		my $tag="NH:i:$hits";
+		$line=add_tag($line,
+			      $tag);
+		print $outfh $line,"\n";
+	    }
+
 	    $old_read_id=$read_id;
 	    @lines=();
 	}
@@ -165,10 +175,17 @@ sub filterbam {
 
     # Print the last record
     if (@lines == 1) {
-	print $outfh @lines;
 	$uniquecount++;
     } else {
 	$multicount+=@lines;
+    }
+
+    foreach my $line (@lines) {
+	my $hits=@lines;
+	my $tag="NH:i:$hits";
+	$line=add_tag($line,
+		      $tag);
+	print $outfh $line,"\n";
     }
     close($outfh);
     close($infh);
@@ -179,3 +196,4 @@ sub filterbam {
 
     return($outfile);
 }
+
