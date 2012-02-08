@@ -39,7 +39,7 @@ BEGIN {
 # We have to be able to decide what table to get the data from (pooled or not)
 # And also we have to be able to select genes that are expressed 
 
-use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command);
+use RNAseq_pipeline3 qw(get_fh get_log_fh run_system_command get_list);
 use RNAseq_pipeline_settings3 qw(get_dbh read_config_file);
 use RNAseq_pipeline_stats3 qw(log10);
 use RNAseq_pipeline_comp3 ('get_tables','check_tables','get_labels_sub',
