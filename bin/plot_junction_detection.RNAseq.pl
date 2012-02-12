@@ -101,6 +101,12 @@ foreach my $lane (keys %lanes) {
     
 }
 
+# Exit if we find no features
+unless (keys %expressed > 0) {
+    print STDERR "No features detected\n";
+    exit;
+}
+
 # Get the average number of reads for each of the features
 my %averages=%{get_averages(\%features,
 			    $lanes)};
@@ -237,6 +243,7 @@ sub plot_by_feature {
     system($command);
     $command="rm $execution_file";
     system($command);
+    return();
 }
 
 

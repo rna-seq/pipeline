@@ -107,6 +107,12 @@ foreach my $lane (keys %lanes) {
 # Build the curve
 my @curve=@{get_saturation_curve(\%detected)};
 
+# Exit if we find no features
+unless(@curve) {
+    print STDERR "No features detected\n";
+    exit;
+}
+
 # Plot the results
 plot_saturation_point(\@curve,
 		      $junction_number,
@@ -186,4 +192,6 @@ sub plot_saturation_point {
     system($command);
     $command="rm $execution_file";
     system($command);
+
+    return();
 }

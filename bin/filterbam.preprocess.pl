@@ -134,6 +134,7 @@ sub filterbam {
     my $linecount=0;
     my $uniquecount=0;
     my $multicount=0;
+    my $unalignedcount=0;
     my $flags='';
     my @line;
 
@@ -143,6 +144,12 @@ sub filterbam {
 	chomp($line);
 	@line=split("\t",$line);
 	$linecount++;
+
+	# Filter out those lines with no cigar
+	if ($line[5] eq '*') {
+	    $unalignedcount++;
+	    next;
+	}
 
 	my $read_id=$line[0].'_'.$line[9].'_'.$line[10];
 	# If the last previous read is different check if it is unique
@@ -157,7 +164,6 @@ sub filterbam {
 #		print STDERR @lines;
 #		<STDIN>;
 	    }
-
 
 	    foreach my $line (@lines) {
 		my $hits=@lines;
@@ -177,6 +183,7 @@ sub filterbam {
     if (@lines == 1) {
 	$uniquecount++;
     } else {
+
 	$multicount+=@lines;
     }
 
@@ -193,6 +200,7 @@ sub filterbam {
     print STDERR $linecount,"\tHits processed\n";
     print STDERR $uniquecount,"\tUnique\n";
     print STDERR $multicount,"\tMultimaps\n";
+    print STDERR $unalignedcount,"\tUnaligned\n";
 
     return($outfile);
 }

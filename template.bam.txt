@@ -287,7 +287,7 @@ _split_mapping_breakdown: _initial_clusters
 # Here we will take all the maps that split to junctions or splitmaps and
 # put them into one file counting the number of reads mapping to each
 # independently of the strand
-_all_junctions_class_pooled: _split_mapping_breakdown
+_all_junctions_class_pooled: _split_mapping_breakdown _junction_coverage
 	cluster_run.RNAseq.pl get_junction_classification_all_pooled.RNAseq.pl
 	cat $JUNCTIONSDIR/*.all.junc.class.pooled > _all_junctions_class_pooled.txt
 	all_no_log_table
@@ -327,8 +327,8 @@ _junction_coverage: _junction_classification _unique_maps_genome
 	wc -l *.overlap.total |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _junction_coverage.txt;
 	mv *.overlap.total $JUNCTIONSDIR
 	get_junction_read_contributions.RNAseq.pl
-	plot_junction_detection.RNAseq.pl; mv $PREFIX.Junctions.*.ps $GRAPHS
-	plot_junction_saturation.RNAseq.pl; mv Junction.saturation.ps $GRAPHS
+	plot_junction_detection.RNAseq.pl; [[ -r $PREFIX.junctions.*.ps ]] && mv $PREFIX.Junctions.*.ps $GRAPHS || echo "No detection plot. Skipping"
+	plot_junction_saturation.RNAseq.pl; [[ -r Junction.saturation.ps ]] && mv Junction.saturation.ps $GRAPHS || echo "No saturation plot. Skipping"
 	all_no_log_table
 
 _splicing_summary: _junction_coverage _split_mapping_breakdown

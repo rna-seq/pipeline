@@ -53,7 +53,9 @@ sub add_tag {
     my @line=split("\t",$line);
     my $flags=$line[11];
     if ($flags) {
-	unless ($flags=~/$tag_prefix/) {
+	if ($flags=~/$tag_prefix/) {
+	    return($line);
+	} else {
 	    $line[11]=join(' ',$flags,$tag);
 	}
     } else {
@@ -280,14 +282,22 @@ sub bam2coords {
     my @coords;
     my $paired=$aln->get_tag_values('PAIRED');
 
-    my @subaligns=$aln->get_SeqFeatures();
+    my $cigar=$aln->cigar_str();
+    # Skip the entry if it has no match
+    unless ($cigar &&
+	    $cigar!~/\*/) {
+	return(\@coords);
+    }
+
 
     # Check if the alignment is spliced
+    my @subaligns=$aln->get_SeqFeatures();
     if (@subaligns) {
 	while (my $a=shift(@subaligns)) {
 	    my $entry=process_aln($a);
 	    $entry->{'id'}=$aln->name();
-	    
+	    $entry->{'cigar'}=$cigar;
+
 	    # Add the paired end info to the IDs
 	    if ($paired) {
 		if ($aln->get_tag_values('SECOND_MATE')) {
@@ -305,13 +315,20 @@ sub bam2coords {
 				     $aln->get_tag_values('H0'),
 				     $aln->get_tag_values('H1'),
 				     $aln->get_tag_values('H2'));
+	    $entry->{'tothits'}=$aln->get_tag_values('NH');
 	    # Determine if it is a unique map.
 	    if ($entry->{'matches'}=~/^(0:)*1(:.)*/) {
 		$entry->{'unique'}=1;
-	    } elsif ($entry->{'matches'}) {
+	    } elsif ($entry->{'tothits'} &&
+		     $entry->{'tothits'} == 1) {
+		$entry->{'unique'}=1;
+	    } elsif ($entry->{'matches'} ||
+		     ($entry->{'tothits'} && ($entry->{'tothits'} > 1))) {
 		# This is a multimap
 		$entry->{'unique'}=0;
 	    } elsif ($global) {
+		print STDERR "Checking all posibilities for split match\n";
+		print STDERR $entry->{'id'},"\n";
 		$entry->{'unique'}=check_unique($aln,
 						$global);
 	    } else {
@@ -320,18 +337,12 @@ sub bam2coords {
 		print STDERR "No H? tag found for $read_id. Setting as unique, but beware\n";
 		$entry->{'unique'}=1;
 	    }
-	    
-	    # Add the entry if it has a match
-	    $entry->{'cigar'}=$aln->cigar_str();
-	    if ($entry->{'cigar'} &&
-		$entry->{'cigar'}!~/\*/) {
-		push @coords,$entry;
-	    }
 	}
     } else {
 	# The alignment is not spliced
 	my $entry=process_aln($aln);
 	$entry->{'id'}=$aln->name();
+	$entry->{'cigar'}=$cigar;
 	    
 	# Add the paired end info to the IDs
 	if ($paired) {
@@ -349,15 +360,22 @@ sub bam2coords {
 				 $aln->get_tag_values('H0'),
 				 $aln->get_tag_values('H1'),
 				 $aln->get_tag_values('H2'));
+	$entry->{'tothits'}=$aln->get_tag_values('NH');
 	# Determine if it is a unique map.
-	if ($entry->{'matches'}=~/^(0:)*1(:.)*/) {
+	if ($entry->{'matches'} && 
+	    $entry->{'matches'}=~/^(0:)*1(:.)*/) {
 	    $entry->{'unique'}=1;
-	} elsif ($entry->{'matches'}) {
+	} elsif ($entry->{'tothits'} && $entry->{'tothits'} == 1) {
+	    $entry->{'unique'}=1;
+	} elsif ($entry->{'matches'} ||
+		 ($entry->{'tothits'} && ($entry->{'tothits'} > 1))) {
 	    # This is a multimap
 	    $entry->{'unique'}=0;
 	} elsif ($global) {
 	    $entry->{'unique'}=check_unique($aln,
 					    $global);
+	    print STDERR "Checking all posibilities for full match\n";
+	    print STDERR $entry->{'id'},"\n";
 	} else {
 	    # The tags are not defined so we don't know what this is
 	    my $read_id=$entry->{'id'};
