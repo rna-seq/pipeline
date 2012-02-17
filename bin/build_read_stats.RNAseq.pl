@@ -402,6 +402,7 @@ sub process_fastq_file_old {
 		$ntpos->{$laneid}->{$pos}->[0]++;
 	    } else {
 		$ntpos->{$laneid}->{$pos}->[$ntindex{$nucleotides[$i]}]++;
+		$ntpos->{$laneid}->{$pos}->[0]+=0;
 	    }
 	}
     }
@@ -489,6 +490,7 @@ sub process_fasta_file {
 		$ntpos->{$laneid}->{$pos}->[0]++;
 	    } else {
 		$ntpos->{$laneid}->{$pos}->[$ntindex{$nucleotides[$i]}]++;
+		$ntpos->{$laneid}->{$pos}->[0]+=0;
 	    }
 	}
     }
