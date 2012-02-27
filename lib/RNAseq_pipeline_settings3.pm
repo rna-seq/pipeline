@@ -45,7 +45,7 @@ use POSIX qw(uname);
 # Add the path to the library to be used
 BEGIN {
     use Cwd 'abs_path';
-    my $libdir=abs_path($0);
+    my $libdir=abs_path($0) || die "Unable to determine absolute path: $!\n";
     $libdir=~s/bin\/[^\/]*$/lib/;
     unshift @INC, "$libdir";
 }
