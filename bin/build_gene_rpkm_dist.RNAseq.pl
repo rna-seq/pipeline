@@ -54,7 +54,7 @@ my %hist;
 my $dbh=get_dbh();
 
 # Check if the tables exist and use the first one we find (we will probably not
-# neer the unpooled soon as we are no longer mixing samples usually)
+# need the unpooled soon as we are no longer mixing samples usually)
 if (check_table_existence($dbh,$rpkm)) {
     get_info_from_table($dbh,
 			$rpkm,
