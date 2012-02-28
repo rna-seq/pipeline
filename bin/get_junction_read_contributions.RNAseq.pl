@@ -95,6 +95,8 @@ foreach my $lane (keys %lanes) {
     close($outfh);
 }
 
+$dbh_common->disconnect();
+
 exit;
 
 sub get_feature_coverage_junctions {
