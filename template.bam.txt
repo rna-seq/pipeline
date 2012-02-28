@@ -344,7 +344,7 @@ _exon_RPKM_pooled: _exon_coverage
 
 _exon_readcount_pooled: _exon_RPKM_pooled
 	cluster_run.RNAseq.pl get_exon_readcount_pooled.RNAseq.pl
-	zcat $EXONDIR/*.exon.rpkm.pooled.txt.gz > _exon_RPKM_pooled.txt
+	zcat $EXONDIR/*.exon.readcount.pooled.txt.gz > _exon_readcount_pooled.txt
 	all_no_log_table
 
 ################
