@@ -74,34 +74,34 @@ sub check_option_characters {
 	if ($option eq 'experiment') {
 	    if ($value=~/([^\w_])/o) {
 		my $char=$1;
-		$problems.="Value $value corresponding to $option contains an invalid character: '$char'\n";
+		$problems.="WARNING: Value $value corresponding to $option contains an invalid character: '$char'\n";
 	    }
 	    next;
 	} elsif ($option eq 'project') {
 	    # Project id should only be alphanumeric
 	    if ($value=~/([^\w])/o) {
 		my $char=$1;
-		$problems.="Value $value corresponding to $option contains an invalid character: '$char'\n";
+		$problems.="WARNING: Value $value corresponding to $option contains an invalid character: '$char'\n";
 	    }
 	    next;
 	} elsif ($option eq 'qualities') {
 	    # Qualities can only be solexa, phred or ignore
 	    unless ($value=~/^(solexa|phred|ignore)$/o) {
 		my $char=$1;
-		$problems.="Value for qualities is set to $value, but the only valid options are 'solexa', 'phred' or 'ignore'\n";
+		$problems.="WARNING: Value for qualities is set to $value, but the only valid options are 'solexa', 'phred' or 'ignore'\n";
 	    }
 	    next;
 	} elsif ($option eq 'preprocess_trim_length') {
 	    if ($value) {
 		unless ($value=~/^(<?=?(\d)+)$/o) {
 		    my $char=$1;
-		    $problems.="Value for preprocess_trim_length is set to $value, which is not a valid option\n";
+		    $problems.="WARNING: Value for preprocess_trim_length is set to $value, which is not a valid option\n";
 		}
 	    }
 	    next;
 	} elsif ($value=~/([^\w_\/\. -])/o) {
 	    my $char=$1;
-	    $problems.="Value $value corresponding to $option contains an invalid character: '$char'\n";
+	    $problems.="WARNING: Value $value corresponding to $option contains an invalid character: '$char'\n";
 	} else {
 	    print $log_fh "Option $option => $value OK\n";
 	}
@@ -113,7 +113,7 @@ sub check_option_characters {
     my $species=${$options->{'species'}};
     my @species=split(/\s+/,$species);
     if (@species < 2) {
-	$problems.="Species name ($species) does not look right. Should have a Genus and species name at least\n";
+	$problems.="WARNING: Species name ($species) does not look right. Should have a Genus and species name at least\n";
     }
     print $log_fh "done\n";
 
@@ -260,7 +260,7 @@ sub base_table_build {
        exp_description mediumtext,
        expDate date NULL,
        CellType varchar(50) NULL,
-       RNAType varchar(50) NOT NULL DEFAULT "POLYA",
+       RNAType varchar(50) NULL,
        Compartment varchar(50) NOT NULL DEFAULT "CELL",
        Bioreplicate varchar(10) DEFAULT 1,
        partition varchar(50) NULL,
@@ -620,36 +620,6 @@ sub get_existing_data_subs {
 	}
 	return($location);
     };
-    $guessing_subs{'exonindex'}=sub {
-	my $filetype=shift;
-	my $present=0;
-	my $fasta_name=$annotation.'.'.$genome;
-	$fasta_name=~s/\.g[tf]f//g;
-	$fasta_name=~s/\.fa(stq)?$//;
-	$fasta_name.='.exons';
-	my $location=$project_dir.'/GEMIndices/'.$fasta_name;
-
-	my $count=$sth1->execute($genome_id,$annotation_id,$filetype);
-	if ($count > 0) {
-	    if ($count == 1) {
-		($location)=$sth1->fetchrow_array();
-		$present=1;
-	    } else {
-		warn "More than one entry retrieved for $genome $annotation\n";
-		$present=1
-	    }
-	}
-	if ($present) {
-	    print $log_fh "File present at $location\n";
-	} else {
-	    print $log_fh "File not present. Will be built at $location\n";
-	    # The entry is absent and we must set it
-	    print $log_fh "Executing: $ins_query1\n";
-	    $ins_sth1->execute($genome_id,$annotation_id,$species_id,
-			       $filetype,$location);
-	}
-	return($location);
-    };
     $guessing_subs{'transcriptomeindex'}=sub {
 	my $filetype=shift;
 	my $present=0;
@@ -727,7 +697,7 @@ sub get_existing_data_subs {
 	my $exclusion_name=$annotation;
 	$exclusion_name=~s/\.g[tf]f//;
 	$exclusion_name.='.exclusion';
-	my $location=$project_dir.'/exclusion/'.$exclusion_name;
+	my $location=$project_dir.'/GEMIndices/'.$exclusion_name;
 
 	my $count=$sth2->execute($annotation_id);
 	if ($count > 0) {
@@ -944,7 +914,7 @@ sub get_existing_data_subs {
 	$fasta_name=~s/\.g[tf]f//g;
 	$fasta_name=~s/\.fa(stq)?$//;
 	$fasta_name.='.exons.fa';
-	my $location=$project_dir.'/exons/'.$fasta_name;
+	my $location=$project_dir.'/GEMIndices/'.$fasta_name;
 	
 	my $count=$sth5->execute($annotation_id,$genome_id,$filetype);
 	if ($count > 0) {
@@ -974,10 +944,9 @@ sub get_existing_data_subs {
 	$fasta_name=~s/\.g[tf]f//g;
 	$fasta_name=~s/\.fa(stq)?$//;
 	$fasta_name.='.transcripts.fa';
-	my $location=$project_dir.'/transcriptome/'.$fasta_name;
+	my $location=$project_dir.'/GEMIndices/'.$fasta_name;
 	
 	my $count=$sth5->execute($annotation_id,$genome_id,$filetype);
-#	print STDERR join("\t",$annotation_id,$genome_id,$filetype),"\n";
 	if ($count > 0) {
 	    if ($count == 1) {
 		($location)=$sth5->fetchrow_array();
@@ -1005,7 +974,7 @@ sub get_existing_data_subs {
 	$fasta_name=~s/\.g[tf]f//g;
 	$fasta_name=~s/\.fa(stq)?$//;
 	$fasta_name.='.junctions.fa';
-	my $location=$project_dir.'/junctions/'.$fasta_name;
+	my $location=$project_dir.'/GEMIndices/'.$fasta_name;
 	
 	my $count=$sth5->execute($annotation_id,$genome_id,$filetype);
 	if ($count > 0) {
@@ -2155,9 +2124,7 @@ sub add_exp_info {
     my $overwrite_all=0;
     foreach my $key (keys %vals) {
 	my $value=$vals{$key};
-	if ($value) {
-	    print $log_fh "Inserting $key for experiment $exp_id from $proj_id into the database...\n";
-	} else {
+	unless ($value) {
 	    print $log_fh "No $key supplied form $exp_id\n";
 	    next;
 	}
@@ -2176,16 +2143,21 @@ sub add_exp_info {
 	    unless ($value) {next;}
 	    if ($existing eq $value) {next;}
 
-	    print STDERR "$exp_id from $proj_id may already have a $key. Do you want to overwrite $existing with $value?(y/n/all)\n";
-	    my $reply=<STDIN>;
-	    chomp($reply);
-	    if ($reply=~/^y/i) {
-		$overwrite=1;
-	    } elsif ($reply=~/^all$/i) {
-		$overwrite=1;
-		$overwrite_all=1;
+	    # If the key already has a value check if it should be altered
+	    if ($existing) {
+		print STDERR "$exp_id from $proj_id may already have a $key set to $existing. Do you want to overwrite $existing with $value?(y/n/all)\n";
+		my $reply=<STDIN>;
+		chomp($reply);
+		if ($reply=~/^y/i) {
+		    $overwrite=1;
+		} elsif ($reply=~/^all$/i) {
+		    $overwrite=1;
+		    $overwrite_all=1;
+		} else {
+		    next;
+		}
 	    } else {
-		next;
+		$overwrite=1
 	    }
 	    $query ="UPDATE $table ";
 	    $query.="SET $key = ? ";
@@ -2200,7 +2172,7 @@ sub add_exp_info {
 	}
 
 	if ($overwrite) {
-	    print $log_fh "Adding $key\n";
+	    print $log_fh "Setting $key for experiment $exp_id from $proj_id to $value \n";
 	    # Insert the info into the database
 	    print $log_fh "Executing: $query\n";
 	    $sth=$dbh->prepare($query);
