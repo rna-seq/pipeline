@@ -1,7 +1,7 @@
-Version 4.0
+GRAPE 1.4.0
 
 Main changes:
-Version 4.0
+GRAPE 1.4.0
 * Start scritp has a -clean option that removes all information from an experiment
   from the databases
 * Quality type has to be provided to the start script in order to correctly run the
