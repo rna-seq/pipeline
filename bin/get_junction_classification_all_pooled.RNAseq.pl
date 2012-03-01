@@ -75,7 +75,7 @@ unless ($paralleltmp) {
     $paralleltmp=$options{'PROJECT'}.'/work';
 }
 
-# Get the requred subs
+# Get the required subs
 *junction_type=get_junction_type_sub($junctable);
 *get_start_exons=get_exons_from_start_sub();
 *get_end_exons=get_exons_from_end_sub();
@@ -87,10 +87,8 @@ my %files=%{read_file_list($file_list)};
 my %lane_files=%{get_lane_files(\%files)};
 my %groups=%{get_groups(\%files)};
 
-
-my %coverage;
-
 foreach my $group (keys %groups) {
+    print STDERR "Processing $group\n";
     my %junctions;
 
     foreach my $pair (keys %lane_files) {
@@ -178,45 +176,65 @@ sub process_splits {
     print STDERR "Reading $infile\n";
     my $infh=get_fh($infile);
     my $line_no=0;
-    my ($start,$end,$chr1,$chr2);
+    my ($start,$end,$chr1,$chr2,$read_id);
     while (my $line=<$infh>) {
 	$line_no++;
 	chomp($line);
 
 	my %line=%{parse_gff_line($line)};
 
-	# Check if it is an end line or a start line
-	if ($line_no % 2) {
-	    # splice start line 
-	    $start=$line{'end'};
-	    $chr1=$line{'chr'};
-	} else {
-	    # splice end line
-	    $end=$line{'start'};
-	    $chr2=$line{'chr'};
-	    # get the start exons
-	    my $start_exons=get_start_exons($chr1,
-					    $start);
-	    # get the end exons
-	    my $end_exons=get_end_exons($chr2,
-					$end);
+	# The first line is not always necessarily a start line so we should
+	# check this
+	my $start1=$line{'start'};
+	my $end1=$line{'end'};
+	$chr1=$line{'chr'};
+	$read_id=$line{'feature'}{'ID'};
 
-	    my ($type)='split';
-	    if ($chr1 ne $chr2) {
-		$type='split_interchro';
-	    }
-	    my $split_id=join("\t",$chr1,$chr2,$start,$end);
+	# The second line is an end line
+	$line=<$infh>;
+	chomp($line);
+	%line=%{parse_gff_line($line)};
 
-	    if ($splits->{$split_id}) {
-		$splits->{$split_id}->[5]++;
-	    } else {
-		$splits->{$split_id}=[$chr1,$start,$chr2,$end,$type,1,
-				      $start_exons,$end_exons,$pair];
-	    }
-	    ($chr1,$chr2,$start,$end)=('','','','');
+	my $start2=$line{'start'};
+	my $end2=$line{'end'};
+	$chr2=$line{'chr'};
+	if ($read_id ne $line{'feature'}{'ID'}) {
+	    print STDERR $read_id,"\n";
 	}
+
+
+	my $range1=[$start1,$end1];
+	my $range2=[$start2,$end2];
+
+	($range1,$range2)=sort {$a->[0]<=>$b->[0]} ($range1,$range2);
+	
+
+	$start=$range1->[1];
+	$end=$range2->[0];
+	# get the start exons
+	my $start_exons=get_start_exons($chr1,
+					$start);
+	# get the end exons
+	my $end_exons=get_end_exons($chr2,
+				    $end);
+	
+	my ($type)='split';
+	if ($chr1 ne $chr2) {
+	    $type='split_interchro';
+	}
+	my $split_id=join("\t",$chr1,$chr2,$start,$end);
+	
+	if ($splits->{$split_id} && 
+	    ($splits->{$split_id}->[5] > 0)) {
+	    $splits->{$split_id}->[5]++;
+	} else {
+	    $splits->{$split_id}=[$chr1,$start,$chr2,$end,$type,1,
+				  $start_exons,$end_exons,$pair];
+	}
+	($start,$end,$chr1,$chr2,$read_id)=('','','','','');
     }
     close($infh);
+    print STDERR $line_no,"\tSplits processed in $infile\n";
 }
 
 sub get_exons_from_end_sub {
