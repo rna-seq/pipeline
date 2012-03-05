@@ -221,6 +221,10 @@ sub build_run_mapper_submission {
     # Print the submission file
     my $subfile="subfile.$$.job";
     my $outfh=get_fh($subfile,1);
+
+# This should be added to the submission as soon as the cluster is able to use 
+# smp
+#$ -pe smp $threads
     
     print $outfh <<FORMEND;
 # Get the job name
@@ -230,7 +234,7 @@ sub build_run_mapper_submission {
 #\$ -t 1-$filenum
 
 # Request 8 cpus and request memmory (if configured)
-#\$ -pe smp $threads
+
 #\$ -l h_vmem=16G
 
 # Write in to the current working directory
