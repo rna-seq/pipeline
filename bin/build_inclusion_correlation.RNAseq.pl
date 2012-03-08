@@ -38,7 +38,7 @@ BEGIN {
 
 use RNAseq_pipeline3 qw(get_fh);
 use RNAseq_pipeline_settings3 ('read_config_file','read_file_list',
-			       'get_dbh');
+			       'get_lanes','get_dbh');
 
 # Declare some variables
 my %inclusion;
@@ -80,6 +80,9 @@ foreach my $exon (keys %inclusion) {
 foreach my $exon (keys %expressed) {
     for (my $i=0;$i<@lanes;$i++) {
 	for (my $j=0;$j<@lanes;$j++) {
+	    if ($i==$j) {
+		next;
+	    }
 	    my $inc1_exp=$expressed{$exon}->[$i] || 0;
 	    my $inc2_exp=$expressed{$exon}->[$j] || 0;
 	    print join("\t",
@@ -114,16 +117,5 @@ sub get_exon_inclusion {
 	my $expression=int(($inc_rate * 100) + 0.5);
 	$exons->{$exon}->[$index]=$expression
     }
-}
-
-sub get_lanes {
-    my $files=shift;
-    my %lanes;
-
-    foreach my $file (keys %{$files}) {
-	$lanes{$files->{$file}->[0]}++;
-    }
-
-    return(\%lanes);
 }
 
