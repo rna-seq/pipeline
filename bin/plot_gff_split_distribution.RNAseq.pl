@@ -174,12 +174,18 @@ sub build_graph {
     }
     my $tmpfh=get_fh($stats_file,1);
     foreach my $filename (keys %{$dist}) {
+	my $count=0;
 	foreach my $type (sort keys %{$dist->{$filename}}) {
+	    $count++;
 	    print $tmpfh join("\t",
 			      $filename,
 			      $type,
 			      $dist->{$filename}->{$type}),"\n";
 	}
+	print $tmpfh join("\t",
+			  $filename,
+			  'total',
+			  $count),"\n";
     }
     # Close the file to make sure buffer is flushed
     close($tmpfh);
