@@ -173,8 +173,8 @@ sub build_graph {
 	$stats_file.='.txt';
     }
     my $tmpfh=get_fh($stats_file,1);
+    my $count=0;
     foreach my $filename (keys %{$dist}) {
-	my $count=0;
 	foreach my $type (sort keys %{$dist->{$filename}}) {
 	    $count++;
 	    print $tmpfh join("\t",
@@ -182,11 +182,16 @@ sub build_graph {
 			      $type,
 			      $dist->{$filename}->{$type}),"\n";
 	}
+    }
+
+    # If no splits are detected make sure we have an entry
+    unless ($count) {
 	print $tmpfh join("\t",
-			  $filename,
-			  'total',
+			  'Detected',
+			  'Total',
 			  $count),"\n";
     }
+
     # Close the file to make sure buffer is flushed
     close($tmpfh);
 
