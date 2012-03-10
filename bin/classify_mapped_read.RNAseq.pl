@@ -151,7 +151,8 @@ foreach my $lane (keys %lanes) {
     # Print out the results
     my @results;
     foreach my $type ('exonic','intronic','intergenic','total') {
-	$read_types{$type}->[1]=sprintf "%.2f",($read_types{$type}->[0] / 
+	my $typereads=$read_types{$type}->[0] || 0;
+	$read_types{$type}->[1]=sprintf "%.2f",($typereads / 
 						$read_types{'total'}->[0]) * 100;
 	push @results,@{$read_types{$type}};
     }
