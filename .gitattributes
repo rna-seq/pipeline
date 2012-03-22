@@ -143,3 +143,4 @@ lib/Tools/Bam.pm -text
 lib/Tools/Flux.pm -text
 /template.bam.txt -text
 /template3.0.txt -text
+/version.txt -text
