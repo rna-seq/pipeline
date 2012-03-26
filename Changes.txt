@@ -4,8 +4,14 @@ Next release
 Features
 --------
 
+= 5.0.1 (2012-03-26)
 
-
+- add ./bin/contrib/ to host contributions from other developers
+- add ./bin/run_cluster_flux.main.pl
+      ./bin/run_mapper_cluster.main.pl
+      ./bin/contrib/templates/template3.0.1.txt
+  with specific options for 'main' cluster queue that do not work on the standard 'mem_6' queue
+  
 = 5.0 (2012-03-22) =
 
 - First official release
