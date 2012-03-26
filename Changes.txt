@@ -1,8 +1,18 @@
-GRAPE 1.4.0
+Next release
+============
 
-Main changes:
-GRAPE 1.4.0
-* Start scritp has a -clean option that removes all information from an experiment
+Features
+--------
+
+
+
+= 5.0 (2012-03-22) =
+
+- First official release
+
+= 1.4.0 (2011-01-04) =
+
+- Start scritp has a -clean option that removes all information from an experiment
   from the databases
-* Quality type has to be provided to the start script in order to correctly run the
+- Quality type has to be provided to the start script in order to correctly run the
   pipeline. This has two options 'phred 'or 'solexa'
