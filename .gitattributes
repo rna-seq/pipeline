@@ -45,6 +45,7 @@ bin/check_prerequisites.RNAseq.pl -text
 bin/classify_mapped_read.RNAseq.pl -text
 bin/clean_read_ids.preprocess.pl -text
 bin/cluster_run.RNAseq.pl -text
+bin/cluster_run_flux.main.RNAseq.pl -text
 bin/compare_exon_RPKM.RNAseqComp.pl -text
 bin/compare_fusions.RNAseqComp.pl -text
 bin/compare_gene_RPKM.RNAseqComp.pl -text
