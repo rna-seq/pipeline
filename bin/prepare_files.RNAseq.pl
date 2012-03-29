@@ -38,6 +38,7 @@ BEGIN {
 
 # Load some modules
 use RNAseq_pipeline3 qw(get_log_fh run_system_command);
+use GRAPE::Logs;
 use RNAseq_pipeline_settings3 qw(read_config_file read_file_list);
 
 # Get some options from the configuration file
@@ -49,44 +50,48 @@ my $debug;
 my %options=%{read_config_file()};
 $tmpdir=$options{'LOCALDIR'};
 $readdir=$options{'READDIR'};
+$debug=$options{'DEBUG'};
 
-my $log_fh=get_log_fh('prepare_files.RNAseq.log',
-		      $debug);
+my $logobj=GRAPE::Logs->new('prepare_files.RNAseq.log',
+			    $debug);
 my %files=%{read_file_list()};
 
 foreach my $readfile (keys %files) {
-    print $log_fh "Processing $readfile\n";
+    $logobj->printlog("Processing $readfile");
     my $command;
 
     # Set source and target
     my $infile=$readdir.'/'.$readfile;
     my $target=$tmpdir.'/'.$readfile;
 
+    # Check if the necessary directory is present
+    unless (-e $tmpdir) {
+	die "WARNING: $tmpdir is not present. Please check settings or rerun start\n";
+    }
+
     # Check if target is already present and readable
     if (-e $target && 
 	-r $target) {
-	print $log_fh "$readfile already present in $tmpdir\n";
+	$logobj->printlog("$readfile already present in $tmpdir");
 	next;
     }
 
     if (-r $infile) {
 	if ($infile=~/.bam$/) {
-	    print $log_fh $infile,"\tIs in BAM format. Copying to $tmpdir\n";
+	    $logobj->printlog($infile,"\tIs in BAM format. Copying to $tmpdir");
 	    $command="cp $infile $target";
 	} else {
-	    print $log_fh $infile,"\tIs unzipped gzipping for storage\n";
+	    $logobj->printlog($infile,"\tIs unzipped gzipping for storage");
 	    $command="cp $infile $target; gzip -7 $infile";
 	}
     } elsif (-r $infile.'.gz') {
-	print $log_fh $infile,"\tIs gzipped. Inflating...\n";
+	$logobj->printlog($infile,"\tIs gzipped. Inflating...");
 	$command="gunzip $infile.gz -c > $target";
     } else {
 	die "I can't find $infile(.gz)\n";
     }
 
-    run_system_command($command,
-		       $log_fh);
+    run_system_command($command);
 }
-close($log_fh);
 
 exit;

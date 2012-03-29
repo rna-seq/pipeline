@@ -135,6 +135,7 @@ bin/split_gtf_annotation.RNAseq.pl -text
 bin/start_RNAseq_pipeline.3.0.pl -text
 bin/trimreads.preprocess.pl -text
 contrib/templates/cluster_sub/template3.0.1.txt -text
+lib/GRAPE/Logs.pm -text
 lib/RNAseq_GEM3.pm -text
 lib/RNAseq_mapping_summary3.pm -text
 lib/RNAseq_pipeline3.pm -text
