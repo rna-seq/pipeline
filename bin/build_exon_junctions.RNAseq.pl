@@ -40,7 +40,8 @@ BEGIN {
 
 use RNAseq_pipeline3 ('get_fh','get_log_fh',
 		      'get_annotation_from_gtf',
-		      'build_annotated_junctions');
+		      'build_annotated_junctions',
+		      'run_system_command');
 use RNAseq_pipeline_settings3 qw(read_config_file check_db);
 use Bio::Range;
 
@@ -65,6 +66,7 @@ if ($present) {
     exit;
 } else {
     # Prepare for table generation
+    print $log_fh "$table is absent. Generating...\n";
     make_db_table($table)
 }
 
@@ -129,11 +131,11 @@ if (-r $table.'.sql') {
     print $log_fh `$command`,"\n";
     $command="mysqlimport -L $database $juncfn";
     print $log_fh "Executing:\t",$command,"\n";
-    print $log_fh `$command`,"\t";
+    print $log_fh `$command`,"\n";
     sleep(1);
     $command="rm $table.sql $juncfn";
-    print $log_fh "Executing:\t",$command,"\n";
-    system($command);
+    run_system_command($command,
+		       $log_fh);
 } else {
     die "Can't find $table.sql\n";
 }
