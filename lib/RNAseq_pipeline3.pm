@@ -230,6 +230,9 @@ sub get_log_fh {
 	run_system_command($command);
     } else {
 	$log_fh=get_fh($logfn,1);
+	my $oldfh = select($log_fh);
+	$| = 1;
+	select($oldfh);
     }
     return($log_fh);
 }
