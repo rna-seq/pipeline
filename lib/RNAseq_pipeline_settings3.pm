@@ -1579,7 +1579,11 @@ export infile=\${infiles[\$SGE_TASK_ID-1]}
 export outfile=\${outfiles[\$SGE_TASK_ID-1]}
 
 echo \$HOSTNAME >&2
-$bindir/overlap $annotation \$infile $flags > \$outfile
+until ( [[ -r \$outfile ]] );
+do $bindir/overlap $annotation \$infile $flags > \$outfile; sleep 1;
+if [[ -r \$outfile ]]; then echo done; else echo repeating; fi
+done
+
 FORMEND
     ;
     close($outfh);

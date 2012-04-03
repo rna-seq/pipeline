@@ -53,15 +53,15 @@ sub build_parameter_file {
     print $paramfh join(" ",
 			'MAPPING_FILE',
 			$maps),"\n";
-    print $paramfh join(" ",
-			'SORTED_MAPPINGS_FILE',
-			$sorted_maps),"\n";
+#    print $paramfh join(" ",
+#			'SORTED_MAPPINGS_FILE',
+#			$sorted_maps),"\n";
     ### WARNING
     # if  this flag is not set the input annotation and read files will be
     # deleted (WORK_LOCAL)
-    print $paramfh join(" = ",
-			'WORK_LOCAL',
-			'1'),"\n";
+#    print $paramfh join(" = ",
+#			'WORK_LOCAL',
+#			'1'),"\n";
     print $paramfh join(" ",
 			'STDOUT_FILE',
 			$output),"\n";
@@ -74,6 +74,9 @@ sub build_parameter_file {
     print $paramfh join(" ",
 			'ANNOTATION_MAPPING',
 			$type),"\n";
+    print $paramfh join(" ",
+			'SORT_IN_RAM',
+			'false'),"\n";
 
     close($paramfh);
 
@@ -102,6 +105,7 @@ sub run_flux {
     $fileroot2=~s/(\.\w+?)?$//;
     $fileroot2=~s/.*\///;
 
+    print STDERR $fileroot1,"\n";
     my $outfile=join('_',
 		     $fileroot1,
 		     'flux',
@@ -135,7 +139,7 @@ sub run_flux {
 					   $tmpdir);
 
     # build the flux command
-    $command="$bindir/flux.sh $parameterfile -u";
+    $command="$bindir/flux -t capacitor -p $parameterfile -u";
     run_system_command($command);
 
     if (-r $outfile) {	
