@@ -329,7 +329,7 @@ sub remove_pair_info {
 	if ($line[0]=~s/\|p?1$/\/1/o) {
 	} elsif ($line[0]=~s/\|p?2$/\/2/o) {
 #	} elsif ($line[0]=~s/ 1:/_X:/o) {
-#	    # Down synbdrome reads
+#	    # Down syndrome reads
 #	    $line[0]=~s/$/\/1/o;
 #	} elsif ($line[0]=~s/ 2:/_X:/o) {
 #	    # Down syndrome reads
