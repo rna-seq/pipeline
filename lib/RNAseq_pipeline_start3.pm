@@ -328,15 +328,15 @@ sub base_table_build {
 #         REFERENCES species_info(species_id) 
 #         ON UPDATE CASCADE ON DELETE RESTRICT
 );',
-		'mappabilities' => 'CREATE TABLE IF NOT EXISTS mappabilities (
-       mappability_id mediumint unsigned NOT NULL AUTO_INCREMENT,
-       index_id mediumint unsigned NOT NULL,
-       genome_id mediumint unsigned NOT NULL REFERENCES genome_files(genome_id),
-       read_length smallint unsigned NOT NULL,
-       mismatches smallint unsigned NOT NULL,
-       location varchar(200) NOT NULL,
-       PRIMARY KEY (mappability_id)
-);',	
+#		'mappabilities' => 'CREATE TABLE IF NOT EXISTS mappabilities (
+#       mappability_id mediumint unsigned NOT NULL AUTO_INCREMENT,
+#       index_id mediumint unsigned NOT NULL,
+#       genome_id mediumint unsigned NOT NULL REFERENCES genome_files(genome_id),
+#       read_length smallint unsigned NOT NULL,
+#       mismatches smallint unsigned NOT NULL,
+#       location varchar(200) NOT NULL,
+#       PRIMARY KEY (mappability_id)
+#);',	
 		'annotation_tables' => 'CREATE TABLE IF NOT EXISTS annotation_tables (
        genome_id mediumint unsigned NOT NULL REFERENCES genome_files(genome_id),
        annotation_id mediumint unsigned NOT NULL REFERENCES annotation_files(annotation_id),
@@ -1857,50 +1857,50 @@ sub print_pipeline_file {
     print $log_fh "done\n";
 }
 
-# Print the read.list.txt file
-sub build_file_list {
-    my $vars=shift;
-    my $log_fh=shift;
-    my $file_list=$vars->{'FILELIST'};
-    my $command;
-
-    print $log_fh "Ckecking $file_list...\n";
-    if ($file_list &&
-	(-r $file_list)) {
-	my $readfh=get_fh($file_list);
-	my $not_ok=0;
-	while (my $line=<$readfh>) {
-	    chomp($line);
-	    my @line=split("\t",$line);
-	    if (@line < 3) {
-		$not_ok=1;
-		print $log_fh "Incorrect line in $file_list: $line\n";
-	    } elsif ($line[0]!~/fa(stq)*$/) {
-		$not_ok=1;
-		print $log_fh "Incorrect file name in $file_list: $line\n";
-		print $log_fh "\tName should be the unzipped name of the input file";
-	    } elsif ($line=~/-/) {
-		$not_ok=1;
-		print $log_fh "Presence of '-' may cause problems to with the MySQL database, please change the naming\n";
-	    }
-	}
-	if ($not_ok) {
-	    print STDERR "Please edit $file_list so it contains readfile, pair and lane name in tab separated fields\n";
-	    print STDERR "Readfile should be the unzipped file name, pair and lane names should be single words\n";
-	}
-    } else {
-	my $readdir=$vars->{'READDIR'};
-	my $projdir=$vars->{'PROJECT'};
-	$command="ls $readdir ".'| sed \'s/.gz$//\' | sed \'s/.*\///\' > '."$projdir/read.list.txt";
-	if (`ls $readdir`) {
-	    run_system_command($command,
-			       $log_fh);
-	} else {
-	    die "No read files found\n";
-	}
-    }
-    print $log_fh "done\n";
-}
+# Print the read.list.txt file necessary as it is done by the buildout
+#sub build_file_list {
+#    my $vars=shift;
+#    my $log_fh=shift;
+#    my $file_list=$vars->{'FILELIST'};
+#    my $command;
+#
+#    print $log_fh "Ckecking $file_list...\n";
+#    if ($file_list &&
+#	(-r $file_list)) {
+#	my $readfh=get_fh($file_list);
+#	my $not_ok=0;
+#	while (my $line=<$readfh>) {
+#	    chomp($line);
+#	    my @line=split("\t",$line);
+#	    if (@line < 3) {
+#		$not_ok=1;
+#		print $log_fh "Incorrect line in $file_list: $line\n";
+#	    } elsif ($line[0]!~/fa(stq)*$/) {
+#		$not_ok=1;
+#		print $log_fh "Incorrect file name in $file_list: $line\n";
+#		print $log_fh "\tName should be the unzipped name of the input file";
+#	    } elsif ($line=~/-/) {
+#		$not_ok=1;
+#		print $log_fh "Presence of '-' may cause problems to with the MySQL database, please change the naming\n";
+#	    }
+#	}
+#	if ($not_ok) {
+#	    print STDERR "Please edit $file_list so it contains readfile, pair and lane name in tab separated fields\n";
+#	    print STDERR "Readfile should be the unzipped file name, pair and lane names should be single words\n";
+#	}
+#    } else {
+#	my $readdir=$vars->{'READDIR'};
+#	my $projdir=$vars->{'PROJECT'};
+#	$command="ls $readdir ".'| sed \'s/.gz$//\' | sed \'s/.*\///\' > '."$projdir/read.list.txt";
+#	if (`ls $readdir`) {
+#	    run_system_command($command,
+#			       $log_fh);
+#	} else {
+#	    die "No read files found\n";
+#	}
+#    }
+#    print $log_fh "done\n";
+#}
 
 # Add the project and experiment information to the database
 sub add_project {

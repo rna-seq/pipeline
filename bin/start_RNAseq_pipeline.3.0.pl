@@ -391,9 +391,9 @@ print_pipeline_file(\%tables,
 print_config_file(\%vars,
 		  $log_fh);
 
-# Build the file list
-build_file_list(\%vars,
-		$log_fh);
+# Build the file list. This is obsoltete as it is done by the buildout
+#build_file_list(\%vars,
+#		$log_fh);
 
 # Add the project and experiment entries to the respective tables
 add_project($commondb,
