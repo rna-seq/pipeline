@@ -1431,6 +1431,11 @@ sub combine_overlap {
 	    warn "Problem no hits field in: $line\n";
 	}
 
+	# Remove the file entry to reduce the size
+	my @fields=split("\t",$line);
+	$fields[1]='ref';
+	$line=join("\t",@fields);
+
 	print $overlapfh $line,"\n";
     }
     close($overlapfh);
