@@ -41,8 +41,9 @@ BEGIN {
 use RNAseq_pipeline3 ('get_fh','get_log_fh',
 		      'get_annotation_from_gtf',
 		      'build_annotated_junctions',
-		      'run_system_command');
-use RNAseq_pipeline_settings3 qw(read_config_file check_db);
+		      'run_system_command',
+		      'check_table_existence');
+use RNAseq_pipeline_settings3 qw(read_config_file check_db get_dbh);
 use Bio::Range;
 
 my $debug=0;
@@ -52,6 +53,8 @@ my %options=%{read_config_file()};
 # Set a couple of variables
 my $annotation_file=$options{'ANNOTATION'};
 my $table=$options{'JUNCTIONSTABLE'};
+
+my $dbh=get_dbh(1);
 
 # Get a log file
 my $log_fh=get_log_fh('build_exon_junctions.RNAseq.log',
@@ -139,6 +142,15 @@ if (-r $table.'.sql') {
 } else {
     die "Can't find $table.sql\n";
 }
+
+# Check if the table has been created correctly
+$present=check_table_existence($dbh,
+			       $table);
+
+if ($present) {
+    die "ERROR: $table does not seem to be present\n";
+}
+
 close($log_fh);
 
 exit;

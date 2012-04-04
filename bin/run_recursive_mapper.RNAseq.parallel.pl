@@ -69,7 +69,7 @@ my $readlength;
 my $maxmismatch;
 my $trimthreshold=10; # This is the amount of nt by which the reads are trimmed 
                       # each round
-my $debug=0;
+my $debug=1;
 
 # Get some options from the command line
 GetOptions('index|I=s' => \$index,
@@ -80,7 +80,7 @@ GetOptions('index|I=s' => \$index,
 my %options=%{read_config_file()};
 $index=$options{'GENOMEINDEX'};
 $mapper=$options{'MAPPER'};
-$threads=$options{'THREADS'} unless ($threads);
+$threads=$options{'THREADS'} || 2;
 $tempdir=$options{'LOCALDIR'};
 $mismatches=$options{'MISMATCHES'};
 $readlength=$options{'READLENGTH'};
@@ -183,8 +183,8 @@ while ($mismatches < $maxmismatch) {
 		       $mismatches);
 
     $command="rm $unmapped";
-    print $log_fh "Executing:\t$command\n";
-    system($command);
+    run_system_command($command,
+		       $log_fh);
 
     # collect the mapped file
     push @mapping_files, $mapped.".map";
@@ -210,7 +210,8 @@ while ($mismatches < $maxmismatch) {
 	      $mismatches);
 
     $command="rm $unmapped";
-    run_system_command($command);
+    run_system_command($command,
+		       $log_fh);
 
     # collect the mapped file
     push @mapping_files, $mapped.".split-map";
@@ -235,7 +236,8 @@ while (1) {
 			   $trimthreshold);
 
     $command="rm $unmapped";
-    run_system_command($command);
+    run_system_command($command,
+		       $log_fh);
 
     # map the unmapped reads and collect the mapped files
     my $mapped=$tempdir.'/'.$basename.".mapped.$mismatches.$round.$$";
@@ -272,7 +274,8 @@ while (1) {
 	      $mismatches);
 
     $command="rm $unmapped";
-    run_system_command($command);
+    run_system_command($command,
+		       $log_fh);
 
     # collect the mapped file
     push @mapping_files, $split.".split-map";
@@ -296,7 +299,8 @@ while (1) {
 
 # Remove the final file
 my $command="rm $unmapped";
-run_system_command($command);
+run_system_command($command,
+		   $log_fh);
 
 my $final_mapping=$outdir.'/'.$basename.".recursive.map.gz";
 combine_mapping_files(\@mapping_files,

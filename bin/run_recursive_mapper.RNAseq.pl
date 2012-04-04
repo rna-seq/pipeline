@@ -67,7 +67,6 @@ my $filetype;
 my $mismatches;
 my $readlength;
 my $maxmismatch;
-my $minmapthreshold=10;
 my $trimthreshold=10;
 my $debug=1;
 
@@ -75,13 +74,12 @@ my $debug=1;
 GetOptions('index|I=s' => \$index,
 	   'infile|i=s' => \$infile,
 	   'outdir|o=s' => \$outdir,
-	   'noqual' => \$ignore_quals,
-	   'threads=i' => \$threads);
+	   'noqual' => \$ignore_quals);
 
 my %options=%{read_config_file()};
 $index=$options{'GENOMEINDEX'};
 $mapper=$options{'MAPPER'};
-$threads=$options{'THREADS'} unless ($threads);
+$threads=$options{'THREADS'} || 2;
 $tempdir=$options{'LOCALDIR'};
 $mismatches=$options{'MISMATCHES'};
 $readlength=$options{'READLENGTH'};
@@ -196,6 +194,10 @@ while ($mismatches < $maxmismatch) {
 			   $unmapped,
 			   $log_fh);
 
+    if ($left1 == 0) {
+	last;
+    }
+
     $mapped=$tempdir.'/'.$basename.".split.$mismatches.$$";
     # split map the still unmapped reads
     split_map($index,
@@ -300,7 +302,7 @@ my $command="rm $unmapped";
 run_system_command($command,
 		   $log_fh);
 
-my $final_mapping=$outdir.'/'.$basename.".recursive.map";
+my $final_mapping=$outdir.'/'.$basename.".recursive.map.gz";
 combine_mapping_files(\@mapping_files,
 		      $final_mapping,
 		      $tempdir,

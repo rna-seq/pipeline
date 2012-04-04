@@ -233,7 +233,7 @@ export infile=\${infiles[\$SGE_TASK_ID-1]}
 export outdir=\${outfiles[\$SGE_TASK_ID-1]}
 
 echo \$HOSTNAME >&2
-$bindir/run_recursive_mapper.RNAseq.parallel.pl -index $index -infile \$infile -outdir \$outdir > \$infile.mapping.log
+$bindir/run_recursive_mapper.pl -index $index -infile \$infile -outdir \$outdir > \$infile.mapping.log
 FORMEND
     ;
     close($outfh);

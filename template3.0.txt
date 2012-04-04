@@ -404,10 +404,10 @@ _splicing_summary: _junction_coverage _split_mapping_breakdown
 
 ################
 # Exon RPKM info
-_exon_RPKM: _exon_coverage _junction_coverage
-	cluster_run.RNAseq.pl get_exon_rpkm.RNAseq.pl
-	zcat $EXONDIR/*.exon.rpkm.txt.gz > _exon_RPKM.txt
-	all_no_log_table
+#_exon_RPKM: _exon_coverage _junction_coverage
+#	cluster_run.RNAseq.pl get_exon_rpkm.RNAseq.pl
+#	zcat $EXONDIR/*.exon.rpkm.txt.gz > _exon_RPKM.txt
+#	all_no_log_table
 
 _exon_RPKM_pooled: _exon_coverage _junction_coverage
 	cluster_run.RNAseq.pl get_exon_rpkm_pooled.RNAseq.pl
@@ -548,7 +548,7 @@ _fusion_transcripts: _transcriptome_mapping _gene_RPKM
 # a summary of the detected junctions. this table will contain the completion
 # status of these two steps (it is only here to run the two scripts as they
 # both generate their own tables ad load them
-_summaries: _exon_RPKM_pooled _gene_RPKM_dist _inclusion_dist _detected_transcripts _splicing_summary _novel_junctions_summary _exon_RPKM
+_summaries: _exon_RPKM_pooled _gene_RPKM_dist _inclusion_dist _detected_transcripts _splicing_summary _novel_junctions_summary
 	build_expression_summary.RNAseq.pl > _summaries.txt
 	build_top_genes.RNAseq.pl >> _summaries.txt
 	build_top_transcripts.RNAseq.pl >> _summaries.txt
