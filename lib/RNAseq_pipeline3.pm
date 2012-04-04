@@ -862,12 +862,12 @@ sub print_gff {
     my $string= join(' ',
 		     'read_id','"'.$read_id.'";',
 		     'mismatches','"'.$read->[4].'";',
-		     'qualities','"'.$read->[5].'";',
+		     'qual','"'.$read->[5].'";',
 		     'matches','"'.$read->[6].'";');
 
     print $outfh join("\t",
 		      $read->[0],
-		      $readfile,
+		      '-',
 		      $type,
 		      $read->[1],
 		      $read->[2],
