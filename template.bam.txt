@@ -349,10 +349,6 @@ _exon_readcount_pooled: _exon_RPKM_pooled
 
 ################
 # Gene RPKM info
-#_gene_RPKM: _proj_coverage
-#	cluster_run.RNAseq.pl get_gene_rpkm.RNAseq.pl
-#	zcat $GENOMEDIR/*.gene.rpkm.txt.gz > _gene_RPKM.txt
-#	all_no_log_table
 _gene_RPKM_pooled: _proj_coverage _junction_coverage
 	cluster_run.RNAseq.pl get_gene_rpkm_pooled.RNAseq.pl
 	zcat $GENOMEDIR/*.gene.rpkm.pooled.txt.gz > _gene_RPKM_pooled.txt

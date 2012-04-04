@@ -38,7 +38,7 @@ BEGIN {
 # transcript. If so it will classify these into intragenic and intergenic
 
 use RNAseq_pipeline3 qw(get_fh get_log_fh parse_gff_line);
-use RNAseq_pipeline_settings3 ('get_gene_from_trans_sub','get_dbh',
+use RNAseq_pipeline_settings3 ('get_gene_from_trans_sub','get_dbh','get_lanes',
 			      'read_file_list','read_config_file');
 use RNAseq_GEM3 ('parse_gem_line');
 
@@ -61,7 +61,7 @@ $gendir=$options{'GENOMEDIR'};
 
 # Get the lane names;
 my %files=%{read_file_list()};
-my %lanes=%{get_lanes(\%files)};
+my %lanes=%{get_lanes()};
 my %lane2file=%{get_lane2file(\%files)};
 
 # Get the require subroutines.
@@ -69,7 +69,7 @@ my %lane2file=%{get_lane2file(\%files)};
 # that is coaused by the forks in the filehandles closing before the dbh
 # connection is closed
 *trans2gene=get_gene_from_trans_sub();
-my $rpkmtable=$prefix.'_gene_RPKM';
+my $rpkmtable=$prefix.'_gene_RPKM_pooled';
 *geneRPKM=get_gene_RPKM_sub($rpkmtable);
 
 # Read and process the transcript raw mapping files
@@ -284,8 +284,8 @@ foreach my $lane (keys %lanes) {
 	    my $gene2id=trans2gene($transid2);
 
 	    # Get the RPKM value for each of the genes
-	    my $gene1rpkm=geneRPKM($gene1id,$lane);
-	    my $gene2rpkm=geneRPKM($gene2id,$lane);
+	    my $gene1rpkm=geneRPKM($gene1id);
+	    my $gene2rpkm=geneRPKM($gene2id);
 
 	    # Classify the candidate into Variant or fusion
 	    my $type='Variant';
@@ -336,17 +336,6 @@ foreach my $key (keys %stats) {
 
 exit;
 
-sub get_lanes {
-    my $files=shift;
-    my %lanes;
-    
-    foreach my $file (keys %{$files}) {
-	$lanes{$files->{$file}->[0]}{$files->{$file}->[1]}=1;
-    }
-
-    return(\%lanes);
-}
-
 sub get_lane2file {
     my $files=shift;
     my %lanes;
@@ -368,15 +357,14 @@ sub get_gene_RPKM_sub {
     my ($query,$sth);
     $query ='SELECT RPKM ';
     $query.="FROM $table ";
-    $query.='WHERE gene_id = ? AND LaneName = ?';
+    $query.='WHERE gene_id = ?';
     $sth=$dbh->prepare($query);
 
     my $subroutine= sub {
 	my $gene=shift;
-	my $lane=shift;
 
 	unless ($cache{$gene}) {
-	    my $count=$sth->execute($gene,$lane);
+	    my $count=$sth->execute($gene);
 	    if ($count > 1) {
 		die "Too many hits recovered";
 	    } else {

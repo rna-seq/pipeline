@@ -46,20 +46,13 @@ my %options=%{read_config_file()};
 $prefix=$options{'PREFIX'};
 
 # Get the table names we need
-my $rpkm=$prefix.'_gene_RPKM';
 my $rpkm_pooled=$prefix.'_gene_RPKM_pooled';
 
 # Get the information for the histogram
 my %hist;
 my $dbh=get_dbh();
 
-# Check if the tables exist and use the first one we find (we will probably not
-# need the unpooled soon as we are no longer mixing samples usually)
-if (check_table_existence($dbh,$rpkm)) {
-    get_info_from_table($dbh,
-			$rpkm,
-			%hist);
-} elsif (check_table_existence($dbh,$rpkm_pooled)) {
+if (check_table_existence($dbh,$rpkm_pooled)) {
     get_info_from_table($dbh,
 			$rpkm_pooled,
 			%hist);

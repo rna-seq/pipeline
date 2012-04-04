@@ -1046,10 +1046,8 @@ sub get_tables_hash {
 		'_exon_coverage' => '',
 		'_junction_coverage' => '',
 		'_splicing_summary' => '',
-		'_exon_RPKM' => '',
 		'_exon_RPKM_pooled' => '',
 		'_gene_readcount_pooled' => '',
-		'_gene_RPKM' => '',
 		'_gene_RPKM_pooled' => '',
 		'_gene_RPKM_dist' => '',
 		'_EJEI' => '',
@@ -1265,14 +1263,6 @@ CREATE TABLE ${prefix}_store_reads (
     md5comp char(32) not null,
     md5global char(32) not null
     );",
-		'_gene_RPKM' => "DROP TABLE IF EXISTS ${prefix}_gene_RPKM;
-CREATE TABLE ${prefix}_gene_RPKM (
-    gene_id varchar(100) not null,
-    RPKM double unsigned not null,
-    LaneName varchar(50) not null,
-    INDEX idx_gene (gene_id),
-    INDEX idx_lane (LaneName)
-    );",
 		'_gene_readcount_pooled' => "DROP TABLE IF EXISTS ${prefix}_gene_readcount_pooled;
 CREATE TABLE ${prefix}_gene_readcount_pooled (
     gene_id varchar(100) not null,
@@ -1302,14 +1292,6 @@ CREATE TABLE ${prefix}_gene_RPKM_dist (
     support varchar(100) not null,
     RPKM mediumint unsigned not null,
     LaneName varchar(50) not null,
-    INDEX idx_lane (LaneName)
-    );",
-		'_exon_RPKM' => "DROP TABLE IF EXISTS ${prefix}_exon_RPKM;
-CREATE TABLE ${prefix}_exon_RPKM (
-    exon_id varchar(100) not null,
-    RPKM double unsigned not null,
-    LaneName varchar(50) not null,
-    INDEX idx_exon (exon_id),
     INDEX idx_lane (LaneName)
     );",
 		'_exon_RPKM_pooled' => "DROP TABLE IF EXISTS ${prefix}_exon_RPKM_pooled;
