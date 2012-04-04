@@ -161,6 +161,7 @@ if (@root_rules && (@targets==0)) {
 }
 
 # Print a message for the user
+my $starttime=time();
 print STDERR "RNAseq analysis workflow started ", `date`;
 print STDERR "cwd: ", `pwd`;
 print STDERR "Command file: $pipfile\n";
@@ -172,6 +173,15 @@ foreach my $rule (@targets) {
 
 # Print an ending message
 print STDERR "\nRNAseq analysis workflow completed ", `date`;
+
+# Print the total execution time
+my $endtime=time();
+my $duration=$endtime - $starttime;
+printf STDERR ("\n\nTotal running time: %02d:%02d:%02d\n\n", 
+	       int($duration / 3600),
+	       int(($duration % 3600) / 60),
+	       int($duration % 60));
+
 
 close($log_fh);
 
@@ -240,6 +250,9 @@ sub execute_rule {
 	print STDERR "\nExecuting $rule\n";
 	$ok = process_rule($rule,$body,$level+1);
 	$return_value = update_time_stamp($rule);
+
+
+
     }    else {
 	print STDERR "\n$rule is up to date\n" if ($level == 0 || $debug);
     }
@@ -283,6 +296,7 @@ sub process_rule {
     my ($rule,$body,$level) = @_;
     my $ok = 1;
 
+    my $rulestarttime=time();
     print STDERR "\n$rule:\n";
 
     foreach my $line (@$body) {
@@ -307,6 +321,14 @@ sub process_rule {
 	}
 	last unless $ok;
     }
+
+    # Add execution time for the rule
+    my $ruleendtime=time();
+    my $ruleduration=$ruleendtime - $rulestarttime;
+    printf STDERR ("\nExecution time for $rule: %02d:%02d:%02d\n", 
+		   int($ruleduration / 3600),
+		   int(($ruleduration % 3600) / 60),
+		   int($ruleduration % 60));
 
     return $ok;
 }
