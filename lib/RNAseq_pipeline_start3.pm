@@ -328,15 +328,6 @@ sub base_table_build {
 #         REFERENCES species_info(species_id) 
 #         ON UPDATE CASCADE ON DELETE RESTRICT
 );',
-#		'mappabilities' => 'CREATE TABLE IF NOT EXISTS mappabilities (
-#       mappability_id mediumint unsigned NOT NULL AUTO_INCREMENT,
-#       index_id mediumint unsigned NOT NULL,
-#       genome_id mediumint unsigned NOT NULL REFERENCES genome_files(genome_id),
-#       read_length smallint unsigned NOT NULL,
-#       mismatches smallint unsigned NOT NULL,
-#       location varchar(200) NOT NULL,
-#       PRIMARY KEY (mappability_id)
-#);',	
 		'annotation_tables' => 'CREATE TABLE IF NOT EXISTS annotation_tables (
        genome_id mediumint unsigned NOT NULL REFERENCES genome_files(genome_id),
        annotation_id mediumint unsigned NOT NULL REFERENCES annotation_files(annotation_id),
@@ -541,7 +532,6 @@ sub get_existing_data_subs {
     my $table1='indices';
     my $table2='exclusion_files';
     my $table3='annotation_tables';
-    my $table4='mappabilities';
     my $table5='fasta_files';
 
     $genome=~s/.*\///;
@@ -569,13 +559,6 @@ sub get_existing_data_subs {
     $query3.="FROM $table3 ";
     $query3.='WHERE annotation_id = ? AND type = ?';
     $sth3=$dbh->prepare($query3);
-
-    # mappabilities: depend on genome, read length and number of mismatches
-    my ($query4,$sth4);
-    $query4 ='SELECT location ';
-    $query4.="FROM $table4 ";
-    $query4.='WHERE genome_id = ? AND read_length = ? AND mismatches = ?';
-    $sth4=$dbh->prepare($query4);
 
     # Fasta files for building indices: Depend on annotation and genome
     my ($query5,$sth5);
