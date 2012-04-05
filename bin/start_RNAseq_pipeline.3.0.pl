@@ -112,6 +112,9 @@ my $mapper;
 my $threads;
 my $qualities;
 
+# Flux settings
+my $fluxmem;
+
 # Indices
 my $genomeindex;
 my $transcriptomeindex;
@@ -191,7 +194,8 @@ my %options=('species' => \$species,
 	     'rnafrac' => \$rnafraction,
 	     'bioreplicate' => \$bioreplicate,
 	     'preprocess' => \$preprocess,
-	     'preprocess_trim_length' => \$preprocess_trim_length
+	     'preprocess_trim_length' => \$preprocess_trim_length,
+	     'fluxmem' => \$fluxmem
     );
 my $success=GetOptions(\%options,
 		       'species|s=s',
@@ -233,7 +237,8 @@ my $success=GetOptions(\%options,
 		       'rnafrac=s',
 		       'bioreplicate=s',
 		       'preprocess=s',
-		       'preprocess_trim_length=s'
+		       'preprocess_trim_length=s',
+		       'fluxmem=i'
     );
 
 # Print help and exit if required
