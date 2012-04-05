@@ -93,6 +93,7 @@ bin/get_proj_rpkm.RNAseq.pl -text
 bin/get_proj_total_inclusion.RNAseq.pl -text
 bin/get_splicing_summary.RNAseq.pl -text
 bin/get_split_coverage.RNAseq.pl -text
+bin/get_split_coverage_bam.RNAseq.pl -text
 bin/get_transcript_lengths.RNAseq.pl -text
 bin/get_unmapped_reads.RNAseq.pl -text
 bin/gzip_files.RNAseq.pl -text

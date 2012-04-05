@@ -3,6 +3,10 @@ Next release
 
 Features
 --------
+= 5.1
+
+- Execute script will show the wall clock time for each of teh steps executed as well as the total.
+- Exon RPKM and Gene RPKM are no longer calculated for the individual lanes.
 
 = 5.0.1 (2012-03-26)
 
@@ -18,7 +22,7 @@ Features
 
 = 1.4.0 (2011-01-04) =
 
-- Start scritp has a -clean option that removes all information from an experiment
+- Start script has a -clean option that removes all information from an experiment
   from the databases
 - Quality type has to be provided to the start script in order to correctly run the
   pipeline. This has two options 'phred 'or 'solexa'
