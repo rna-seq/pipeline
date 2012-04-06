@@ -144,7 +144,8 @@ sub defaults {
 		  'cluster' => '-', # Should be defined to the local cluster
 		  'qualities' => undef,
 		  'preprocess' => 'zcat',
-		  'preprocess_trim_length' => 0
+		  'preprocess_trim_length' => 0,
+		  'fluxmem' => '16G'
 	);
     my $check_default=sub {
 	my $variable=shift;
@@ -321,12 +322,6 @@ sub base_table_build {
        annotation_id mediumint unsigned NOT NULL REFERENCES annotation_files(annotation_id),
        location varchar(200) NOT NULL,
        PRIMARY KEY (exclusion_id)
-#       FOREIGN KEY (annotation_id) 
-#         REFERENCES annotation_files(annotation_id) 
-#         ON UPDATE CASCADE ON DELETE RESTRICT,
-#       FOREIGN KEY (species_id) 
-#         REFERENCES species_info(species_id) 
-#         ON UPDATE CASCADE ON DELETE RESTRICT
 );',
 		'annotation_tables' => 'CREATE TABLE IF NOT EXISTS annotation_tables (
        genome_id mediumint unsigned NOT NULL REFERENCES genome_files(genome_id),
@@ -336,12 +331,6 @@ sub base_table_build {
        index idx_genome (genome_id),
        index idx_annotation (annotation_id),
        index idx_type (type)
-#       FOREIGN KEY (annotation_id)
-#         REFERENCES annotation_files(annotation_id) 
-#         ON UPDATE CASCADE ON DELETE RESTRICT,
-#       FOREIGN KEY (genome_id) 
-#         REFERENCES genome_files(genome_id) 
-#         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=INNODB;',
 		'fasta_files' => 'CREATE TABLE IF NOT EXISTS fasta_files (
        genome_id mediumint unsigned NOT NULL REFERENCES genome_files(genome_id),
@@ -352,12 +341,6 @@ sub base_table_build {
        index idx_annotation (annotation_id),
        index idx_type (filetype),
        PRIMARY KEY (genome_id,annotation_id,filetype)
-#       FOREIGN KEY (annotation_id) 
-#         REFERENCES annotation_files(annotation_id) 
-#         ON UPDATE CASCADE ON DELETE RESTRICT,
-#       FOREIGN KEY (genome_id) 
-#         REFERENCES genome_files(genome_id) 
-#         ON UPDATE CASCADE ON DELETE RESTRICT
 );',
 		'species_info' => 'CREATE TABLE IF NOT EXISTS species_info (
        species_id mediumint unsigned NOT NULL AUTO_INCREMENT,
@@ -1706,7 +1689,8 @@ sub create_directory_structure {
 	      'LOCALPARALLEL' => 'work',
 	      'QUALITIES' =>${$options->{'qualities'}},
 	      'PREPROCESS' => ${$options->{'preprocess'}},
-	      'RESULTS' => 'results'
+	      'RESULTS' => 'results',
+	      'FLUXMEM' => ${$options->{'fluxmem'}}
 );
 
     foreach my $dir (@directories) {
