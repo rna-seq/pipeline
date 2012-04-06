@@ -99,7 +99,7 @@ if (-r $projectionfile) {
 			       '.',
 			       $strand,
 			       '.',
-			       'gene_id "'.$gene.'"'),"\n";
+			       'gene_id "'.$gene.'"; transcript_id "'.$gene.'"'),"\n";
 	}
     }
     close($projfh);
