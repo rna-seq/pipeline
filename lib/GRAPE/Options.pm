@@ -77,11 +77,20 @@ sub new {
     return $self;
 }
 
+sub set_commondb {
+    my $self=shift;
+    my $value=shift;
+
+    my $dbh=MySQL_DB_Connect($value);
+    $self->{'commondbh'}=$dbh;
+
+    return $self->{'commondb'}=$value
+}
 
 sub _guess_missing_values {
     my $self=shift;
 
-    my $dbh=MySQL_DB_Connect($self->get_commondb());
+    my $dbh=$self->get_commondbh();
 
     foreach my  $opt (keys %{$self}) {
 	if (defined $self->{$opt}) {
@@ -100,7 +109,7 @@ sub _guess_missing_values {
 sub print_options {
     my $self=shift;
 
-    foreach my $opt (keys %{$self}) {
+    foreach my $opt (keys %{$self->{'GRAPEOPTIONS'}}) {
 	my $val=$self->{$opt} || '-';
 	print join("\t",
 		   uc($opt),
@@ -118,7 +127,7 @@ sub _initialize {
     $self->{'annotation'} = undef;
     $self->{'genome'} = undef;
     $self->{'files'} = 'read.list.txt';
-    $slef->{'host'} = 'localhost';
+    $self->{'host'} = 'localhost';
     $self->{'commondb'} = undef;
     $self->{'database'} = undef;
     $self->{'mismatches'} = 2;
@@ -203,11 +212,15 @@ sub set_annotation {
     
     
     # Annotation tables: Depend only on annotation
-    my ($query3,$sth3);
-    $query3 ='SELECT table_name ';
-    $query3.="FROM $table3 ";
-    $query3.='WHERE annotation_id = ? AND type = ?';
-    $sth3=$dbh->prepare($query3);
+    my $table='annotation_tables';
+    my $dbh=$self->get_commondbh();    my ($query,$sth);
+    $query ='SELECT table_name ';
+    $query.="FROM $table ";
+    $query.='WHERE annotation_id = ? AND type = ?';
+    $sth=$dbh->prepare($query);
+
+    # Set the junctionstable
+
 
     return $self->{'annotation'} = $file;
 }
@@ -230,7 +243,7 @@ sub _set_file_table {
     $query ='SELECT location ';
     $query.="FROM $table ";
     $query.='WHERE genome_id = ? AND annotation_id = ? AND type = ?';
-    $sth=$dbh->prepare($query1);
+    $sth=$dbh->prepare($query);
 }
 
 sub set_genomeindex {
@@ -244,7 +257,7 @@ sub set_genomeindex {
     $fasta_name=~s/\.fa$//;
     my $location=$project_dir.'/GEMIndices/'.$fasta_name;
     
-    my $count=$sth1->execute($genome_id,0,'genome');
+    my $count=$sth->execute($genome_id,0,'genome');
     if ($count > 0) {
 	if ($count == 1) {
 	    ($location)=$sth1->fetchrow_array();

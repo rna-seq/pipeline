@@ -19,6 +19,7 @@ sub new {
     $self->{start}  = time();
     $self->{end} = undef;
     $self->{duration}= 0;
+
     bless($self, $class);
 
     $self->printlog("Start: ",$self->{start});
@@ -61,6 +62,11 @@ sub _get_fh {
     } else {
 	open($fh,$openstring) ||
 	    die "Unable to open $filename: $!,$?\n";
+
+	# Set autoflush for the log file
+	my $oldfh = select($fh);
+	$| = 1;
+	select($oldfh);
     }
 
     return($fh);
