@@ -198,6 +198,7 @@ sub plot_by_feature {
     # Print a temporary file with the expression levels
     my $tmpfh=get_fh($tmpfn,1);
     my @lanes=sort keys %{$dist};
+    my $count=0;
     foreach my $feature (keys %{$averages}) {
 	my @reads;
 	foreach my $lane (@lanes) {
@@ -208,8 +209,19 @@ sub plot_by_feature {
 	print $tmpfh join("\t",
 			  $averages->{$feature},
 			  @reads),"\n";
+	$count++;
     }   
     close($tmpfh);
+
+    my $filename=$prefix.'.'.$graph.'.split';
+    unless($count > 0) {
+	print STDERR "No lines in $graph.txt. Skipping graph.\n";
+	my $command="touch $filename.ps";
+	run_system_command($command);
+	$command="touch $filename.jpeg";
+	run_system_command($command);
+	return();
+    }
 
     # This sorts the file according to the average value of the feature
     my $command="sort -o $graph.txt -n -r -k 1 $graph.txt";
@@ -223,7 +235,6 @@ sub plot_by_feature {
     my $execution_file="execution.$$.r";
     my $exec_fh=get_fh($execution_file,1);
     my $r_string;
-    my $filename=$prefix.'.'.$graph.'.split';
 
     # Initialize the colors & symbols
     $r_string.="cols=topo.colors($lanes)\n";
@@ -267,14 +278,25 @@ sub plot_expressed {
     # Print a temporary file with the expression levels
     my $tmpfh=get_fh($tmpfn,1);
     my @lanes=sort keys %{$dist};
+    my $count=0;
     foreach my $lane (@lanes) {
 	print $tmpfh join("\t",
 			  $lane,
 			  $dist->{$lane}),"\n";
+	$count++;
     }
 
     # Close the file to make sure buffer is flushed
     close($tmpfh);
+
+    unless($count > 0) {
+	print STDERR "No lines in $graph.txt. Skipping graph.\n";
+	my $command="touch $prefix.$graph.detection.ps";
+	run_system_command($command);
+	$command="touch $prefix.$graph.detection.jpeg";
+	run_system_command($command);
+	return();
+    }
 
     # Build the R command file
     my $names='"'.join('","',@lanes).'"';

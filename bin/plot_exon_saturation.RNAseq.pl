@@ -38,7 +38,7 @@ BEGIN {
 # It will use this to build a saturation curve for the lanes
 
 # Load some modules
-use RNAseq_pipeline3 qw(get_fh);
+use RNAseq_pipeline3 qw(get_fh run_system_command);
 use RNAseq_pipeline_settings3 ('read_config_file','read_file_list',
 			      'get_unique_exons',
 			      'get_saturation_curve','get_dbh');
@@ -137,6 +137,7 @@ sub plot_saturation_point {
     my $tmpfile="$$.saturation.points.txt";
     my $outfh=get_fh($tmpfile,1);
     my $max=0;
+    my $count=0;
     foreach my $point (@{$curve}) {
 	my $fraction=sprintf "%.2f",$point->[1] / $total;
 	$point->[0]=~s/.*\///;
@@ -148,8 +149,19 @@ sub plot_saturation_point {
 	if ($point->[1] > $max) {
 	    $max=$point->[1];
 	}
+	$count++;
     }
     close($outfh);
+
+    unless($count > 0) {
+	print STDERR "No mapped reads. Skipping graph.\n";
+	my $command="touch $filename.ps";
+	run_system_command($command);
+	$command="touch $filename.jpeg";
+	run_system_command($command);
+	return();
+    }
+
 
     # Set the ylimit
     $max+=1000;
@@ -213,9 +225,9 @@ sub plot_saturation_point {
 
     # execute the R file
     my $command="R --vanilla --quiet < $execution_file";
-    system($command);
+    run_system_command($command);
     $command="rm $tmpfile";
-    system($command);
+    run_system_command($command);
     $command="rm $execution_file";
-    system($command);
+    run_system_command($command);
 }
