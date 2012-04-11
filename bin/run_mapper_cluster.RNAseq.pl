@@ -47,6 +47,7 @@ use RNAseq_GEM3 ('check_index','determine_quality_type','get_mapper_routines',
 use Tools::Bam ('bam2sequence');
 
 my $index;
+my $mappermem;
 my $mapper;
 my $outdir;
 my $qualities;
@@ -69,6 +70,7 @@ GetOptions('index|I=s' => \$index,
 
 my %options=%{read_config_file()};
 $mapper=$options{'MAPPER'};
+$mappermem=$options{'MAPPERMEM'} || '5G';
 $threads=$options{'THREADS'};
 $tempdir=$options{'LOCALDIR'};
 $mismatches=$options{'MISMATCHES'};
@@ -169,7 +171,8 @@ if ($usecluster) {
 					    $index,
 					    $threads,
 					    $jobname,
-					    $mismatches);
+					    $mismatches,
+					    $mappermem);
     my $queue=$options{'CLUSTER'};
     send2cluster($subfile,
 		 $queue,
@@ -202,6 +205,7 @@ sub build_run_mapper_submission {
     my $threads=shift || 2;
     my $jobname=shift;
     my $mismatches=shift;
+    my $mappermem=shift;
 
     print STDERR 'Building submission file...';
     my $filenum=@{$pairs};
@@ -235,7 +239,8 @@ sub build_run_mapper_submission {
 
 # Request 8 cpus and request memmory (if configured)
 
-#\$ -l h_vmem=16G
+#\$ -l h_vmem=$mappermem
+#\$ -pe smp $threads
 
 # Write in to the current working directory
 #\$ -cwd 
