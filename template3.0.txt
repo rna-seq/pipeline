@@ -372,9 +372,9 @@ _all_junctions_class_pooled: _split_mapping_breakdown
 
 # TO DO we have to insert the number of detected genes here as well as the gene
 # saturation
-_proj_coverage: _junction_classification _unique_maps_genome _merged_SAM
+_proj_coverage: _junction_classification _merged_SAM
 	get_proj_overlaps_cluster.RNAseq.pl
-	cd $GENOMEDIR; for file in `ls *proj.overlap.gz | sed 's/\/.*\///' | sed 's/.gz$//'`; do get_proj_total_inclusion.RNAseq.pl $file.gz > $file.total; done
+#	cd $GENOMEDIR; for file in `ls *proj.overlap.gz | sed 's/\/.*\///' | sed 's/.gz$//'`; do get_proj_total_inclusion.RNAseq.pl $file.gz > $file.total; done
 	plot_proj_detection.RNAseq.pl; mv $PREFIX.Proj.*.ps $PREFIX.Proj.*.jpeg $GRAPHS
 	cd $GENOMEDIR; wc -l *.proj.overlap.total |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _proj_coverage.txt; mv _proj_coverage.txt $PROJECT
 	all_no_log_table
