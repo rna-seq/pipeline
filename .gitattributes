@@ -90,7 +90,6 @@ bin/get_junction_read_contributions.RNAseq.pl -text
 bin/get_junction_total_inclusion.RNAseq.pl -text
 bin/get_pooled_exon_inclusion_rates.RNAseq.pl -text
 bin/get_proj_overlaps_cluster.RNAseq.pl -text
-bin/get_proj_overlaps_cluster_bam.RNAseq.pl -text
 bin/get_proj_rpkm.RNAseq.pl -text
 bin/get_proj_total_inclusion.RNAseq.pl -text
 bin/get_splicing_summary.RNAseq.pl -text
