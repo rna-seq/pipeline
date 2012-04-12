@@ -46,7 +46,7 @@ use Bio::DB::Sam;
 my $threshold=1;
 my $tmpdir;
 my $clusterdir;
-my $readdir;
+my $samdir;
 my $genomedir;
 my $exondir;
 my $splitdir;
@@ -66,7 +66,7 @@ GetOptions('threshold|t=i' => \$threshold,
 my %options=%{read_config_file()};
 $tmpdir=$options{'LOCALDIR'};
 $genomedir=$options{'PROJECT'}.'/'.$options{'GENOMEDIR'};
-$readdir=$options{'PROJECT'}.'/'.$options{'READDIR'};
+$samdir=$options{'PROJECT'}.'/'.$options{'SAMDIR'};
 $exondir=$options{'EXONDIR'};
 $splitdir=$options{'SPLITMAPDIR'};
 $junctionsdir=$options{'JUNCTIONSDIR'};
@@ -89,8 +89,7 @@ print STDERR $annotation,"\n";
 my %files=%{read_file_list($file_list)};
 
 # Get for each lane the BAM files
-my %lane_files=%{get_lane_files(\%files,
-				$readdir)};
+my %lane_files=%{get_lane_files(\%files)};
 
 my %coverage;
 
@@ -98,74 +97,76 @@ my %coverage;
 my %genes=%{get_annotation_from_gtf($annotation)};
 
 foreach my $pair (keys %lane_files) {
-    foreach my $lane (keys %{$lane_files{$pair}}) {
-	my $bamfile=$lane_files{$pair}{$lane};
-	print STDERR "$bamfile\n";
-	my $outfile=$genomedir.'/'.$lane.'.single.unique.gtf.proj.overlap.total';
+    my $bamfile=$samdir.'/'.$pair.'.merged.bam';
+    my $type=$lane_files{$pair};
+    print STDERR "$bamfile\n";
+    my $outfile=$genomedir.'/'.$pair.'.'.$type.'.unique.gtf.proj.overlap.total';
 	
-	if (-r $outfile) {
-	    print STDERR $outfile,"\tis present. Skipping\n";
-	    next;
-	}
-	
-	# Get the necessary filehandles
-	my $sam = Bio::DB::Sam->new(-bam  =>$bamfile,
-				    -autoindex => 1);
-	my $outfh=get_fh($outfile,1);
-	
-	# Process the genes
-	foreach my $gene (keys %genes) {
-	    my @exons=$genes{$gene}{'gene'}->exons();
-	    my $chr=$genes{$gene}{'chr'};
-	    my %gene_hits;
-	    # Get the exon information
-	    foreach my $exon (@exons) {
-		my $feat_hits=process_feature($exon,
-					      $chr,
-					      $sam,
-					      $gene);
-		
-		$gene_hits{'exon'}{$exon}=$feat_hits;
-		$gene_hits{'gene'}+=$feat_hits->[2];
-	    }
-	    	    
-	    # Print the output
-	    foreach my $exon (@exons) {
-		my $exon_id=join("\t",
-				 $chr,
-				 $exon->start(),
-				 $exon->end(),
-				 $exon->strand());
-		# only print if there are actually reads in the gene
-		if ($gene_hits{'exon'}{$exon}->[2]) {
-		    my $length=$exon->end() - $exon->start() + 1;
-		    my $frac=sprintf "%.2f",$gene_hits{'exon'}{$exon}->[2]/$length;
-		    print $outfh join("\t",
-				      $gene,
-				      $gene_hits{'exon'}{$exon}->[2],
-				      $length,
-				      'exon',
-				      $frac),"\n";
-		}
-	    }
-	    
-	}
-	close($outfh);
+    if (-r $outfile) {
+	print STDERR $outfile,"\tis present. Skipping\n";
+	next;
     }
+	
+    # Get the necessary filehandles
+    my $sam = Bio::DB::Sam->new(-bam  =>$bamfile,
+				-autoindex => 1);
+    my $outfh=get_fh($outfile,1);
+    
+    # Process the genes
+    foreach my $gene (keys %genes) {
+	my @exons=$genes{$gene}{'gene'}->exons();
+	my $chr=$genes{$gene}{'chr'};
+	my %gene_hits;
+	# Get the exon information
+	foreach my $exon (@exons) {
+	    my $feat_hits=process_feature($exon,
+					  $chr,
+					  $sam,
+					  $gene);
+	    
+	    $gene_hits{'exon'}{$exon}=$feat_hits;
+	    $gene_hits{'gene'}+=$feat_hits->[2];
+	}
+	
+	# Print the output
+	foreach my $exon (@exons) {
+	    my $exon_id=join("\t",
+			     $chr,
+			     $exon->start(),
+			     $exon->end(),
+			     $exon->strand());
+	    # only print if there are actually reads in the gene
+	    if ($gene_hits{'exon'}{$exon}->[2]) {
+		my $length=$exon->end() - $exon->start() + 1;
+		my $frac=sprintf "%.2f",$gene_hits{'exon'}{$exon}->[2]/$length;
+		print $outfh join("\t",
+				  $gene,
+				  $gene_hits{'exon'}{$exon}->[2],
+				  $length,
+				  'exon',
+				  $frac),"\n";
+	    }
+	}
+	
+    }
+    close($outfh);
 }
 
 exit;
 
 sub get_lane_files {
     my $files=shift;
-    my $dir=shift;
 
     my %lane_files;
 
     foreach my $file (keys %{$files}) {
 	my $pair=$files->{$file}->[0];
 	my $lane=$files->{$file}->[1];
-	$lane_files{$pair}{$lane}=$dir.'/'.$file;
+	if ($pair eq $lane) {
+	    $lane_files{$pair}='single';
+	} else {
+	    $lane_files{$pair}='paired';
+	}
     }
 
     return(\%lane_files);
@@ -203,11 +204,11 @@ sub process_feature {
 	    # another
 	    # Skip reads that start outside of the feature
 	    next;
-	} elsif ($cigar=~/(\d+)M(\d+)[NI](\d+)M/o) {
-	    # Skip junction hits
-	    next;
 	} elsif ($rend < $end) {
 	    # Skip reads that end outside of the feature
+	    next;
+	} elsif ($cigar=~/(\d+)M(\d+)[NI](\d+)M/o) {
+	    # Skip junction hits
 	    next;
 	}
 	# where does the alignment start in the query sequence
