@@ -97,59 +97,58 @@ my %exons=%{get_annotation_from_gtf($annotation,
 				    'exons')};
 
 foreach my $pair (keys %lane_files) {
-    foreach my $lane (keys %{$lane_files{$pair}}) {
-	my $bamfile=$samdir.'/'.$pair.'.merged.bam';
-	print STDERR "$bamfile\n";
-	my $outfile=$exondir.'/'.$lane.'.single.unique.gtf.overlap.total';
-	
-	if (-r $outfile) {
-	    print STDERR $outfile,"\tis present. Skipping\n";
-	    next;
-	}
-	
-	# Get the necessary filehandles
-	my $sam = Bio::DB::Sam->new(-bam  =>$bamfile,
-				    -autoindex => 1);
-	my $outfh=get_fh($outfile,1);
-	
-	# Process the genes
-	my %gene_hits;
-	foreach my $exon (keys %exons) {
-	    my @exon=split('_',$exon);
-	    my $strand=pop(@exon);
-	    my $end=pop(@exon);
-	    my $start=pop(@exon);
-	    my $chr=join('_',@exon);
-
-
-	    # Get the exon information
-	    my $exonobj=Bio::Range->new(-start=>$start,
-					-end=>$end,
-					-strand=>$strand);
-	    my $feat_hits=process_feature($exonobj,
-					  $chr,
-					  $sam,
-					  $exon);
-	    
-	    $gene_hits{'exon'}{$exon}=$feat_hits;
-
-	
-	    # Print the output
-	    # only print if there are actually reads in the gene
-
-	    if ($gene_hits{'exon'}{$exon}->[2]) {
-		my $length=$exonobj->end() - $exonobj->start() + 1;
-		my $frac=sprintf "%.2f",$gene_hits{'exon'}{$exon}->[2]/$length;
-		print $outfh join("\t",
-				  $exon,
-				  $gene_hits{'exon'}{$exon}->[2],
-				  $length,
-				  'exon',
-				  $frac),"\n";
-	    }
-	}
-	close($outfh);
+    my $bamfile=$samdir.'/'.$pair.'.merged.bam';
+    my $type=$lane_files{$pair};
+    print STDERR "$bamfile\n";
+    my $outfile=$exondir.'/'.$pair.'.'.$type.'.unique.gtf.overlap.total';
+    
+    if (-r $outfile) {
+	print STDERR $outfile,"\tis present. Skipping\n";
+	next;
     }
+	
+    # Get the necessary filehandles
+    my $sam = Bio::DB::Sam->new(-bam  =>$bamfile,
+				-autoindex => 1);
+    my $outfh=get_fh($outfile,1);
+    
+    # Process the genes
+    my %gene_hits;
+    foreach my $exon (keys %exons) {
+	my @exon=split('_',$exon);
+	my $strand=pop(@exon);
+	my $end=pop(@exon);
+	my $start=pop(@exon);
+	my $chr=join('_',@exon);
+	
+	
+	# Get the exon information
+	my $exonobj=Bio::Range->new(-start=>$start,
+				    -end=>$end,
+				    -strand=>$strand);
+	my $feat_hits=process_feature($exonobj,
+				      $chr,
+				      $sam,
+				      $exon);
+	
+	$gene_hits{'exon'}{$exon}=$feat_hits;
+	
+	
+	# Print the output
+	# only print if there are actually reads in the gene
+	
+	if ($gene_hits{'exon'}{$exon}->[2]) {
+	    my $length=$exonobj->end() - $exonobj->start() + 1;
+	    my $frac=sprintf "%.2f",$gene_hits{'exon'}{$exon}->[2]/$length;
+	    print $outfh join("\t",
+			      $exon,
+			      $gene_hits{'exon'}{$exon}->[2],
+			      $length,
+			      'exon',
+			      $frac),"\n";
+	}
+    }
+    close($outfh);
 }
 
 exit;
@@ -162,7 +161,11 @@ sub get_lane_files {
     foreach my $file (keys %{$files}) {
 	my $pair=$files->{$file}->[0];
 	my $lane=$files->{$file}->[1];
-	$lane_files{$pair}{$lane}=1;
+	if ($pair eq $lane) {
+	    $lane_files{$pair}='single';
+	} else {
+	    $lane_files{$pair}='paired';
+	}
     }
 
     return(\%lane_files);
