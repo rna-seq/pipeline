@@ -55,6 +55,7 @@ use RNAseq_GEM3 ('check_index','determine_quality_type','get_mapper_routines',
 my $infile;
 my $index;
 my $outdir;
+my $recmapdir;
 
 my $mapper='GEM';
 my $threads;
@@ -83,6 +84,7 @@ $threads=$options{'THREADS'} || 2;
 $tempdir=$options{'LOCALDIR'};
 $mismatches=$options{'MISMATCHES'};
 $readlength=$options{'READLENGTH'};
+$recmapdir=$options{'RECMAPDIR'};
 $maxmismatch=int($readlength / 25);
 
 # Get a log_fh
@@ -114,9 +116,13 @@ $outfile=~s/.*\///;
 $outfile=$tempdir.'/'.$outfile;
 $outfile=~s/(.fa(stq)*)$/.gem/;
 
-if (-r "$outfile.map" ||
-    -r "$outfile.map.gz") {
-    print STDERR "$outfile Exists.. Skipping\n";
+
+my $basename=$infile;
+$basename=~s/.*\///;
+my $final_mapping=$outdir.'/'.$basename.".recursive.map.gz";
+
+if (-r $final_mapping) {
+    print STDERR "$final_mapping Exists.. Skipping\n";
     exit;
 }
 
@@ -147,8 +153,6 @@ unless (exists $mapper{$mapper}) {
 # Before mapping trim the ambiguous nucleotides from the reads, this should
 # save some mapping time. All these reads are mapped without quality as they
 # are done after the split mapping
-my $basename=$infile;
-$basename=~s/.*\///;
 my $trimmed=$tempdir.'/'.$basename.".noambiguous.$$";
 my $left=trim_ambiguous($infile,
 			$trimmed,
@@ -302,7 +306,6 @@ my $command="rm $unmapped";
 run_system_command($command,
 		   $log_fh);
 
-my $final_mapping=$outdir.'/'.$basename.".recursive.map.gz";
 combine_mapping_files(\@mapping_files,
 		      $final_mapping,
 		      $tempdir,
