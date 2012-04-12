@@ -73,6 +73,7 @@ bin/gemjunc2gemsplit.RNAseq.pl -text
 bin/get_exon_inclusion_exclusion_rates.RNAseq.2.pl -text
 bin/get_exon_inclusion_exclusion_rates.RNAseq.pl -text
 bin/get_exon_overlaps_cluster.RNAseq.pl -text
+bin/get_exon_overlaps_cluster_bam.RNAseq.pl -text
 bin/get_exon_readcount_pooled.RNAseq.pl -text
 bin/get_exon_rpkm_pooled.RNAseq.pl -text
 bin/get_exon_rpkm_pooled_flux.RNAseq.pl -text
