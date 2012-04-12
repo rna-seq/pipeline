@@ -73,6 +73,9 @@ my %samples=%{get_samples(\%tables,
 
 my %detected;
 
+# Initialize the values with a total
+$genes{'total'}{'total'}{'total'}=0;
+
 # Get the gene information
 my $gene_out=$project_id.'_'.$exp_id.'_detected_genes.txt';
 foreach my $exp (keys %samples) {
@@ -90,6 +93,7 @@ foreach my $exp (keys %samples) {
 	}
 	my $type=get_gene_info($gene_id);
 	$genes{$sample}{$type->[1]}{$type->[0]}++;
+	$genes{'total'}{'total'}{'total'}++;
     }
 }
 

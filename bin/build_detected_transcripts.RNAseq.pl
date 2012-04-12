@@ -74,6 +74,9 @@ my %samples=%{get_samples(\%tables,
 
 my %detected;
 
+# Initialize transcripts
+$transcripts{'total'}{'total'}{'total'}=0;
+
 # Get the gene information
 my $trans_out=$project_id.'_'.$exp_id.'_detected_transcripts.txt';
 foreach my $exp (keys %samples) {
@@ -87,6 +90,7 @@ foreach my $exp (keys %samples) {
     foreach my $trans_id (keys %{$data}) {
 	my $type=get_trans_info($trans_id);
 	$transcripts{$sample}{$type->[1]}{$type->[0]}++;
+	$transcripts{'total'}{'total'}{'total'}++;
     }
 }
 
