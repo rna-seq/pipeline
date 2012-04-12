@@ -372,7 +372,7 @@ _all_junctions_class_pooled: _split_mapping_breakdown
 
 # TO DO we have to insert the number of detected genes here as well as the gene
 # saturation
-_proj_coverage: _junction_classification _merged_SAM
+_proj_coverage: _junction_classification _merged_SAM _unique_maps_genome
 	get_proj_overlaps_cluster.RNAseq.pl
 #	cd $GENOMEDIR; for file in `ls *proj.overlap.gz | sed 's/\/.*\///' | sed 's/.gz$//'`; do get_proj_total_inclusion.RNAseq.pl $file.gz > $file.total; done
 	plot_proj_detection.RNAseq.pl; mv $PREFIX.Proj.*.ps $PREFIX.Proj.*.jpeg $GRAPHS
@@ -381,9 +381,10 @@ _proj_coverage: _junction_classification _merged_SAM
 
 # This has to be fixed so the get_exon_total_inclusion script does not take the
 # files from the command line
-_exon_coverage: _junction_classification _unique_maps_genome
-	get_exon_overlaps_cluster.RNAseq.pl
-	cd $EXONDIR; for file in `ls *.gtf.overlap.gz | sed 's/\/.*\///' |sed 's/.gz//'`; do get_exon_total_inclusion.RNAseq.pl $file.gz > $file.total; done
+_exon_coverage: _junction_classification _merged_SAM _unique_maps_genome
+	get_exon_overlaps_cluster_bam.RNAseq.pl
+#	get_exon_overlaps_cluster.RNAseq.pl
+#	cd $EXONDIR; for file in `ls *.gtf.overlap.gz | sed 's/\/.*\///' |sed 's/.gz//'`; do get_exon_total_inclusion.RNAseq.pl $file.gz > $file.total; done
 	plot_exon_detection.RNAseq.pl; mv $PREFIX.Exons.*.ps $PREFIX.Exons.*.jpeg $GRAPHS
 	plot_exon_saturation.RNAseq.pl; mv Exon.saturation.ps Exon.saturation.jpeg $GRAPHS
 	cd $EXONDIR; wc -l *.overlap.total |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _exon_coverage.txt; mv _exon_coverage.txt $PROJECT
