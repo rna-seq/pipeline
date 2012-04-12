@@ -315,7 +315,6 @@ _proj_coverage: _junction_classification _merged_SAM
 # files from the command line
 _exon_coverage: _junction_classification _merged_SAM
 	get_exon_overlaps_cluster_bam.RNAseq.pl
-#	cd $EXONDIR; for file in `ls *.gtf.overlap.gz | sed 's/\/.*\///' |sed 's/.gz//'`; do get_exon_total_inclusion.RNAseq.pl $file.gz > $file.total; done
 	plot_exon_detection.RNAseq.pl; mv $PREFIX.Exons.*.ps $PREFIX.Exons.*.jpeg $GRAPHS
 	plot_exon_saturation.RNAseq.pl; mv Exon.saturation.ps Exon.saturation.jpeg $GRAPHS
 	cd $EXONDIR; wc -l *.overlap.total |gawk '{if ($2 !~/^total$/) {print $2"\t"$1}}' > _exon_coverage.txt; mv _exon_coverage.txt $PROJECT

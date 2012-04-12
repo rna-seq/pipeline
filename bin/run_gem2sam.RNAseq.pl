@@ -59,6 +59,7 @@ my $tmpdir;
 my $samdir;
 my $file_list;
 my $bindir;
+my $maxintronlength=100000;
 
 # Read the configuration file
 my %options=%{read_config_file()};
@@ -206,6 +207,7 @@ sub get_lane_files {
 sub generate_sam_header {
     my $genomefile=shift;
     my $outfn=shift;
+    my $maxintronlength=shift || 10000;
 
     my @seqheader;
     my $invalid=0;
@@ -264,7 +266,7 @@ sub generate_sam_header {
 		my $gap=$coords[0];
 		$gap=~s/.+[^\d]//o;
 		$gap=~s/N//o;
-		if ($gap && $gap > 10000) {
+		if ($gap && $gap > $maxintronlength) {
 		    $invalid++;
 		    print STDERR join("\t",
 				      "Gap Too large:",
@@ -272,7 +274,10 @@ sub generate_sam_header {
 		    next;
 		}
 	    }
-	    if ($line[8] > 10000) {
+
+	    # This probably should be removed as it is a patch to avoid linking
+	    # pairs that are too far appart
+	    if ($line[8] > $maxintronlength) {
 		$line[1]=65;
 		$line[6]='*';
 		$line[7]=0;
