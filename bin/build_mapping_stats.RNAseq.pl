@@ -46,10 +46,12 @@ use RNAseq_GEM3 qw(parse_gem_line);
 
 my $mismatches;
 my $file_list;
+my $rlength;
 
 my %options=%{read_config_file()};
 $mismatches=$options{'MISMATCHES'};
 $file_list=$options{'FILELIST'};
+$rlength=$options{'READLENGTH'} || 25;
 
 my %files=%{read_file_list()};
 
@@ -98,6 +100,11 @@ for (my $i=0;$i<@input;$i++) {
 	
 	if ($line{'matches'}=~/^0(:0)*$/) {
 	    # If the read does not map we needn't continue
+	    next;
+	} elsif (($line{'length'} < $rlength)
+		 || ($line{'hits'} eq '-')) {
+	    # Remove the reads that are mapped to too many locations after the
+	    # recursive mapping
 	    next;
 	} else {
 	    # This means the read maps somewhere
