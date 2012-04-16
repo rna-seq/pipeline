@@ -119,6 +119,9 @@ sub get_projections {
     my $genes=shift;
     my $logfh=shift;
 
+    my $gene_no=keys %{$genes};
+
+    print $logfh $gene_no,"\tGenes present in annotation\n";
     print $logfh 'Calculating gene projections...';
     foreach my $gene (keys %{$genes}) {
 	my $chr;
@@ -197,8 +200,8 @@ sub get_exons {
 	    $remove{$exon_id}=1;
 	} else {
 	    $exons{$exon_id}=$gene_id;
-	    $genes->{$gene_id}->{$exon_id}=1;
 	}
+	$genes->{$gene_id}->{$exon_id}=1;
     }
     close($exonfh);
     print $logfh "done\n";
