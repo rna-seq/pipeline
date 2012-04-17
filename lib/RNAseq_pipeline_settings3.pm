@@ -1817,7 +1817,7 @@ sub get_trans_expression_data {
     if ($count && ($count > 1)) {
 	print STDERR $count,"\tTranscripts are detected in $table\n";
     } else {
-	die "No transcripts present in $table\n";
+	print STDERR "No transcripts present in $table\n";
     }
 
     if ($count < 16000) {
