@@ -595,7 +595,9 @@ sub process_fastq_file {
 	}
 
 	# Count the number of sequences with N's (ambiguous bases)
-	if ($seq=~/N/) {
+	if ($seq=~/N/o) {
+	    $ambiguous_reads++;
+	} elsif ($seq=~/\./o) {
 	    $ambiguous_reads++;
 	} else {
 	    $good_reads++;
