@@ -54,7 +54,7 @@ sub get_tables {
     $sth=$dbh->prepare($query);
     $count=$sth->execute($project);
 
-    if ($count && ($count > 1)) {
+    if ($count && ($count > 0)) {
 	print STDERR $count,"\tExperiments are present for $project\n";
     } else {
 	die "No experiments present for project $project\n";
