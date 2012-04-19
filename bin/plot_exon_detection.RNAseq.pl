@@ -43,7 +43,7 @@ BEGIN {
 # If an annotation is provided the fraction off features from the annotation
 # that is detected in each file will be output.
 
-use RNAseq_pipeline3 qw(get_fh get_Average);
+use RNAseq_pipeline3 qw(get_fh get_Average run_system_command);
 use RNAseq_pipeline_settings3 qw(read_config_file read_file_list);
 use Getopt::Long;
 
