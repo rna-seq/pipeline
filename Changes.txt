@@ -1,16 +1,82 @@
 Next release
 ============
 
-Features
---------
-= 5.1
+= 6.0  (2012-04-27) =
+
+- Require only one gene in bin/compare_individual_genes.RNAseqComp.pl
+
+- Fix bug occurring when no exons are detected
+
+- Allow the comparison scripts to one with 1 dataset instead of requiring 2
+
+- Count "." as an N in case the reads have not been preprocessed correctly
+
+- Prevent the pipeline fom dying if no transcripts are detected
+
+- Avoid counting the trimmed reads that map to more than 10 locations when 
+  generating the mapping statistics
+
+- Fix projections for genes with repeated exons in 
+  bin/build_gene_projections.RNAseq.pl
+
+- Skip recursive mapping if final file is already present
+
+- Take the information for the exon overlap total from the bam file
+
+- Allow for no transcripts and no genes to be detected without crashing
+
+- use the bam for the exon overlaps
+
+- Get the overlaps from the BAM when starting from bam files
+
+- Get the overlaps from the BAM file in fastq
+
+- Prevent the crashing of the pipeline when no read is mapped to the genome
+
+- Add mapper memory in configuration to bin/run_mapper_cluster.RNAseq.pl
+
+- Add bin/get_proj_overlaps_cluster2.RNAseq.pl
+
+- Modify the overlap.total calculation in order to reduce time by using the
+  information from the BAM directly instead of the overlap
+
+- Add fluxmem option
+
+- Add bin/link_sam.RNAseq.pl
+
+- Add missing script bin/get_split_coverage_bam.RNAseq.pl
+
+- Add timing for the total pipeline and each of the steps
+
+- Remove the unpooled gene RPKM and use the pooled gene RPKM for the fusion
+  transcript rule.
+
+- Remove the reference file name from the gtf to reduce the size in 
+  lib/RNAseq_pipeline_settings3.pm
+
+- Add a check for the creation of the junctions table. Remove redundant code
+  and remove the exon RPKM (unpooled) step
+
+- Remove the file nme from the gtf in order to reduce file sizes in
+  lib/RNAseq_pipeline3.pm
+
+- Change cluster run for overlap 
+
+- Add autoflush to the logs in lib/RNAseq_pipeline3.pm
+
+- Reduce code by removing the read.list generation, as this is done by buildout
+
+- Add some additional checks to bin/prepare_files.RNAseq.pl and change the way
+  the log file is managed in order to time the script
 
 - Execute script will show the wall clock time for each of teh steps executed as well as the total.
+
 - Exon RPKM and Gene RPKM are no longer calculated for the individual lanes.
 
-= 5.0.1 (2012-03-26)
+= 5.0.1 (2012-03-26) =
 
 - add ./bin/contrib/ to host contributions from other developers
+
 - add ./bin/run_cluster_flux.main.pl
       ./bin/run_mapper_cluster.main.pl
       ./bin/contrib/templates/template3.0.1.txt
