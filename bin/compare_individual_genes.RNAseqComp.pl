@@ -80,8 +80,8 @@ if ($genefile) {
     close($genefh);
 }
 
-unless (@genes_needed >= 2) {
-    die "I need at least 2 genes to compare (provided with the -g option\n";
+unless (@genes_needed >= 1) {
+    die "I need at least 1 gene (provided with the -g option\n";
 }
 
 # read the config file
