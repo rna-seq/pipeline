@@ -1,9 +1,19 @@
 Copyright (C) 2011 Centre for Genomic Regulation (CRG)
 
 Author: David Gonzalez Knowles david.gonzalez@crg.eu
-	Maik Röder maik.roeder@crg.es
+	Maik Röder maikroeder@gmail.com
 
 = RNASeq Pipeline =
+
+The pipeline is part of the Grape pipeline:
+
+    http://big.crg.cat/services/grape
+
+The following installation instructions are only useful if
+you really want to run the pipeline without assistance.
+
+Grape instead will install all dependencies for you, and also set up
+all pipeline parameters, and is really recommended.
 
 = Dependencies =
 
