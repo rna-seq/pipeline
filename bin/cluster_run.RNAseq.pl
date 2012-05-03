@@ -103,8 +103,12 @@ sub build_script_submission {
 # Get the job name
 #\$ -N $jobname
     
+#\$ -l h_vmem=6G
+#\$ -pe smp 1
+
 # Write in to the current working directory
-#\$ -cwd 
+#\$ -cwd
+
 export PATH=\$PATH:/soft/bin
 export LC_ALL='C'
 
