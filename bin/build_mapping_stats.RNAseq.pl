@@ -101,8 +101,7 @@ for (my $i=0;$i<@input;$i++) {
 	if ($line{'matches'}=~/^0(:0)*$/) {
 	    # If the read does not map we needn't continue
 	    next;
-	} elsif (($line{'length'} < $rlength)
-		 || ($line{'hits'} eq '-')) {
+	} elsif ($line{'hits'}=~/^-:/) {
 	    # Remove the reads that are mapped to too many locations after the
 	    # recursive mapping
 	    next;
