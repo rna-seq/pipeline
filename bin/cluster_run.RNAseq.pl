@@ -45,6 +45,7 @@ my $script;
 my $queue;
 my $projdir;
 my $logsdir;
+my $mem='3G'; # Set the default memory usage to 3G
 
 # get some options from the config file
 my %options=%{read_config_file()};
@@ -61,7 +62,8 @@ unless($script) {
 
 if ($queue) {
     my ($subfile,$jobname)=build_script_submission($script,
-						   $bindir);    
+						   $bindir,
+						   $mem);    
     send2cluster($subfile,
 		 $queue,
 		 $jobname);
@@ -80,6 +82,7 @@ exit;
 sub build_script_submission {
     my $script=shift;
     my $bindir=shift;
+    my $memmory=shift;
 
     unless ($bindir) {
 	die "I don't know where to find the binaries\n";
@@ -103,8 +106,8 @@ sub build_script_submission {
 # Get the job name
 #\$ -N $jobname
     
-#\$ -l h_vmem=6G
-#\$ -pe smp 1
+#\$ -l h_vmem=$memmory
+#\$ -pe smp 2
 
 # Write in to the current working directory
 #\$ -cwd
