@@ -59,7 +59,7 @@ unless($infile) {
 
 # Process the file
 print STDERR "Processing $infile\n";
-print STDERR "Extracting uniquely mapping reads acordig to the alignmnent\n";
+print STDERR "Extracting uniquely mapping reads acording to the alignmnent\n";
 
 # produce a sam file sorted by read_id, pipe it into the script and print out
 # only those cases where the read id appears only once.
