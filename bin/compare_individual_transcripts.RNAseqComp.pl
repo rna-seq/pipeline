@@ -94,8 +94,8 @@ if ($transfile) {
     close($transfh);
 }
 
-unless (@trans_needed >= 2) {
-    die "I need at least 2 transcripts to compare (provided with the -t option\n";
+unless (@trans_needed >= 1) {
+    die "I need at least 1 transcript (provided with the -t option\n";
 }
 
 # read the config file
