@@ -65,6 +65,7 @@ my @input=sort @ARGV;
 # We will check if there are repeated files in the input (one zipped and one
 # unzipped), if so we will use the unzipped one.
 my %input;
+my %multi;
 foreach my $file (@input) {
     my $unzipped=$file;
     $unzipped=~s/.gz$//;
@@ -73,76 +74,100 @@ foreach my $file (@input) {
     } else {
 	$input{$file}=1;
     }
+
+    my $multimapfile=$file;
+
+    if ($multimapfile=~s/unique/multi/) {
+	if (-r $multimapfile) {
+	    print STDERR "Adding $multimapfile to list\n";
+	    $multi{$file}=$multimapfile;
+	}   
+    }
 }
 
 @input=sort keys %input;
 my @files=sort keys %files;
 unless (@input == @files) {
-    die "We have a filenumber problem??\n";
+#    die "We have a filenumber problem??\n";
 }
 
+
+
 for (my $i=0;$i<@input;$i++) {
-    my $infile=$input[$i];
+    my $infilename=$input[$i];
     my $shortname=$files{$files[$i]}->[1];
-    my $infh=get_fh($infile);
     my $total=0;
     my $mapped=0;
     my $unique=0;
     my $unique100=0;
-    
-    while (my $line=<$infh>) {
-	if ($line=~/^\s*$/) {
-	    warn "Empty line in $infile, maybe something is wrong...\n";
-	    next;
-	}
-	my %line=%{parse_gem_line($line)};
-	$total++;
-	
-	if ($line{'matches'}=~/^0(:0)*$/) {
-	    # If the read does not map we needn't continue
-	    next;
-	} elsif ($line{'matches'}=~/^-:/) {
-	    # Remove the reads that are mapped to too many locations after the
-	    # recursive mapping
-	    next;
-	} else {
-	    # This means the read maps somewhere
-	    $mapped++;
-	}
-	
-	# Check if the read is unique
-	my @hits=split(':',$line{'matches'});
 
-	if (@hits < $mismatches - 1) {
-	    $mismatches= @hits - 1;
-	    warn "File was mapped with $mismatches mismatches, reducing mismatch threshold accordingly\n";
-	}
-
-	for (my $i=0;$i<=$mismatches;$i++) {
-	    if ($hits[$i] eq '-') {
-		last;
-	    } elsif ($hits[$i] eq '!') {
-		last;
-	    } elsif ($hits[$i] > 0) {
-		# This is the best hit
-		if ($hits[$i] == 1) {
-		    $unique++;
-		}
-		last;
-	    }
-	}	 
-	
-	# Check if the read is 1:0:0
-	if ($line{'matches'}=~/^1(:0)+$/) {
-	    $unique100++;
-	}
-	
+    my @files=($infilename);
+    if ($multi{$infilename}) {
+	push @files,$multi{$infilename};
     }
-    close($infh);
 
-    $infile=~s/.*\///;
+    foreach my $infile (@files) {
+	my $infh=get_fh($infile);
+
+	while (my $line=<$infh>) {
+	    if ($line=~/^\s*$/) {
+		warn "Empty line in $infile, maybe something is wrong...\n";
+		next;
+	    }
+	    my %line=%{parse_gem_line($line)};
+	    
+	    # Counter for total reads
+	    $total++;
+	    
+	    # Counter for mapped reads
+	    if ($line{'matches'}=~/^0(:0)*$/) {
+		# If the read does not map we needn't continue
+		next;
+	    } elsif ($line{'matches'}=~/^-:/) {
+		# Remove the reads that are mapped to too many locations after the
+		# recursive mapping
+		next;
+	    } elsif ($line{'matches'}=~/^(0:)*!/) {
+		# Remove the reads that are mapped to too many locations after the
+		# recursive mapping
+		next;
+	    } else {
+		# This means the read maps somewhere
+		$mapped++;
+	    }
+	    
+	    # Check if the read is unique
+	    my @hits=split(':',$line{'matches'});
+	    
+	    if (@hits < $mismatches - 1) {
+		$mismatches= @hits - 1;
+		warn "File was mapped with $mismatches mismatches, reducing mismatch threshold accordingly\n";
+	    }
+	    
+	    for (my $i=0;$i<=$mismatches;$i++) {
+		if ($hits[$i] eq '-') {
+		    last;
+		} elsif ($hits[$i] > 0) {
+		    # This is the best hit
+		    if ($hits[$i] == 1) {
+			$unique++;
+		    }
+		    last;
+		}
+	    }	 
+	    
+	    # Check if the read is 1:0:0
+	    if ($line{'matches'}=~/^1:0:0/) {
+		$unique100++;
+	    }
+	    
+	}
+	close($infh);
+    }
+
+    $infilename=~s/.*\///;
     print join("\t",
-	       $infile,
+	       $infilename,
 	       $total,
 	       $mapped,
 	       $unique,

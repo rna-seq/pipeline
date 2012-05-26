@@ -58,7 +58,7 @@ my @prerequisites=('gem-mapper',
 		   'gem-split-mapper',
 		   'gem-do-index',
 		   'overlap',
-		   'flux.sh');
+		   'flux');
 
 print $log_fh "Checking prerequisites\n";
 foreach my $req (@prerequisites) {
