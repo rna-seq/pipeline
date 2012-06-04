@@ -84,6 +84,8 @@ foreach my $pair (keys %pairs) {
 	}
     } elsif (@lanes == 2) {
 	print $log_fh "$pair reads identified as paired\n";
+	unless ($reads{$lanes[0]}) {die "No reads found for $lanes[0]\n"}
+	unless ($reads{$lanes[1]}) {die "No reads found for $lanes[1]\n"}
 	unless ($reads{$lanes[0]}==$reads{$lanes[1]}) {
 	    die "In paired reads both read files should have the same number of entries.\nThis is not the case for pair $pair\n";
 	}
