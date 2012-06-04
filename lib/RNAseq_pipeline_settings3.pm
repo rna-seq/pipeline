@@ -1258,7 +1258,7 @@ sub get_feature_overlap_sub {
 			     $size,
 			     $tmpdir);
 
-	# Create the file pairs fro overlap
+	# Create the file pairs for overlap
 	my @file_pairs;
 	my @overlap_files;
 	foreach my $file (@files) {
@@ -1584,9 +1584,9 @@ export infile=\${infiles[\$SGE_TASK_ID-1]}
 export outfile=\${outfiles[\$SGE_TASK_ID-1]}
 
 echo \$HOSTNAME >&2
-until ( [[ -r \$outfile ]] );
+until ( [[ -s \$outfile ]] );
 do $bindir/overlap $annotation \$infile $flags > \$outfile; sleep 1;
-if [[ -r \$outfile ]]; then echo done; else echo repeating; fi
+if [[ -s \$outfile ]]; then echo done; else echo repeating; fi
 done
 
 FORMEND
