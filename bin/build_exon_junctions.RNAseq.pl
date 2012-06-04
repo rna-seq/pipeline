@@ -147,7 +147,7 @@ if (-r $table.'.sql') {
 $present=check_table_existence($dbh,
 			       $table);
 
-if ($present) {
+unless ($present) {
     die "ERROR: $table does not seem to be present\n";
 }
 
