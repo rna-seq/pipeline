@@ -1,6 +1,13 @@
 Next release
 ============
 
+= 6.1
+
+- Bugfix to prevent error when checking for the prerequisite flux executable
+
+- Fix error in some tables when processing only one file of single end reads
+
+
 = 6.0  (2012-04-27) =
 
 - Require only one gene in bin/compare_individual_genes.RNAseqComp.pl
@@ -72,6 +79,7 @@ Next release
 - Execute script will show the wall clock time for each of teh steps executed as well as the total.
 
 - Exon RPKM and Gene RPKM are no longer calculated for the individual lanes.
+- Fix problem with the projection generation that missed some genes containing exons that are present in more than one gene. This affects > 1% of the genes
 
 = 5.0.1 (2012-03-26) =
 
