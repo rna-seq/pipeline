@@ -221,7 +221,7 @@ _junctions_mapping: _dataset _indices
 # of the sets and we will try to map them using the splitmapper
 _unmapped_reads: _genome_mapping _transcriptome_mapping _junctions_mapping
 	cluster_run.RNAseq.pl get_unmapped_reads.RNAseq.pl
-	grep -c '^>' $SPLITMAPDIR/*unmapped.fa |sed 's/^.*\///' |gawk -F":" '{print $1"\t"$2}' > _unmapped_reads.txt
+	grep -H -c '^>' $SPLITMAPDIR/*unmapped.fa |sed 's/^.*\///' |gawk -F":" '{print $1"\t"$2}' > _unmapped_reads.txt
 	all_no_log_table
 
 # split map those reads with no hits We will use conservative settings in order
