@@ -32,8 +32,6 @@ BEGIN {
     unshift @INC, "$libdir";
 }
 
-use Tools::Bam ('generate_bam_index','generate_sorted_bam');
-
 # Objective
 # This script should take the gem-2-sam program and run it in the pipeline.
 # As the program is in test phase currently, it will generate the header first
@@ -52,6 +50,7 @@ use Getopt::Long;
 use RNAseq_pipeline3 qw(get_fh get_files_from_table_sub run_system_command);
 use RNAseq_pipeline_settings3 ('read_config_file','get_dbh','read_file_list');
 use Bio::SeqIO;
+use Tools::Bam ('generate_bam_index','generate_sorted_bam');
 
 my $genomefile;
 my $prefix;
@@ -59,7 +58,6 @@ my $tmpdir;
 my $samdir;
 my $file_list;
 my $bindir;
-my $maxintronlength=100000;
 
 # Read the configuration file
 my %options=%{read_config_file()};
@@ -113,18 +111,11 @@ foreach my $pair (keys %lane_files) {
 		  $tmpdir);
     # This has to be modified, because if not the file is not filtered and it
     # will crash due to the hard clippings from GEM
-    if (-r $genomefile.'.fai' && 0) {
-	print STDERR "$genomefile.fai is present\n";
-	generate_merged_sorted_bam($samfn,
-				   $bamfn,
-				   $genomefile);
-    } else {
-	print STDERR "$genomefile.fai not present\n";
-	generate_sam_header($genomefile,
-			    $samfn);
-	generate_sorted_bam($samfn,
-			    $bamfn);
-    }
+    print STDERR "$genomefile.fai not present\n";
+    generate_sam_header($genomefile,
+			$samfn);
+    generate_sorted_bam($samfn,
+			$bamfn);
     generate_bam_index($bamfn);
     print join("\t",
 	       $pair,
@@ -133,25 +124,6 @@ foreach my $pair (keys %lane_files) {
 
 
 exit;
-
-sub generate_merged_sorted_bam {
-    my $samfile=shift;
-    my $bamfile=shift;
-    my $indexfile=shift;
-
-    my $tmpbam=$bamfile;
-    $tmpbam=~s/.*\///o;
-    $tmpbam=$$.'.'.$tmpbam;
-    my $tmpsam=$$.'.tmpsam';
-
-    print STDERR "Building sorted BAM file from $samfile\n";
-
-    my $command='samtools import ';
-    $command.="$indexfile.fai ";
-    $command.="$samfile.$$ $tmpsam;samtools sort $tmpsam $bamfile;";
-    $command.="rm $tmpsam $samfile.$$";
-    run_system_command($command);
-}
 
 sub process_files {
     my $set=shift;
@@ -261,28 +233,28 @@ sub generate_sam_header {
 				  "Hard clipping:",
 				  @line),"\n";
 		next;
-	    } elsif ($line[5]=~/^\d+M\d+N\d+M$/o) {
-		my @coords=split(/N/,$line[5]);
-		my $gap=$coords[0];
-		$gap=~s/.+[^\d]//o;
-		$gap=~s/N//o;
-		if ($gap && $gap > $maxintronlength) {
-		    $invalid++;
-		    print STDERR join("\t",
-				      "Gap Too large:",
-				      @line),"\n";
-		    next;
-		}
+#	    } elsif ($line[5]=~/^\d+M\d+N\d+M$/o) {
+#		my @coords=split(/N/,$line[5]);
+#		my $gap=$coords[0];
+#		$gap=~s/.+[^\d]//o;
+#		$gap=~s/N//o;
+#		if ($gap && $gap > $maxintronlength) {
+#		    $invalid++;
+#		    print STDERR join("\t",
+#				      "Gap Too large:",
+#				      @line),"\n";
+#		    next;
+#		}
 	    }
 
 	    # This probably should be removed as it is a patch to avoid linking
 	    # pairs that are too far appart
-	    if ($line[8] > $maxintronlength) {
-		$line[1]=65;
-		$line[6]='*';
-		$line[7]=0;
-		$line[8]=0;
-	    }
+#	    if ($line[8] > $maxintronlength) {
+#		$line[1]=65;
+#		$line[6]='*';
+#		$line[7]=0;
+#		$line[8]=0;
+#	    }
 	    print $outfh join("\t",
 			      @line),"\n";
 	} else {
