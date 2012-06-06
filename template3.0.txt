@@ -405,7 +405,7 @@ _splicing_summary: _junction_coverage _split_mapping_breakdown
 
 ################
 # Exon RPKM info
-_exon_RPKM_pooled: _exon_coverage _junction_coverage
+_exon_RPKM_pooled_old: _exon_coverage _junction_coverage
 	cluster_run.RNAseq.pl get_exon_rpkm_pooled.RNAseq.pl
 	zcat $EXONDIR/*.exon.rpkm.pooled.txt.gz > _exon_RPKM_pooled.txt
 	all_no_log_table
@@ -417,7 +417,7 @@ _exon_readcount_pooled: _exon_RPKM_pooled
 
 ################
 # Gene RPKM info
-_gene_RPKM_pooled: _proj_coverage _junction_coverage
+_gene_RPKM_pooled_old: _proj_coverage _junction_coverage
 	cluster_run.RNAseq.pl get_gene_rpkm_pooled.RNAseq.pl
 	zcat $GENOMEDIR/*.gene.rpkm.pooled.txt.gz > _gene_RPKM_pooled.txt
 	all_no_log_table
@@ -515,15 +515,15 @@ _detected_transcripts: _transcript_expression_levels_pooled _transcript_expressi
 
 #######################
 # Calculate gene RPKM from the flux capacitor results
-_gene_RPKM_pooled_flux: _transcript_expression_levels_pooled
-	get_gene_rpkm_pooled_flux.RNAseq.pl > _gene_RPKM_pooled_flux.txt
+_gene_RPKM_pooled: _transcript_expression_levels_pooled
+	get_gene_rpkm_pooled_flux.RNAseq.pl > _gene_RPKM_pooled.txt
 	all_no_log_table
 
-_exon_RPKM_pooled_flux: _transcript_expression_levels_pooled
-	get_exon_rpkm_pooled_flux.RNAseq.pl > _exon_RPKM_pooled_flux.txt
+_exon_RPKM_pooled: _transcript_expression_levels_pooled
+	get_exon_rpkm_pooled_flux.RNAseq.pl > _exon_RPKM_pooled.txt
 	all_no_log_table
 
-RPKMs_flux: _gene_RPKM_pooled_flux _exon_RPKM_pooled_flux
+RPKMs_flux: _gene_RPKM_pooled _exon_RPKM_pooled
 
 # #####################
 # Get fusion transcripts
