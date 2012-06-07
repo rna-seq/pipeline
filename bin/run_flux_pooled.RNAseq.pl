@@ -100,8 +100,6 @@ foreach my $group (keys %groups) {
 	}
     }
 
-
-
     # Check if we have the combined bed file an if not create it
     my $infilename=$localdir.'/'.$group.'.combined.bed';
     if (-r $infilename) {
