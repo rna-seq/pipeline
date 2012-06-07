@@ -40,8 +40,6 @@ use RNAseq_pipeline_settings3 ('read_config_file','read_file_list');
 use Getopt::Long;
 use Bio::DB::Sam;
 
-
-
 # Declare some variables
 my $threshold=1;
 my $tmpdir;
