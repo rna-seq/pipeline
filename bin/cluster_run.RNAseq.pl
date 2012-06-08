@@ -60,6 +60,10 @@ unless($script) {
     die "No input script supplied\n";
 }
 
+if ($script=~/flux/) {
+    $mem='12G';
+}
+
 if ($queue) {
     my ($subfile,$jobname)=build_script_submission($script,
 						   $bindir,
