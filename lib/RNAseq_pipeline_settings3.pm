@@ -1013,11 +1013,11 @@ sub send2cluster {
     run_system_command($command);
 
     # Add the command output
-    $command="cat $jobname.[eo]$job_id* >> $logs/$jobname.$queue.log";
+    $command="cat $jobname.p?[eo]$job_id* >> $logs/$jobname.$queue.log";
     run_system_command($command);
 
     # Remove the files
-    $command="rm $jobname.[eo]$job_id*";
+    $command="rm $jobname.p?[eo]$job_id*";
     run_system_command($command);
 
     return($job_id);
