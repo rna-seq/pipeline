@@ -71,7 +71,6 @@ foreach my $req (@prerequisites) {
 	print $log_fh join("\t",
 			   $req,
 			   'absent'),"\n";
-	exit(1);
     } else {
 	print $log_fh join("\t",
 			   $req,
