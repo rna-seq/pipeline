@@ -37,7 +37,8 @@ BEGIN {
 # single word, and it will run that script on the cluster
 
 use RNAseq_pipeline3 qw(get_fh run_system_command);
-use RNAseq_pipeline_settings3 qw(read_config_file send2cluster);
+use RNAseq_pipeline_settings3 qw(read_config_file);
+use Tools::Cluster qw(send2cluster build_script_submission);
 
 # Declare some variables
 my $bindir;
@@ -46,6 +47,7 @@ my $queue;
 my $projdir;
 my $logsdir;
 my $mem='3G'; # Set the default memory usage to 3G
+my $threads=1;
 
 # get some options from the config file
 my %options=%{read_config_file()};
@@ -62,12 +64,14 @@ unless($script) {
 
 if ($script=~/flux/) {
     $mem='12G';
+    $threads=2;
 }
 
 if ($queue) {
     my ($subfile,$jobname)=build_script_submission($script,
 						   $bindir,
-						   $mem);    
+						   $mem,
+						   $threads);    
     send2cluster($subfile,
 		 $queue,
 		 $jobname);
@@ -82,51 +86,6 @@ if ($queue) {
 }
 
 exit;
-
-sub build_script_submission {
-    my $script=shift;
-    my $bindir=shift;
-    my $memmory=shift;
-
-    unless ($bindir) {
-	die "I don't know where to find the binaries\n";
-    }
-     
-    unless($script) {
-	die "No input supplied\n";
-    }
-
-    my $jobname=$script;
-    $jobname=~s/(.pl)?$//;
-    $jobname=~s/_//g;
-    
-    # Print the submission file
-    my $subfile="subfile.$$.job";
-    my $outfh=get_fh($subfile,1);
-    
-    print STDERR "Building submission file for $jobname...";
-
-    print $outfh <<FORMEND;
-# Get the job name
-#\$ -N $jobname
-    
-#\$ -l h_vmem=$memmory
-#\$ -pe smp 2
-
-# Write in to the current working directory
-#\$ -cwd
-
-export PATH=\$PATH:/soft/bin
-export LC_ALL='C'
-
-$bindir/$script
-FORMEND
-    ;
-    close($outfh);
-    print STDERR "done\n";
-
-    return($subfile,$jobname);
-}
 
 __END__
 
