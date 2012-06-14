@@ -53,15 +53,6 @@ sub build_parameter_file {
     print $paramfh join(" ",
 			'MAPPING_FILE',
 			$maps),"\n";
-#    print $paramfh join(" ",
-#			'SORTED_MAPPINGS_FILE',
-#			$sorted_maps),"\n";
-    ### WARNING
-    # if  this flag is not set the input annotation and read files will be
-    # deleted (WORK_LOCAL)
-#    print $paramfh join(" = ",
-#			'WORK_LOCAL',
-#			'1'),"\n";
     print $paramfh join(" ",
 			'STDOUT_FILE',
 			$output),"\n";

@@ -43,7 +43,7 @@ BEGIN {
 ### TO DO join the subroutines from build_top(genes,trans,exons) into one
 
 use RNAseq_pipeline3 qw(get_fh parse_gff_line check_table_existence);
-use RNAseq_pipeline_settings3 ('read_config_file','get_dataset_id',
+use RNAseq_pipeline_settings3 ('read_config_file','get_sample_id',
 			       'get_dbh');
 
 # Declare some variables
@@ -63,7 +63,7 @@ my $threshold=1;
 my %options=%{read_config_file()};
 $annotation=$options{'ANNOTATION'};
 $prefix=$options{'PREFIX'};
-$gene_rpkm_table=$prefix.'_gene_RPKM';
+$gene_rpkm_table=$prefix.'_gene_RPKM_pooled';
 $exonclasstab=$options{'EXONSCLASSTABLE'};
 $top_genes_table=$prefix.'_top_genes_expressed';
 $datasets_table=$prefix.'_dataset';
@@ -80,8 +80,8 @@ my $dbhcommon=get_dbh(1);
 
 my %distribution;
 
-my %lanes=%{get_dataset_id($dbh,
-			   $datasets_table)};
+my %lanes=%{get_sample_id($dbh,
+			  $datasets_table)};
 
 # Get the number of detected features in each lane
 my @lanes=sort keys %lanes;
@@ -300,7 +300,7 @@ sub get_gene_expression {
 	my ($query,$sth);
 	$query ='SELECT gene_id, RPKM ';
 	$query.="FROM $table ";
-	$query.='WHERE LaneName = ?';
+	$query.='WHERE Sample = ?';
 #    $query.=' limit 2';
 	$sth=$dbh->prepare($query);
 	$sth->execute($lane);

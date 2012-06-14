@@ -26,7 +26,8 @@ use Exporter;
 	    'get_coords_from_exon_sub',
 	    'get_coords_from_junc_id_sub',
 	    'get_feature_overlap_sub','get_feature_overlap_split1',
-	    'get_pair_id','get_lane_id','get_dataset_id','get_mapping_fh',
+	    'get_pair_id','get_lane_id','get_dataset_id','get_sample_id',
+	    'get_mapping_fh',
 	    'get_gene_info_sub','get_trans_info_sub',
 	    'get_gene_RPKM_data','get_gene_readcount_data',
 	    'get_exon_readcount_data','get_splicing_data',
@@ -204,6 +205,25 @@ sub get_dataset_id {
 
     while (my ($lane_id,$lane_index)=$sth->fetchrow_array()) {
 	$lanes{$lane_id}=$lane_index;
+    }
+
+    return(\%lanes);
+}
+
+sub get_sample_id {
+    my $dbh=shift;
+    my $table=shift;
+
+    my %lanes;
+    my ($query,$sth);
+
+    $query ='SELECT pair_id, sample_id ';
+    $query.="FROM $table";
+    $sth=$dbh->prepare($query);
+    $sth->execute();
+
+    while (my ($lane_id,$sample_id)=$sth->fetchrow_array()) {
+	$lanes{$sample_id}{$lane_id}=1;
     }
 
     return(\%lanes);

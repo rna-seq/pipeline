@@ -42,7 +42,7 @@ BEGIN {
 # exons that are detected in at least one condition
 
 use RNAseq_pipeline3 qw(get_fh parse_gff_line check_table_existence);
-use RNAseq_pipeline_settings3 ('read_config_file','get_dataset_id',
+use RNAseq_pipeline_settings3 ('read_config_file','get_sample_id',
 			       'get_dbh');
 
 # Declare some variables
@@ -61,7 +61,7 @@ my $threshold=1;
 my %options=%{read_config_file()};
 $annotation=$options{'ANNOTATION'};
 $prefix=$options{'PREFIX'};
-$exon_rpkm_table=$prefix.'_exon_RPKM';
+$exon_rpkm_table=$prefix.'_exon_RPKM_pooled';
 $top_exons_table=$prefix.'_top_exons_expressed';
 $datasets_table=$prefix.'_dataset';
 $db=$options{'DB'};
@@ -70,8 +70,8 @@ my $dbh=get_dbh();
 
 my %distribution;
 
-my %lanes=%{get_dataset_id($dbh,
-			   $datasets_table)};
+my %lanes=%{get_sample_id($dbh,
+			  $datasets_table)};
 
 # Get the number of detected features in each lane
 my @lanes=sort keys %lanes;
@@ -206,7 +206,7 @@ sub get_exon_expression {
 	my ($query,$sth);
 	$query ='SELECT exon_id, RPKM ';
 	$query.="FROM $table ";
-	$query.='WHERE LaneName = ?';
+	$query.='WHERE Sample = ?';
 	$sth=$dbh->prepare($query);
 	$sth->execute($lane);
 	

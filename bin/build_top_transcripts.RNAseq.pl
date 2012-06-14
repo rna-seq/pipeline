@@ -42,7 +42,7 @@ BEGIN {
 # transcripts detected in at least one condition
 
 use RNAseq_pipeline3 qw(get_fh parse_gff_line check_table_existence);
-use RNAseq_pipeline_settings3 ('read_config_file','get_dataset_id',
+use RNAseq_pipeline_settings3 ('read_config_file','get_sample_id',
 			       'get_dbh');
 
 # Declare some variables
@@ -62,7 +62,7 @@ my $threshold=1;
 my %options=%{read_config_file()};
 $annotation=$options{'ANNOTATION'};
 $prefix=$options{'PREFIX'};
-$trans_rpkm_table=$prefix.'_transcript_expression_levels';
+$trans_rpkm_table=$prefix.'_transcript_expression_levels_pooled';
 $exonclasstab=$options{'EXONSCLASSTABLE'};
 $top_trans_table=$prefix.'_top_transcripts_expressed';
 $datasets_table=$prefix.'_dataset';
@@ -77,7 +77,7 @@ my $commondbh=get_dbh(1);
 
 my %distribution;
 
-my %lanes=%{get_dataset_id($dbh,
+my %lanes=%{get_sample_id($dbh,
 			   $datasets_table)};
 
 # Get the number of detected features in each lane
@@ -258,7 +258,7 @@ sub get_trans_expression {
 	
 	$query ='SELECT transcript_id, rpkm ';
 	$query.="FROM $table ";
-	$query.='WHERE lane_id = ?';
+	$query.='WHERE Sample = ?';
 	$sth=$dbh->prepare($query);
 	$sth->execute($lane);
 	

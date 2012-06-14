@@ -58,9 +58,9 @@ my $threshold=1;
 my %options=%{read_config_file()};
 $annotation=$options{'ANNOTATION'};
 $prefix=$options{'PREFIX'};
-$gene_rpkm_table=$prefix.'_gene_RPKM';
-$trans_rpkm_table=$prefix.'_transcript_expression_levels';
-$exon_rpkm_table=$prefix.'_exon_RPKM';
+$gene_rpkm_table=$prefix.'_gene_RPKM_pooled';
+$trans_rpkm_table=$prefix.'_transcript_expression_levels_pooled';
+$exon_rpkm_table=$prefix.'_exon_RPKM_pooled';
 $exonclasstab=$options{'EXONSCLASSTABLE'};
 $expression_summary_table=$prefix.'_expression_summary';
 $datasets_table=$prefix.'_dataset';
@@ -267,7 +267,7 @@ sub get_detected_genes {
 	$query ='SELECT count(DISTINCT gene_id) ';
 	$query.="FROM $table ";
 	if ($lane) {
-	    $query.='WHERE LaneName = ?';
+	    $query.='WHERE Sample = ?';
 	}
 	$sth=$dbh->prepare($query);
 	if ($lane) {
@@ -294,7 +294,7 @@ sub get_detected_transcripts {
 	$query ='SELECT count(DISTINCT transcript_id) ';
 	$query.="FROM $table ";
 	if ($lane) {
-	    $query.='WHERE lane_id = ?';
+	    $query.='WHERE Sample = ?';
 	}
 	$sth=$dbh->prepare($query);
 	if ($lane) {
@@ -321,7 +321,7 @@ sub get_detected_exons {
 	$query ='SELECT count(DISTINCT exon_id) ';
 	$query.="FROM $table ";
 	if ($lane) {
-	    $query.='WHERE LaneName = ?';
+	    $query.='WHERE Sample = ?';
 	}
 	$sth=$dbh->prepare($query);
 	if ($lane) {
