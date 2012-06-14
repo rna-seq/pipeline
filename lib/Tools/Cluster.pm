@@ -12,7 +12,7 @@ package Tools::Cluster;
 # Must be done before strict is used
 use Exporter;
 @ISA=('Exporter');
-@EXPORT_OK=('send2cluster');
+@EXPORT_OK=('send2cluster','build_script_submission');
 
 use strict;
 use warnings;
