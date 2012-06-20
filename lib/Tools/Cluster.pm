@@ -33,6 +33,7 @@ BEGIN {
 # Load subs from other modules
 use RNAseq_pipeline3 ('MySQL_DB_Connect','get_fh','run_system_command',
 		      'parse_gff_line','check_field_existence');
+use RNAseq_pipeline_settings3 qw(read_config_file);
 use Cwd;
 
 ### Sub to send stuff to the cluster
