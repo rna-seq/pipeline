@@ -28,6 +28,7 @@ bin/build_junction_sequences.RNAseq.pl -text
 bin/build_mapping_stats.RNAseq.pl -text
 bin/build_mapping_summary.RNAseq.pl -text
 bin/build_novel_junctions_summary.pl -text
+bin/build_novel_transcripts.RNAseq.pl -text
 bin/build_read_stats.RNAseq.pl -text
 bin/build_reads_supporting_inclusions.RNAseq.pl -text
 bin/build_register_results.RNAseq.pl -text
@@ -119,6 +120,7 @@ bin/prepare_files.RNAseq.pl -text
 bin/preprocess.RNAseq.pl -text
 bin/run_IDR.RNAseqComp.pl -text
 bin/run_IDR.RNAseqCompA.pl -text
+bin/run_cufflinks.RNAseq.pl -text
 bin/run_flux.RNAseq.pl -text
 bin/run_flux_pooled.RNAseq.pl -text
 bin/run_gem2sam.RNAseq.pl -text

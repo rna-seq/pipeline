@@ -448,6 +448,13 @@ _exon_RPKM_pooled_flux: _transcript_expression_levels_pooled
 	get_exon_rpkm_pooled_flux.RNAseq.pl > _exon_RPKM_pooled_flux.txt
 	all_no_log_table
 
+#######################
+# Get novel transcripts
+_novel_transcripts: _merged_SAM
+	run_cufflinks.RNAseq.pl
+	build_novel_transcripts.RNAseq.pl > _novel_transcripts.txt
+	all_no_log_table
+
 # #####################
 # Get fusion transcripts
 _fusion_transcripts: _transcriptome_mapping _gene_RPKM_pooled
