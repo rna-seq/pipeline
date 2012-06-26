@@ -1,7 +1,32 @@
 Next release
 ============
 
-= 6.1
+= 6.1 (2012-06-26) =
+
+- Calculate gene and exon RPKM now from the Flux Capacitor results.
+  The implementation of the rules _exon_RPKM_pooled and _gene_RPKM_pooled 
+  have been changed, and the old rules have been deprecated by adding a
+  postfix '_old'.
+  
+- Add bin/build_read_stats.fastqc.RNAseq.pl that will take as an input
+  a list of fasta, fastq or bam files and it will output a summary of
+  the read statistics in the file calculated by fastqc
+
+- Add a rule for getting novel transcripts: _novel_transcripts
+  This runs cufflinks the following new scripts:
+
+  - bin/run_cufflinks.RNAseq.pl - will run cufflinks on the 
+    merged SAM files with the most basic settings
+
+  - bin/build_novel_transcripts.RNAseq.pl - will take the output
+    of cufflinks and create a table to load in the database with this
+    information
+
+- Add lib/Tools/FastQC.pm for running FastQC, A quality control tool 
+  for high throughput sequence data.
+
+- Add lib/Tools/Cluster.pm containing subroutines used for submitting 
+  jobs to the cluster
 
 - Bugfix to prevent error when checking for the prerequisite flux executable
 
