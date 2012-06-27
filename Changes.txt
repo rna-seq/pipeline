@@ -1,7 +1,9 @@
 Next release
 ============
 
-= 6.1 (2012-06-26) =
+= 6.1 (2012-06-27) =
+
+- Installation is now done using grape.buildout exclusively.
 
 - Calculate gene and exon RPKM now from the Flux Capacitor results.
   The implementation of the rules _exon_RPKM_pooled and _gene_RPKM_pooled 
