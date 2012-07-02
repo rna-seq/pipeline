@@ -46,6 +46,7 @@ use RNAseq_pipeline3 ('get_fh','parse_gff_line');
 my $annotation;
 my $feature='gene';
 my $prefix;
+my %detected;
 my %rpkms;
 my $dbh;
 
@@ -65,9 +66,9 @@ $dbh=get_dbh();
 if ($feature eq 'gene') {
     my $tabsuffix='_gene_RPKM_pooled';
     my $table=$prefix.$tabsuffix;
-    my $data=get_gene_RPKM_data($dbh,
+    %rpkms=%{get_gene_RPKM_data($dbh,
 				$table,
-				\%rpkms);
+				\%detected)};
     my $annotfh=get_fh($annotation);
     while (my $line=<$annotfh>) {
 	chomp($line);
@@ -80,7 +81,22 @@ if ($feature eq 'gene') {
     }
     close($annotfh);
 } elsif ($feature eq 'transcript') {
-
+    my $tabsuffix='_transcript_expression_levels_pooled';
+    my $table=$prefix.$tabsuffix;
+    %rpkms=%{get_trans_expression_data($dbh,
+				       $table,
+				       \%detected)};
+    my $annotfh=get_fh($annotation);
+    while (my $line=<$annotfh>) {
+	chomp($line);
+	my %line=%{parse_gff_line($line)};
+	if ($line{'type'} ne 'transcript') {next;}
+	my $trans_id=$line{'feature'}{'transcript_id'};
+	if ($rpkms{$gene_id}) {
+	    print $line," RPKM \"$rpkms{$trans_id}\"\n";
+	}
+    }
+    close($annotfh);
 } elsif ($feature eq 'exon') {
 
 } else {

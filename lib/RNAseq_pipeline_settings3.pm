@@ -1832,13 +1832,19 @@ sub get_trans_expression_data {
     my ($query,$sth,$count);
     $query ='SELECT transcript_id, rpkm ';
     $query.="FROM $table ";
-    if ($breakdown) {
-	$query.='WHERE LaneName = ?';
+    if ($sample) {
+	if ($breakdown) {
+	    $query.='WHERE LaneName = ?';
+	} else {
+	    $query.='WHERE sample = ?';
+	}
+	$sth=$dbh->prepare($query);
+	$count=$sth->execute($sample);
     } else {
-	$query.='WHERE sample = ?';
+	$sample='sample';
+	$sth=$dbh->prepare($query);
+	$count=$sth->execute();
     }
-    $sth=$dbh->prepare($query);
-    $count=$sth->execute($sample);
     
     if ($count && ($count > 1)) {
 	print STDERR $count,"\tTranscripts are detected in $table\n";
