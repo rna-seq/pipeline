@@ -39,7 +39,9 @@ BEGIN {
 # Load modules
 use Getopt::Long;
 use RNAseq_pipeline_settings3 ('get_dbh','read_config_file',
-			       'get_gene_RPKM_data');
+			       'get_gene_RPKM_data',
+			       'get_trans_expression_data',
+			       'get_exon_readcount_data');
 use RNAseq_pipeline3 ('get_fh','parse_gff_line');
 
 # Declare some variables:
@@ -92,13 +94,36 @@ if ($feature eq 'gene') {
 	my %line=%{parse_gff_line($line)};
 	if ($line{'type'} ne 'transcript') {next;}
 	my $trans_id=$line{'feature'}{'transcript_id'};
-	if ($rpkms{$gene_id}) {
+	if ($rpkms{$trans_id}) {
 	    print $line," RPKM \"$rpkms{$trans_id}\"\n";
 	}
     }
     close($annotfh);
 } elsif ($feature eq 'exon') {
-
+    my $tabsuffix='_exon_RPKM_pooled';
+    my $table=$prefix.$tabsuffix;
+    %rpkms=%{get_exon_readcount_data($dbh,
+				     $table,
+				     \%detected)};
+    my $annotfh=get_fh($annotation);
+    while (my $line=<$annotfh>) {
+	chomp($line);
+	my %line=%{parse_gff_line($line)};
+	if ($line{'type'} ne 'exon') {next;}
+	my $strand=1;
+	if ($line{'strand'} eq '-') {
+	    $strand=-1;
+	}
+	my $exon_id=join('_',
+			 $line{'chr'},
+			 $line{'start'},
+			 $line{'end'},
+			 $strand);
+	if ($rpkms{$exon_id}) {
+	    print $line," RPKM \"$rpkms{$exon_id}\"\n";
+	}
+    }
+    close($annotfh);
 } else {
     die "Unknown feature $feature\n";
 }
