@@ -40,7 +40,7 @@ BEGIN {
 use Getopt::Long;
 use RNAseq_pipeline_settings3 ('get_dbh','read_config_file',
 			       'get_gene_RPKM_data');
-use RNAseq_pipeline3 ('parse_gff_line');
+use RNAseq_pipeline3 ('get_fh','parse_gff_line');
 
 # Declare some variables:
 my $annotation;
