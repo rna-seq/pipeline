@@ -34,6 +34,7 @@ Next release
 
 - Fix error in some tables when processing only one file of single end reads
 
+- RPKM pooled is calculated from the flux output
 
 = 6.0  (2012-04-27) =
 
