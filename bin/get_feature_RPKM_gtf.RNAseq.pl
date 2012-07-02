@@ -108,6 +108,7 @@ if ($feature eq 'gene') {
     my $annotfh=get_fh($annotation);
     while (my $line=<$annotfh>) {
 	chomp($line);
+	if ($line=~/^#/) {next};
 	my %line=%{parse_gff_line($line)};
 	if ($line{'type'} ne 'exon') {next;}
 	my $strand=1;
