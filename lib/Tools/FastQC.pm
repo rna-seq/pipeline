@@ -12,7 +12,7 @@ package Tools::FastQC;
 # Must be done before strict is used
 use Exporter;
 @ISA=('Exporter');
-@EXPORT_OK=('run_fastqc');
+@EXPORT_OK=('run_fastqc','parse_fastqc_report');
 
 use strict;
 use warnings;
@@ -31,12 +31,63 @@ BEGIN {
 # This file contains subroutines used for submitting jobs to the cluster
 
 # Load subs from other modules
-use RNAseq_pipeline3 qw(run_system_command);
+use RNAseq_pipeline3 qw(run_system_command get_fh);
 use Cwd;
 
 sub parse_fastqc_report {
     my $fastqc_dir=shift;
     my %report;
+
+    # Check that the report file exists
+    my $reportfile=$fastqc_dir.'/fastqc_data.txt';
+    unless (-s $reportfile) {
+	die "I cant find the report file $reportfile\n";
+    }
+
+    my $reportfh=get_fh($reportfile);
+    while (my $line=<$reportfh>) {
+	chomp($line);
+	if ($line=~/^\>\>/) {
+	    # Begin block
+	    $line=~s/^>>//;
+	    my ($block,$status)=split("\t",$line);
+	    my $key=$block;
+	    $key=~s/\s//g;
+	    $report{$key}{'status'}=[$block,$status];
+
+	    # Get the header and values
+	    while (my $line2=<$reportfh>) {
+		chomp($line2);
+		if ($line2=~/^>>END_MODULE/) {
+		    # end block
+		    last;
+		} elsif ($line2=~/^#/) {
+		    $line2=~s/^#//;
+		    my @header=split("\t",$line2);
+		    push @{$report{$key}{'header'}},[@header];
+		} else {
+		    my @values=split("\t",$line2);
+		    push @{$report{$key}{'values'}},[@values];
+		}
+	    }
+
+	} else {
+	    next;
+	}
+    }
+    close($reportfh);
+
+    # print the results
+    foreach my $key (keys %report) {
+	foreach my $value (@{$report{$key}{'header'}}) {
+#	    print STDERR join("\t",
+#			  @{$value}),"\n";
+	}
+	foreach my $value (@{$report{$key}{'values'}}) {
+#	    print STDERR join("\t",
+#			  @{$value}),"\n";
+	}
+    }
 
     return(\%report)
 }
