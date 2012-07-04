@@ -56,33 +56,28 @@ foreach my $file (keys %files) {
     $report{$file}=$report;
 }
 
+# Buid the information to print
+my @basic_stats;
+my @qualitiespos;
+my @ntstats;
 foreach my $file (keys %report) {
     my $dataset=$files{$file}->[1];
     my %summary=%{$report{$file}};
-    # print the basic statistics file
-    my $statsfn=$prefix.'_basic_stats.txt';
-    my $statsfh=get_fh($statsfn,1);
     foreach my $key (keys %summary) {
-	print $statsfh join("\t",
-			    $dataset,
-			    @{$summary{$key}{'status'}}),"\n";
+	push @basic_stats, join("\t",
+				$dataset,
+				@{$summary{$key}{'status'}});
     }
-    close($statsfh);
     
-    # print the qualities statistics file
-    my $qtfn=$prefix.'_qualitiespos.txt';
-    my $qtfh=get_fh($qtfn,1);
+    # get the qualities statistics info
     my $key='Perbasesequencequality';
     foreach my $line (@{$summary{$key}{'values'}}) {
-	print $qtfh join("\t",
-			    $dataset,
-			    @{$line}[0,1]),"\n";
+	push @qualitiespos, join("\t",
+				 $dataset,
+				 @{$line}[0,1]);
     }
-    close($qtfh);
-
-    # print the nucleotides statistics file
-    my $ntfn=$prefix.'_ambiguous.txt';
-    my $ntfh=get_fh($ntfn,1);
+    
+    # get the nucleotides statistics info
     my $key2='PerbaseNcontent';
     my $key3='Perbasesequencecontent';
     for (my $i=0; $i < @{$summary{$key2}{'values'}} ;$i++) {
@@ -91,13 +86,39 @@ foreach my $file (keys %report) {
 	unless ($line1->[0] eq $line2->[0]) {
 	    die "Problem with nt number\n";
 	}
-	print $ntfh join("\t",
-			 $dataset,
-			 @{$line1}[0,1],
-			 @{$line2}[2,4,1,3]),"\n";
+	push @ntstats, join("\t",
+			    $dataset,
+			    @{$line1}[0,1],
+			    @{$line2}[2,4,1,3]);
     }
+}
+
+# Print the files
+foreach my $file (keys %report) {
+    my $dataset=$files{$file}->[1];
+    my %summary=%{$report{$file}};
+    # print the basic statistics file
+    my $statsfn=$prefix.'_basic_stats.txt';
+    my $statsfh=get_fh($statsfn,1);
+    print $statsfh join("\n",
+			@basic_stats);
+    close($statsfh);
+
+    # print the qualities statistics file
+    my $qtfn=$prefix.'_qualitiespos.txt';
+    my $qtfh=get_fh($qtfn,1);
+    print $qtfh join("\t",
+		     @qualitiespos),"\n";
+    close($qtfh);
+
+    # print the nucleotides statistics file
+    my $ntfn=$prefix.'_ambiguous.txt';
+    my $ntfh=get_fh($ntfn,1);
+    print $ntfh join("\t",
+		     @ntstats),"\n";
     close($ntfh);
 }
+
 
 exit;
 

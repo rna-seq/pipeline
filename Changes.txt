@@ -1,5 +1,8 @@
 Next release
 ============
+= 6.2
+
+- Calculate the read stats using FastQC
 
 = 6.1 (2012-06-27) =
 
