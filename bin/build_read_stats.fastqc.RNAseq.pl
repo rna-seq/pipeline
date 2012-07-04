@@ -149,7 +149,7 @@ foreach my $infile (keys %files) {
 
 # Print out the read summaries
 print $log_fh 'Building the summary file...';
-my $summaryfh=get_fh("${prefix}_read_stats2.txt",1);
+my $summaryfh=get_fh("${prefix}_read_stats.txt",1);
 # Sort on the laneid in order to be consistent with the other sortings
 foreach my $file (sort {$stats{$a}->[7] cmp $stats{$b}->[7]} keys %stats) {
     my $filename=$file;
