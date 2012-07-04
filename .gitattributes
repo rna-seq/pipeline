@@ -104,7 +104,7 @@ bin/gzip_files.RNAseq.pl -text
 bin/link_sam.RNAseq.pl -text
 bin/merge_mappings.RNAseq.pl -text
 bin/multirun.pl -text
-bin/parse_fastqc.pl -text
+bin/parse_fastqc.RNAseq.pl -text
 bin/plot_exon_detection.RNAseq.pl -text
 bin/plot_exon_saturation.RNAseq.pl -text
 bin/plot_gene_detection.RNAseq.pl -text

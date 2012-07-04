@@ -97,10 +97,14 @@ sub run_fastqc {
     my $readdir=shift;
     my $outdir=shift;
 
-    my $readfile=$readdir.'/'.$infile.'.gz';
+    my $readfile=$readdir.'/'.$infile;
+    unless ($infile=~/.bam$/) {
+	$readfile.='.gz';
+    }
 
     my $command='fastqc --nogroup ';
     $command.="-o $outdir ";
+    $command.="-t 2 ";
     $command.="$readfile";
 
     # Build the path for the fastqc directory

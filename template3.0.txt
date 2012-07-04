@@ -86,7 +86,8 @@ preprocess: _start
 # for each of the two files in a paired end lane
 _read_stats: _start
 	cluster_run.RNAseq.pl prepare_files.RNAseq.pl	
-	cluster_run.RNAseq.pl build_read_stats.RNAseq.pl
+	cluster_run.RNAseq.pl build_read_stats.fastqc.RNAseq.pl
+	parse_fastqc.RNAseq.pl
 	mv prepare_files.RNAseq.log build_read_stats.RNAseq.log $LOGS
 	all_no_log_table
 

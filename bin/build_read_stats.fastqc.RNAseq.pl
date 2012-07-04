@@ -325,3 +325,81 @@ sub process_fastq_file {
     $unique=~s/[^\d]//g;
     return($good_reads,$ambiguous_reads,$total_reads,$read_length,$unique);
 }
+
+sub process_bam_file {
+    my $infn=shift;
+    my $stats=shift;
+    my $quals_pos=shift;
+    my $tmpdir=shift;
+    my $log_fh=shift;
+    my $laneid=shift;
+    my $ntpos=shift;
+    my $qualities=shift;
+    my $genomefn=shift;
+
+    my $unique=0;
+    my $read_length=0;
+    my $ambiguous_reads=0;
+    my $good_reads=0;
+    my $total_reads=0;
+    my %sequence;
+    my $line_type=0;
+
+    # The qualities should be phred in the BAM format
+    unless ($qualities eq 'phred') {
+	warn "Qualities should be phred in BAM file but are specified as $qualities";
+    }
+
+    # Open the BAM file.
+    my $sam = Bio::DB::Sam->new(-bam  => $tmpdir.'/'.$infn,
+				-fasta=> $genomefn,
+	);
+
+    my $tmpfn=$$.'.tmp.sequences.txt';
+    my $tmpfh=get_fh($tmpfn,1);
+
+    # Process the BAM file
+    # get all the alignments
+    my $all_alignments=$sam->features(-iterator => 1);
+
+    while (my $a=$all_alignments->next_seq()) {
+	$total_reads++;
+	$sequence{'seq'}=$a->query->dna;
+	$sequence{'qual'}=$a->qscore;
+	if (@{$sequence{'qual'}} < length($sequence{'seq'})) {
+		warn "Quality string shorter than sequence,skipping???\n";
+		next;
+	} elsif (@{$sequence{'qual'}} > length($sequence{'seq'})) {
+		warn "Quality string longer than sequence,skipping???\n";
+		next;
+	}
+
+	my $seq=$sequence{'seq'};
+	# Count the number of unique reads
+	print $tmpfh $seq,"\n";
+
+	# Get the minimum read length
+	my $seq_length=length($seq);
+	if (!$read_length ||
+	    ($read_length > $seq_length)) {
+	    $read_length=$seq_length;
+	}
+
+	# Count the number of sequences with N's (ambiguous bases)
+	if ($seq=~/N/) {
+	    $ambiguous_reads++;
+	} else {
+	    $good_reads++;
+	}
+    }
+    close($tmpfh);
+
+    # Get the unique reads without going out of the roof using RAM
+    my $command="sort -T $tmpdir $tmpfn | uniq| wc -l";
+    $unique=`$command`;
+    $command="rm $tmpfn";
+    system($command);
+
+    $unique=~s/[^\d]//g;
+    return($good_reads,$ambiguous_reads,$total_reads,$read_length,$unique);
+}
