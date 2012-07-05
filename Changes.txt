@@ -1,8 +1,16 @@
 Next release
 ============
-= 6.2
+= 6.2 =
+
+- Add bin/get_feature_RPKM_gtf.RNAseq.pl for creating a gtf file with the requested
+features (genes, transcripts or exons), adding the RPKM values to them.
 
 - Calculate the read stats using FastQC
+
+- In the _read_stats rule, use build_read_stats.fastqc.RNAseq.pl instead of 
+  build_read_stats.RNAseq.pl
+
+- Add parse_fastqc.RNAseq.pl to the _read_stats rule
 
 = 6.1 (2012-06-27) =
 
