@@ -1,18 +1,18 @@
-Next release
-============
-= 6.2 =
+6.2 (2012-07-06)
+================
 
-- Add bin/get_feature_RPKM_gtf.RNAseq.pl for creating a gtf file with the requested
-features (genes, transcripts or exons), adding the RPKM values to them.
-
-- Calculate the read stats using FastQC
+- FastQC is now used to calculate the read stats
 
 - In the _read_stats rule, use build_read_stats.fastqc.RNAseq.pl instead of 
   build_read_stats.RNAseq.pl
 
 - Add parse_fastqc.RNAseq.pl to the _read_stats rule
 
-= 6.1 (2012-06-27) =
+- Add bin/get_feature_RPKM_gtf.RNAseq.pl for creating a gtf file with the requested
+  features (genes, transcripts or exons), adding the RPKM values to them.
+
+6.1 (2012-06-27)
+================
 
 - Installation is now done using grape.buildout exclusively.
 
@@ -47,7 +47,8 @@ features (genes, transcripts or exons), adding the RPKM values to them.
 
 - RPKM pooled is calculated from the flux output
 
-= 6.0  (2012-04-27) =
+6.0 (2012-04-27)
+================
 
 - Require only one gene in bin/compare_individual_genes.RNAseqComp.pl
 
@@ -118,9 +119,11 @@ features (genes, transcripts or exons), adding the RPKM values to them.
 - Execute script will show the wall clock time for each of teh steps executed as well as the total.
 
 - Exon RPKM and Gene RPKM are no longer calculated for the individual lanes.
+
 - Fix problem with the projection generation that missed some genes containing exons that are present in more than one gene. This affects > 1% of the genes
 
-= 5.0.1 (2012-03-26) =
+5.0.1 (2012-03-26)
+==================
 
 - add ./bin/contrib/ to host contributions from other developers
 
@@ -129,13 +132,16 @@ features (genes, transcripts or exons), adding the RPKM values to them.
       ./bin/contrib/templates/template3.0.1.txt
   with specific options for 'main' cluster queue that do not work on the standard 'mem_6' queue
   
-= 5.0 (2012-03-22) =
+5.0 (2012-03-22)
+================
 
 - First official release
 
-= 1.4.0 (2011-01-04) =
+1.4.0 (2011-01-04)
+==================
 
 - Start script has a -clean option that removes all information from an experiment
   from the databases
+
 - Quality type has to be provided to the start script in order to correctly run the
   pipeline. This has two options 'phred 'or 'solexa'
