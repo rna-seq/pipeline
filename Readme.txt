@@ -1,7 +1,7 @@
 Copyright (C) 2011-2012 Centre for Genomic Regulation (CRG)
 
 Authors: David Gonzalez Knowles david.gonzalez@crg.eu
-	Maik Ršder maikroeder@gmail.com
+         Maik Ršder maikroeder@gmail.com
 
 = RNASeq Pipeline =
 
