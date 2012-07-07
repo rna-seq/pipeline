@@ -305,12 +305,12 @@ sub remove_pair_info {
 	my @line=split("\t",$line);
 	if ($line[0]=~s/\|p?1$/\/1/o) {
 	} elsif ($line[0]=~s/\|p?2$/\/2/o) {
-#	} elsif ($line[0]=~s/ 1:/_X:/o) {
-#	    # Down syndrome reads
-#	    $line[0]=~s/$/\/1/o;
-#	} elsif ($line[0]=~s/ 2:/_X:/o) {
-#	    # Down syndrome reads
-#	    $line[0]=~s/$/\/2/o;
+	} elsif ($line[0]=~s/[ _]1:/_X:/o) {
+	    # HiSeq reads
+	    $line[0]=~s/$/\/1/o;
+	} elsif ($line[0]=~s/[ _]2:/_X:/o) {
+	    # HiSeq reads
+	    $line[0]=~s/$/\/2/o;
 	} else {
 	    # This should speed things up
 	    $idok=1;
