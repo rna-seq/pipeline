@@ -509,7 +509,7 @@ _transcript_expression_levels_pooled: _junction_classification _bed_files _junct
 	mv run_flux_pooled.RNAseq.log $LOGS
 	all_no_log_table
 
-_detected_transcripts: _transcript_expression_levels_pooled _transcript_expression_levels
+_detected_transcripts: _transcript_expression_levels_pooled
 	cluster_run.RNAseq.pl build_detected_transcripts.RNAseq.pl
 	mv build_detected_transcripts.RNAseq.log $LOGS
 	all_no_log_table
