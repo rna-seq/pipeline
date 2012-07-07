@@ -473,7 +473,7 @@ _inclusion_correlation: _exon_inclusion_reads
 	build_inclusion_correlation.RNAseq.pl |sort |uniq > _inclusion_correlation.txt
 	all_no_log_table
 
-_inclusion_dist: _exon_inclusion _inclusion_correlation
+_inclusion_dist: _exon_inclusion_pooled _inclusion_correlation
 	build_inclusion_dist.RNAseq.pl > _inclusion_dist.txt
 	all_no_log_table
 
