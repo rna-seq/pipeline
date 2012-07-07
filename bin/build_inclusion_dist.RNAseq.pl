@@ -53,11 +53,11 @@ my $incl_pooled=$prefix.'_exon_inclusion_pooled';
 # Get the information for the histogram
 my %hist;
 my $dbh=get_dbh();
-if (check_table_existence($dbh,$incl)) {
-    get_info_from_table($dbh,
-			$incl,
-			%hist);
-} elsif (check_table_existence($dbh,$incl_pooled)) {
+if (check_table_existence($dbh,$incl_pooled)) {
+#    get_info_from_table($dbh,
+#			$incl,
+#			%hist);
+#} elsif (check_table_existence($dbh,$incl_pooled)) {
     get_info_from_table($dbh,
 			$incl_pooled,
 			%hist);
