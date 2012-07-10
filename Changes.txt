@@ -1,3 +1,28 @@
+6.3 (2012-07-10)
+================
+
+Bugfixes
+--------
+
+- Get all the scores in qualities and ambiguous in bin/parse_fastqc.RNAseq.pl
+
+- Fix parsing of reads in bin/run_gem2sam.RNAseq.pl 
+
+- Find libraries correctly in bin/parse_fastqc.RNAseq.pl
+
+- Handle HiSEq read IDs correctly in bin/build_inclusion_dist.RNAseq.pl
+
+Internal
+--------
+
+- In template3.0.txt, remove unpooled transcript quantification
+
+- In template3.0.txt, remove the need for the unpooled inclusion
+
+- In bin/build_inclusion_dist.RNAseq.pl, remove the need for the unpooled inclusion
+
+- In template.bam.txt, remove the non pooled transcript expression levels
+
 6.2 (2012-07-06)
 ================
 
