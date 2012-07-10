@@ -130,20 +130,20 @@ foreach my $file (keys %report) {
     my $statsfn=$prefix.'_basic_stats.txt';
     my $statsfh=get_fh($statsfn,1);
     print $statsfh join("\n",
-			@basic_stats);
+			@basic_stats),"\n";
     close($statsfh);
 
     # print the qualities statistics file
     my $qtfn=$prefix.'_qualitiespos.txt';
     my $qtfh=get_fh($qtfn,1);
-    print $qtfh join("\t",
+    print $qtfh join("\n",
 		     @qualitiespos),"\n";
     close($qtfh);
 
     # print the nucleotides statistics file
     my $ntfn=$prefix.'_ambiguous.txt';
     my $ntfh=get_fh($ntfn,1);
-    print $ntfh join("\t",
+    print $ntfh join("\n",
 		     @ntstats),"\n";
     close($ntfh);
 }
