@@ -303,6 +303,7 @@ sub remove_pair_info {
     while (my $line=<$infh>) {
 	chomp($line);
 	my @line=split("\t",$line);
+
 	if ($line[0]=~s/\|p?1$/\/1/o) {
 	} elsif ($line[0]=~s/\|p?2$/\/2/o) {
 	} elsif ($line[0]=~s/[ _]1:/_X:/o) {
