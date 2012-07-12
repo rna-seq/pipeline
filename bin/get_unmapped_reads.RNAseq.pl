@@ -81,38 +81,32 @@ foreach my $infile (keys %filelist) {
 
     # Get the necessary filehandles
     my $genomefh=get_fh(`ls $genomedir/$fileroot.gem.map*`);
-    my $transfh=get_fh(`ls $transdir/$fileroot.gem.map*`);
     my $juncfh=get_fh(`ls $juncdir/$fileroot.gem.map* | grep -v 'gen.coords'`);
     my $unmappedfh=get_fh($unmappedfn,1);
 
     print STDERR "Printing unmapped reads from $fileroot to $unmappedfn\n";
     
     while (my $genline=<$genomefh>) {
-	my $transline=<$transfh>;
 	my $juncline=<$juncfh>;
 
 	# Check we have lines from each file
-	unless ($genline && $transline && $juncline) {
+	unless ($genline && $juncline) {
 	    die "Problem: one read entry seems to be missing\n";
 	}
 	my $hitsgen=maps_parser($genline);
-	my $hitstrans=maps_parser($transline);
 	my $hitsjunc=maps_parser($juncline);
 
 	# Check the read we are comparing is the same in the three files
-	unless (($hitsgen->[0] eq $hitstrans->[0]) &&
-		($hitsgen->[0] eq $hitsjunc->[0])) {
+	unless ($hitsgen->[0] eq $hitsjunc->[0]) {
 	    print STDERR join("\t",
 			      'genome',$hitsgen->[0]),"\n";
-	    print STDERR join("\t",
-			      'trans',$hitstrans->[0]),"\n";
 	    print STDERR join("\t",
 			      'junc',$hitsjunc->[0]),"\n";
 	    die "Problem: Incorrect read id\n";
 	}
 
 	# Determine if it had a hit or not
-	if ($hitstrans->[1] || $hitsgen->[1] || $hitsjunc->[1]) {
+	if ($hitsgen->[1] || $hitsjunc->[1]) {
 	    next;
 	} else {
 	    # This read is unmapped
@@ -122,7 +116,6 @@ foreach my $infile (keys %filelist) {
 
     }
     close($genomefh);
-    close($transfh);
     close($juncfh);
     close($unmappedfh);
 }

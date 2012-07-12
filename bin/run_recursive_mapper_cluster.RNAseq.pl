@@ -53,7 +53,7 @@ my $bindir;
 my $splittable;
 my $splitdir;
 my $recmapdir;
-my $queue='mem_6';
+my $queue='main';
 
 # Get some options from the command line
 GetOptions('index|I=s' => \$index,

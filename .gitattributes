@@ -132,7 +132,6 @@ bin/run_mapper.RNAseq.pl -text
 bin/run_mapper_cluster.RNAseq.pl -text
 bin/run_mapper_cluster.main.RNAseq.pl -text
 bin/run_mapper_split.RNAseq.pl -text
-bin/run_recursive_mapper.RNAseq.parallel.pl -text
 bin/run_recursive_mapper.RNAseq.pl -text
 bin/run_recursive_mapper_cluster.RNAseq.pl -text
 bin/run_split_mapper.RNAseq.parallel.pl -text

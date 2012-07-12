@@ -68,7 +68,7 @@ my $filetype;
 my $mismatches;
 my $readlength;
 my $maxmismatch;
-my $trimthreshold=10;
+my $trimthreshold=15;
 my $debug=1;
 
 # Get some options from the command line
