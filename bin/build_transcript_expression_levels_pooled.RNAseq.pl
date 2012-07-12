@@ -56,7 +56,7 @@ foreach my $group (keys %groups) {
 		     $group);
 	my $command="rm $filename";
 	print STDERR "Executing:\t$command\n";
-	system($command);
+#	system($command);
     } else {
 	die "I can't find $filename\n";
     }

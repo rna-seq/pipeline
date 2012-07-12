@@ -497,11 +497,11 @@ _bed_files: _merged_mapping _recursive_mapping
 
 ### TO DO fix the flux to run on the cluster in parallel
 # Run the flux
-_transcript_expression_levels: _junction_classification _bed_files
-	cluster_run.RNAseq.pl run_flux.RNAseq.pl
-	build_transcript_expression_levels.RNAseq.pl > _transcript_expression_levels.txt
-	mv run_flux.RNAseq.log build_transcript_expression_levels.RNAseq.log $LOGS
-	all_no_log_table
+#_transcript_expression_levels: _junction_classification _bed_files
+#	cluster_run.RNAseq.pl run_flux.RNAseq.pl
+#	build_transcript_expression_levels.RNAseq.pl > _transcript_expression_levels.txt
+#	mv run_flux.RNAseq.log build_transcript_expression_levels.RNAseq.log $LOGS
+#	all_no_log_table
 
 _transcript_expression_levels_pooled: _junction_classification _bed_files _junction_classification
 	cluster_run.RNAseq.pl run_flux_pooled.RNAseq.pl
