@@ -45,7 +45,6 @@ use RNAseq_GEM3 ('parse_gem_line','gem_2_coords','gem_2_coords_split',
 		 'get_junction_coords','line_reader');
 
 # Get command line options
-#my $read_length;
 my $file_list;
 my $localdir;
 

@@ -226,10 +226,6 @@ sub build_run_mapper_submission {
     my $subfile="subfile.$$.job";
     my $outfh=get_fh($subfile,1);
 
-# This should be added to the submission as soon as the cluster is able to use 
-# smp
-#$ -pe smp $threads
-    
     print $outfh <<FORMEND;
 # Get the job name
 #\$ -N $jobname
