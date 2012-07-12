@@ -190,6 +190,9 @@ sub build_run_mapper_submission {
     my $bidir=shift;
     my $index=shift;
     my $jobname=shift;
+    # Threads are hardcoded to 2 here in order to prevent wasting toop much CPU
+    # time during the split-mapping which is not parallelized.
+    my $threads=2;
 
     print STDERR 'Building submission file...';
     my $filenum=@{$pairs};
@@ -216,9 +219,10 @@ sub build_run_mapper_submission {
     
 # Set the array jobs
 #\$ -t 1-$filenum
+#\$ -pe smp $threads
 
-# Request 8 cpus this cannot be done, but we can request memmory
-#\$ -l h_vmem=16G
+# Request 2 cpus this cannot be done, but we can request memmory
+#\$ -l h_vmem=6G
 
 # Write in to the current working directory
 #\$ -cwd 

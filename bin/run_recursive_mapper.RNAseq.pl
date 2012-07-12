@@ -80,7 +80,8 @@ GetOptions('index|I=s' => \$index,
 my %options=%{read_config_file()};
 $index=$options{'GENOMEINDEX'};
 $mapper=$options{'MAPPER'};
-$threads=$options{'THREADS'} || 2;
+# Currently limit to 2
+$threads=2;
 $tempdir=$options{'LOCALDIR'};
 $mismatches=$options{'MISMATCHES'};
 $readlength=$options{'READLENGTH'};
