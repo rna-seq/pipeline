@@ -54,6 +54,7 @@ my $splittable;
 my $splitdir;
 my $recmapdir;
 my $queue='main';
+my $threads=2;
 
 # Get some options from the command line
 GetOptions('index|I=s' => \$index,
@@ -70,6 +71,7 @@ $splittable=$options{'PREFIX'}.'_split_mapping';
 $splitdir=$projdir.'/'.$options{'SPLITMAPDIR'};
 $recmapdir=$projdir.'/'.$options{'RECMAPDIR'};
 $queue=$options{'CLUSTER'};
+$threads=$options{'THREADS'};
 
 # Decide where to put the output
 unless ($outdir) {
@@ -137,7 +139,8 @@ if ($usecluster) {
     my $subfile=build_run_mapper_submission(\@filepairs,
 					    $bindir,
 					    $index,
-					    $jobname);
+					    $jobname,
+					    $threads);
     send2cluster($subfile,
 		 $queue,
 		 $jobname);
@@ -190,9 +193,10 @@ sub build_run_mapper_submission {
     my $bidir=shift;
     my $index=shift;
     my $jobname=shift;
+    my $threads=shift;
+
     # Threads are hardcoded to 2 here in order to prevent wasting toop much CPU
     # time during the split-mapping which is not parallelized.
-    my $threads=2;
 
     print STDERR 'Building submission file...';
     my $filenum=@{$pairs};
