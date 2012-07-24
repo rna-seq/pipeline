@@ -460,6 +460,7 @@ _exon_inclusion: _exon_coverage _junction_coverage
 	all_no_log_table
 
 _exon_inclusion_pooled: _exon_coverage _junction_coverage
+	cluster_run.RNAseq.pl build_inclusion_exclusion_table.RNAseq.pl
 	cluster_run.RNAseq.pl get_pooled_exon_inclusion_rates.RNAseq.pl
 	cat $EXONDIR/*.inclusion.exclusion.pooled.txt > _exon_inclusion_pooled.txt
 	all_no_log_table
