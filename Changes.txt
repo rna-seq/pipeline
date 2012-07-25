@@ -1,3 +1,33 @@
+6.4 (2012-07-25)
+================
+
+Features
+-------
+
+- Speed up recursive mapping
+
+    - Set trim_reads to 40 instead of 30 for the trim_reads method 
+      in lib/RNAseq_GEM3.pm
+
+    - Set trimthreshold to 15 instead of 10, and threads to 2
+      in bin/run_recursive_mapper.RNAseq.pl
+
+    - Use the main queue instead of mem_6, and set threads to 2 
+      in bin/run_recursive_mapper_cluster.RNAseq.pl
+
+Bug fixes
+---------
+
+- In pipeline step _exon_inclusion_pooled, the inclusion exclusion table
+  was not built
+
+Internal
+-----------
+
+- Remove obsolete bin/run_recursive_mapper.RNAseq.parallel.pl 
+    
+- In bin/get_unmapped_reads.RNAseq.pl, change dependencies in the unmapped reads 
+
 6.3 (2012-07-10)
 ================
 
