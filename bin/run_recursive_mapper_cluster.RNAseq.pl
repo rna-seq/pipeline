@@ -195,7 +195,7 @@ sub build_run_mapper_submission {
     my $jobname=shift;
     my $threads=shift;
 
-    # Threads are hardcoded to 2 here in order to prevent wasting toop much CPU
+    # Threads are hardcoded to 2 here in order to prevent wasting too much CPU
     # time during the split-mapping which is not parallelized.
 
     print STDERR 'Building submission file...';
