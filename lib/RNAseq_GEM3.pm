@@ -8,7 +8,7 @@ package RNAseq_GEM3;
 #  Author: David Gonzalez
 #
 
-# This package contains subroutines useful to parse GEM as well as otput
+# This package contains subroutines useful to parse GEM as well as output
 # Different formats
 
 # Export to caller namespace
