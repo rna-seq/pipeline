@@ -112,8 +112,7 @@ foreach my $lane (keys %lanes) {
 }
 
 # collect the information from the split_mapping_breakdown table
-my $splitjunc=get_split_junctions($splittable,
-				  $dbh);
+my $splitjunc=get_split_junctions($splittable);
 
 # Print out the summary
 my $detectedknown=keys %{$junctions{'known'}};
@@ -135,7 +134,7 @@ exit;
 
 sub get_split_junctions {
     my $table=shift;
-    my $dbh=shift;
+    my $dbh=get_dbh();
 
     my ($query,$sth);
 
@@ -147,6 +146,8 @@ sub get_split_junctions {
 
     my ($locations)=$sth->fetchrow_array();
 
+    $sth->finish();
+    $dbh->disconnect();
     return($locations);
 }
 
