@@ -166,6 +166,7 @@ foreach my $lane (keys %lanes) {
 	    my $readid2=$trans2hit{'id'};
 	    $readid1=~s/\/?p?[12]$//o;
 	    $readid2=~s/\/?p?[12]$//o;
+	    # Account for Hiseq
 	    $readid1=~s/[ _]1:/_X:/o;
 	    $readid2=~s/[ _]2:/_X:/o;
 
