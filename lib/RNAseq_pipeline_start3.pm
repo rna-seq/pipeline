@@ -70,18 +70,26 @@ sub check_option_characters {
     print $log_fh "Checking options for unadvisable characters...\n";
     foreach my $option (keys %{$options}) {
 	my $value=${$options->{$option}} || '';
-	# Experiment id should only contain alphanumeric and underscore
+	# Experiment id should only contain alphanumeric and underscore and the
+	# length should be limited to 10 characters
 	if ($option eq 'experiment') {
 	    if ($value=~/([^\w_])/o) {
 		my $char=$1;
 		$problems.="WARNING: Value $value corresponding to $option contains an invalid character: '$char'\n";
 	    }
+	    if (length($value) > 12) {
+		$problems.="WARNING: Value $value corresponding to $option is too long. Please limit it to 12 characters\n";
+	    }
 	    next;
 	} elsif ($option eq 'project') {
-	    # Project id should only be alphanumeric
+	    # Project id should only be alphanumeric and limited to 10
+	    # characters
 	    if ($value=~/([^\w])/o) {
 		my $char=$1;
 		$problems.="WARNING: Value $value corresponding to $option contains an invalid character: '$char'\n";
+	    }
+	    if (length($value) > 12) {
+		$problems.="WARNING: Value $value corresponding to $option is too long. Please limit it to 12 characters\n";
 	    }
 	    next;
 	} elsif ($option eq 'qualities') {
