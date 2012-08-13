@@ -89,6 +89,7 @@ foreach my $infile (keys %files) {
     print $log_fh "Processing $infile\n";
 
     my $lanename=$files{$infile}->[1];
+    my $pair=$files{$infile}->[0];
 
     # Identify the file type
     my $filetype;
@@ -139,7 +140,7 @@ foreach my $infile (keys %files) {
 
     $stats{$infile}=[$species,$project,
 		     $length, $total,
-		     $good,$bad,$unique,$lanename];
+		     $good,$bad,$unique,$lanename,$pair];
 
 
     my $fastqcdir=run_fastqc($infile,

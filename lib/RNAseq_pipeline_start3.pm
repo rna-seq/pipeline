@@ -283,9 +283,6 @@ sub base_table_build {
        source mediumtext NULL,
        index idx_annotation (annotation),
        PRIMARY KEY (annotation_id)
-#       FOREIGN KEY (species_id) 
-#         REFERENCES species_info(species_id) 
-#         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=INNODB;',
 		'genome_files' => 'CREATE TABLE IF NOT EXISTS genome_files (
        genome_id mediumint unsigned NOT NULL AUTO_INCREMENT,
@@ -306,15 +303,6 @@ sub base_table_build {
        type varchar(100) NOT NULL,
        location varchar(200) NOT NULL,
        PRIMARY KEY (index_id)
-#       FOREIGN KEY (annotation_id) 
-#         REFERENCES annotation_files(annotation_id)
-#         ON UPDATE CASCADE ON DELETE RESTRICT,
-#       FOREIGN KEY (genome_id) 
-#         REFERENCES genome_files(genome_id)
-#         ON UPDATE CASCADE ON DELETE RESTRICT,
-#       FOREIGN KEY (species_id) 
-#         REFERENCES species_info(species_id)
-#         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=INNODB;',	
 		'exclusion_files' => 'CREATE TABLE IF NOT EXISTS exclusion_files (
        exclusion_id mediumint unsigned NOT NULL AUTO_INCREMENT,
@@ -1040,9 +1028,9 @@ sub get_tables_hash {
 		'_novel_junctions_summary' => '',
 		'_all_junctions_class' => '',
 		'_all_junctions_class_pooled' => '',
-		'_transcript_expression_levels' => '',
+#		'_transcript_expression_levels' => '',
 		'_transcript_expression_levels_pooled' => '',
-		'_exon_inclusion' => '',
+#		'_exon_inclusion' => '',
 		'_exon_inclusion_reads' => '',
 		'_exon_inclusion_pooled' => '',
 		'_inclusion_correlation' => '',
@@ -1156,19 +1144,19 @@ CREATE TABLE ${prefix}_read_classification (
        TptFrac double unsigned NOT NULL,
        index idx_lane (lane_id)
 );",
-		'_exon_inclusion' => "DROP TABLE IF EXISTS ${prefix}_exon_inclusion;
-CREATE TABLE ${prefix}_exon_inclusion (
-       gene_id varchar(50) NOT NULL,
-       exon_id varchar(50) NOT NULL,
-       ExIncl double unsigned NOT NULL,
-       JuncInc double unsigned NOT NULL,
-       JuncExc double unsigned NOT  NULL,
-       inc_rate double unsigned NULL,
-       lane_id varchar(100) NOT NULL,
-       index idx_gene (gene_id),
-       index idx_exon (exon_id),
-       index idx_lane (lane_id)
-);",
+#		'_exon_inclusion' => "DROP TABLE IF EXISTS ${prefix}_exon_inclusion;
+#CREATE TABLE ${prefix}_exon_inclusion (
+#       gene_id varchar(50) NOT NULL,
+#       exon_id varchar(50) NOT NULL,
+#       ExIncl double unsigned NOT NULL,
+#       JuncInc double unsigned NOT NULL,
+#       JuncExc double unsigned NOT  NULL,
+#       inc_rate double unsigned NULL,
+#       lane_id varchar(100) NOT NULL,
+#       index idx_gene (gene_id),
+#       index idx_exon (exon_id),
+#       index idx_lane (lane_id)
+#);",
 		'_exon_inclusion_reads' => "DROP TABLE IF EXISTS ${prefix}_exon_inclusion_reads;
 CREATE TABLE ${prefix}_exon_inclusion_reads (
        exon_id varchar(50) NOT NULL,
@@ -1203,18 +1191,18 @@ CREATE TABLE ${prefix}_inclusion_dist (
     LaneName varchar(50) not null,
     INDEX idx_lane (LaneName)
 );",
-		'_transcript_expression_levels' => "DROP TABLE IF EXISTS ${prefix}_transcript_expression_levels;
-CREATE TABLE ${prefix}_transcript_expression_levels (
-       gene_id varchar(50) NOT NULL,
-       transcript_id varchar(50) NOT NULL,
-       flux_locus varchar(50) NOT NULL,
-       rpkm double unsigned NULL,
-       lane_id varchar(100) NOT NULL,
-       index idx_gene (gene_id),
-       index idx_transcript (transcript_id),
-       index idx_flux_locus (flux_locus),
-       index idx_lane (lane_id)
-);",
+#		'_transcript_expression_levels' => "DROP TABLE IF EXISTS ${prefix}_transcript_expression_levels;
+#CREATE TABLE ${prefix}_transcript_expression_levels (
+#       gene_id varchar(50) NOT NULL,
+#       transcript_id varchar(50) NOT NULL,
+#       flux_locus varchar(50) NOT NULL,
+#       rpkm double unsigned NULL,
+#       lane_id varchar(100) NOT NULL,
+#       index idx_gene (gene_id),
+#       index idx_transcript (transcript_id),
+#       index idx_flux_locus (flux_locus),
+#       index idx_lane (lane_id)
+#);",
 		'_transcript_expression_levels_pooled' => "DROP TABLE IF EXISTS ${prefix}_transcript_expression_levels_pooled;
 CREATE TABLE ${prefix}_transcript_expression_levels_pooled (
        gene_id varchar(50) NOT NULL,
@@ -1571,7 +1559,8 @@ CREATE TABLE ${prefix}_read_stats (
        NoAmbiguousBases INT unsigned NOT NULL,
        AmbiguousBases INT unsigned NOT NULL,
        UniqueReads INT unsigned NOT NULL,
-       LaneName varchar(50) NOT NULL
+       LaneName varchar(50) NOT NULL,
+       pair_id varchar(50) NOT NULL
 );",
 		'_register_results' => "DROP TABLE IF EXISTS ${prefix}_register_results;
 CREATE TABLE ${prefix}_register_results (
@@ -1617,8 +1606,8 @@ sub create_directory_structure {
     my @directories=('mysql',
 		     'mysql/table_build',
 		     'mysql/table_data',
-		     'bin',
-		     'GEMIndices',
+#		     'bin',
+#		     'GEMIndices',
 		     'genome',
 		     'sequence',
 		     'transcriptome',
@@ -1633,7 +1622,7 @@ sub create_directory_structure {
 		     "$localdir",
 		     'clusters',
 		     'exclusion',
-		     'results',
+#		     'results',
 		     'SAM',
 		     'work');
     # The -L option is necessary to print the same path for all nodes
