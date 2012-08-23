@@ -12,7 +12,7 @@ package GRAPE::DBinterface;
 # Must be done before strict is used
 use Exporter;
 @ISA=('Exporter');
-push @EXPORT_OK,('MySQL_DB_Connect');
+push @EXPORT_OK,('MySQL_DB_Connect','check_field_value');
 
 
 use strict;
@@ -92,6 +92,24 @@ sub set_species_field {
 	$sth2->execute($key,$genus,$abbreviation,'-');
     }
     return($value);
+}
+
+sub check_field_value {
+    my $dbh=shift;
+    my $reference=shift;
+    my $table=shift;
+    my $field=shift;
+
+    my ($key,$value)=@{$reference};
+    my ($query,$sth,$count);
+    $query ="SELECT $field ";
+    $query.="FROM $table ";
+    $query.="WHERE $key = ?";
+    $sth=$dbh->prepare($query);
+
+    # A sth is returned here instead of the results as this allows for the
+    # query to be executed again with less code
+    return($sth);
 }
 
 1;
