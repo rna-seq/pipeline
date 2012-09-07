@@ -12,7 +12,10 @@ package GRAPE::DBinterface;
 # Must be done before strict is used
 use Exporter;
 @ISA=('Exporter');
-push @EXPORT_OK,('MySQL_DB_Connect','check_field_value');
+push @EXPORT_OK,('MySQL_DB_Connect',
+		 'check_field_value','check_key_value',
+		 'check_table_existence',
+		 'create_MySQL_table');
 
 
 use strict;
@@ -20,6 +23,9 @@ use warnings;
 
 use DBI;
 use DBD::mysql;
+
+# Load GRAPE modules
+use GRAPE::Base ('get_fh','run_system_command');
 
 sub MySQL_DB_Connect {
     my $database = shift;
@@ -37,6 +43,56 @@ sub MySQL_DB_Connect {
 	print STDERR "Unable to find $ENV{HOME}/.my.cnf\n";
     }
     return $dbh;
+}
+
+# Create a table having the 
+sub create_MySQL_table {
+    my $database=shift;
+    my $table=shift;
+    my $tablebuild=shift;
+
+    print STDERR "Creating $table...";
+    my $file_name=$table.'.sql';
+    my $table_fh=get_fh($file_name,1);
+    print $table_fh "SET FOREIGN_KEY_CHECKS=0;\n";
+    print $table_fh $tablebuild,"\n";
+    print $table_fh "SET FOREIGN_KEY_CHECKS=1;\n";
+    close($table_fh);
+    
+    my $command="mysql $database < $file_name";
+    run_system_command($command);
+    $command="rm $file_name";
+    run_system_command($command);
+    print STDERR join("\t",
+		      $table,
+		      "Generated"),"\n"
+}
+
+# Check if a table exists in the database
+sub check_table_existence {
+    my $dbh=shift;
+    my $table=shift;
+
+    print STDERR "Checking database for $table...";
+
+    my ($query,$sth);
+    $query ='SELECT count(*) ';
+    $query.="FROM $table";
+
+    $sth = $dbh->table_info(undef,undef,$table,"TABLE");
+
+    my $count=$sth->execute();
+    my $results=$sth->fetchall_arrayref();
+    my $present=0;
+    
+    if (@{$results}) {
+	# Print the table location for the junctions of this experiment
+	print STDERR "$table is present\n";
+	$present=1;
+    } else {
+	print STDERR "$table is absent\n";
+    }
+    return($present);
 }
 
 sub check_key_value {
@@ -64,41 +120,17 @@ sub check_key_value {
     return($field_value);
 }
 
-sub set_species_field {
-    my $dbh=shift;
-    my $key=shift;
-    my $table=shift; # species_info
-    my $field=shift; # species_id
-
-    my $value=check_field_value($dbh,
-				$table,
-				$field,
-				$key);
-    
-    unless ($value) {
-	# The entry is absent and we must set it
-	# Get the genus and abbreviation
-	my ($genus,$specific)=split(/\s+/,$key,2);
-	my $abbreviation=join('',
-			      substr($genus,0,1),
-			      substr($specific,0,3));
-	
-	# Insert the info into the database
-	my $query;
-	$query ="INSERT INTO $table ";
-	$query.='SET species = ? , genus = ? , abbreviation = ?, sp_alias = ? ';
-	print STDERR "Executing: $query\n";
-	my $sth2=$dbh->prepare($query);
-	$sth2->execute($key,$genus,$abbreviation,'-');
-    }
-    return($value);
-}
-
+# Get the value of a certain filed to see if it is defined
 sub check_field_value {
     my $dbh=shift;
     my $reference=shift;
     my $table=shift;
     my $field=shift;
+
+    # Check if the table actually exists
+    my $present=check_table_existence($dbh,
+				      $table);
+    die "Unable to search a nonexistant table\n" unless $present;
 
     my ($key,$value)=@{$reference};
     my ($query,$sth,$count);

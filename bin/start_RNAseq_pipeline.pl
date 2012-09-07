@@ -54,7 +54,6 @@ BEGIN {
 }
 
 use Pod::Usage;
-use Getopt::Long;
 use GRAPE::Start ('check_option_characters','defaults',
 		  'check_base_tables',
 		  'get_species_hash','base_table_build',
@@ -71,25 +70,26 @@ use GRAPE::Logs;
 use GRAPE::Options;
 use Cwd;
 
-my $options=GRAPE::Options->new();
+my $tables=base_table_build();
+my $options=GRAPE::Options->new($tables);
 
 $options->print_options(1);
 # Declare the variables
 # naming variables
-my $species=$options->get_species();
-my $proj_prefix=$options->get_project();
-my $exp_prefix=$options->get_experiment();
+my $species=$options->get_species() || die "No species\n";
+my $proj_prefix=$options->get_project() || die "No project\n";
+my $exp_prefix=$options->get_experiment() || die "No experiment\n";
 
 # Cluster specification
-my $cluster=$options->get_cluster();
+my $cluster=$options->get_cluster() || die "No cluster\n";
 
 # Behaviour
 my $debug=$options->get_debug();
 
 # Basic files
-my $template=$options->get_template();
+my $template=$options->get_template() || die "No template\n";
 my $annotation_file=$options->get_annotation_file();
-my $genome_file;
+my $genome_file=$options->get_genome_file();
 my $file_list='read.list'; # this file will list all the files in the 
                            # directory to map as
                            # well as if they are paired, and/or stranded.
@@ -97,9 +97,9 @@ my $file_list='read.list'; # this file will list all the files in the
 # Database information
 # Most of the connection information will be read from the .my.cnf file, so it
 # is not necessary to supply this
-my $host;
-my $commondb='RNAseqPipelineCommon';
-my $database='RNAseqPipeline';
+my $host=$options->get_host() || die "Unknown host\n";
+my $commondb=$options->get_commondb() || die "Unknown database Common\n";
+my $database=$options->get_database() || die "Unknown database\n";
 my $junctionstable;
 my $geneclasstable;
 my $transclasstable;
@@ -107,7 +107,7 @@ my $junctionsclasstable;
 my $exonsclasstable;
 
 # Mapping settings
-my $mismatches=2;
+my $mismatches=$options->get_mismatches() || die "Unknown mismatches\n";
 my $paired=0;
 my $stranded=0;
 my $readlength;
@@ -451,7 +451,7 @@ __END__
 
 =head1 NAME
     
-    start_RNAseq_pipeline.X.0.pl
+    start_RNAseq_pipeline.pl
     
 =head1 SYNOPSIS
     

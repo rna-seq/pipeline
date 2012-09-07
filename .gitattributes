@@ -141,7 +141,10 @@ bin/start_RNAseq_pipeline.3.0.pl -text
 bin/start_RNAseq_pipeline.pl -text
 bin/trimreads.preprocess.pl -text
 contrib/templates/cluster_sub/template3.0.1.txt -text
+lib/GRAPE/Base.pm -text
 lib/GRAPE/DBinterface.pm -text
+lib/GRAPE/Formats/Fasta.pm -text
+lib/GRAPE/Formats/GFF.pm -text
 lib/GRAPE/Logs.pm -text
 lib/GRAPE/Options.pm -text
 lib/GRAPE/Start.pm -text
