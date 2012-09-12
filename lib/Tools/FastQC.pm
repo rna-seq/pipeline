@@ -78,16 +78,16 @@ sub parse_fastqc_report {
     close($reportfh);
 
     # print the results
-    foreach my $key (keys %report) {
-	foreach my $value (@{$report{$key}{'header'}}) {
+#    foreach my $key (keys %report) {
+#	foreach my $value (@{$report{$key}{'header'}}) {
 #	    print STDERR join("\t",
 #			  @{$value}),"\n";
-	}
-	foreach my $value (@{$report{$key}{'values'}}) {
+#	}
+#	foreach my $value (@{$report{$key}{'values'}}) {
 #	    print STDERR join("\t",
 #			  @{$value}),"\n";
-	}
-    }
+#	}
+#    }
 
     return(\%report)
 }
@@ -104,7 +104,7 @@ sub run_fastqc {
 
     my $command='fastqc --nogroup ';
     $command.="-o $outdir ";
-    $command.="-t 2 ";
+    $command.="-t 1 ";
     $command.="$readfile";
 
     # Build the path for the fastqc directory

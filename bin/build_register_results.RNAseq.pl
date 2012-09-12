@@ -96,7 +96,8 @@ get_gtf_files(\@files,
 # Get the bed files
 get_bed_files(\@files,
 	      \%files,
-	      $project);
+	      $project,
+	      $tmpdir);
 
 # Print out the results
 my ($globalmd5)=@{get_exp_info($proj_id,
@@ -221,8 +222,9 @@ sub get_bed_files {
     my $files=shift;
     my $fileprefix=shift;
     my $project=shift;
+    my $tmpdir=shift;
 
-    my @bedfiles=`ls work/*.bed`;
+    my @bedfiles=`ls $tmpdir/*.bed`;
 
     foreach my $filename (@bedfiles) {
 	chomp($filename);
