@@ -62,6 +62,7 @@ sub new {
 			   'compartment=s',
 			   'run_description=s',
 			   'projdesc=s',
+			   'secret=s',
 			   'rnafrac=s',
 			   'bioreplicate=s',
 			   'preprocess=s',
@@ -71,11 +72,14 @@ sub new {
 			   'genomesource=s',
 			   'gender=s',
 			   'annotationversion=s',
-			   'annotationsource=s'
+			   'annotationsource=s',
+			   'protocolinfo=s',
+			   'protocolshort=s'
 	);
 
     # Determine if the options were all read correctly
-    $self->set_OptionsOK($success);
+    $self->set_help(1) unless $success;
+    return($self) unless $success;
 
     # Initialize the options that need to be present with the provided values or
     # reasonable defaults if they are missing
@@ -92,8 +96,6 @@ sub new {
 	_add_extra_parameters($self,
 			      $tables);
     }
-
-#    _guess_missing_values($self);
 
     return $self;
 }
@@ -142,6 +144,25 @@ sub set_database {
     return($self);
 }
 
+sub set_species {
+    my $self=shift;
+    my $value=shift || die "No species has been provided\n";
+
+    my @species=split(/\s+/,$value);
+    if (@species < 2) {
+	die "WARNING: Species name ($value) does not look right. Should have a Genus and species name at least\n";
+    }
+
+    if ($value=~/([^\w_\/\. -])/o) {
+	my $char=$1;
+	warn "WARNING: Species value $value contains an invalid character: '$char'\n";
+    }
+
+    $self->{'species'} = $value;
+
+    return($self);
+}
+
 sub _add_extra_parameters {
     my $self=shift;
     my $tables=shift;
@@ -150,6 +171,14 @@ sub _add_extra_parameters {
 				$self->{'project'},
 				$self->{'experiment'});
     $self->{'CommonTables'}=$tables;
+
+    # Set the prefix
+    $self->set_prefix();
+
+    # If the clean option is set skip alll the pable creation steps
+    if ($self->get_clean()) {
+	return($self);
+    }
 
     # Set the species tables
     $self->set_species_tables();
@@ -167,33 +196,28 @@ sub _add_extra_parameters {
     $self->set_fasta_files_tables();
 
     # Set the indices table
+    $self->set_indices_tables();
 
     # Set the protocol info table
+    $self->set_protocol_info();
 
     # Set the projects table
+    $self->add_project();
 
     # set the experiments table
+    $self->add_experiment();
 
     return($self);
 }
 
-sub _guess_missing_values {
+sub set_prefix {
     my $self=shift;
-
-    my $dbh=$self->get_commondbh();
-
-    foreach my  $opt (keys %{$self}) {
-	if (defined $self->{$opt}) {
-	    print STDERR $opt,"\tDefined as ",$self->{$opt},"\n";
-	} else {
-	    print STDERR $opt,"\tUndefined\n";
-	    my $subname='guess_'.$opt;
-	    $self->$subname($opt);
-	    print STDERR "Setting to:",$self->{$opt},"\n";
-	}
-    }
-
-    return($self);
+    my $project=$self->get_project();
+    my $experiment=$self->get_experiment();
+    
+    $self->{'prefix'}=join('_',
+			   $project,
+			   $experiment);
 }
 
 sub print_options {
@@ -219,10 +243,11 @@ sub _initialize {
 	$self->$subname($options->{$option});
     }
 
-    $self->{'species'} = undef unless $self->{'species'};
-    $self->set_project(undef) unless $self->get_project();
-    $self->set_experiment(undef) unless $self->get_experiment();
-    $self->{'template'} = 'template.txt' unless $self->{'template'};
+    # Add the defaults for those cases that have not been defined
+    $self->set_species(undef) unless $self->get_species();
+    $self->set_project('QuickRun') unless $self->get_project();
+    $self->set_experiment('QuickRun') unless $self->get_experiment();
+    $self->set_template('template.txt') unless $self->get_template();
     $self->{'annotation'} = undef unless $self->{'annotation'};
     $self->set_genome(undef) unless $self->get_genome();
     $self->{'files'} = 'read.list.txt' unless $self->{'files'};
@@ -231,17 +256,22 @@ sub _initialize {
     $self->set_database('TestRNAseqPipeline') unless $self->get_database();
     $self->{'mismatches'} = 2 unless $self->{'mismatches'};
     $self->{'stranded'} = 0 unless $self->{'stranded'};
+    $self->{'paired'} = 0 unless $self->{'paired'};
     $self->{'readlength'} = undef unless $self->{'readlength'};
     $self->{'mapper'} = 'GEM' unless $self->{'mapper'};
     $self->{'threads'} = 2 unless $self->{'threads'};
-    $self->{'localdir'} = undef unless $self->{'localdir'};
+    $self->guess_localdir() unless $self->get_localdir();
     $self->{'cluster'} = '-' unless $self->{'cluster'};
     $self->{'qualities'} = 'ignore' unless $self->{'qualities'};
-    $self->{'preprocess'} = '' unless $self->{'preprocess'};
+    $self->{'preprocess'} = 'zcat' unless $self->{'preprocess'};
     $self->{'preprocess_trim_length'} = 0 unless $self->{'preprocess_trim_length'};
     $self->{'input'} = 'fastqc' unless $self->{'input'};
-    $self->set_projectdir() unless $self->{'projectdir'};
-    $self->set_indexdir() unless $self->{'indexdir'};
+    $self->set_projectdir() unless $self->get_projectdir();
+    $self->set_indexdir() unless $self->get_indexdir();
+    $self->set_fluxmem('16G') unless $self->get_fluxmem();
+    $self->set_protocolinfo('none') unless $self->get_protocolinfo();
+    $self->set_protocolshort('-') unless $self->get_protocolshort();
+    $self->set_projdesc('-') unless $self->get_projdesc();
 
     return $self;
 }
@@ -270,9 +300,20 @@ sub guess_localdir {
 
     my $project_dir=getcwd();
     chomp($project_dir);
-    $self->{'localdir'}=$project_dir."/work";
+    $self->set_localdir($project_dir."/work");
 
     return($self);
+}
+
+sub set_template {
+    my $self=shift;
+    my $file=shift;
+
+    unless ($file && -r $file) {
+	die "Template file supplied is not readable: $!\n";
+    }
+    
+    return $self->{'template'} = $file;
 }
 
 # This should set the experiment value and also insert it in the necessary
@@ -284,6 +325,9 @@ sub set_experiment {
     if ($value=~/([^\w_])/o) {
 	my $char=$1;
 	warn "WARNING: Experiment value $value contains an invalid character: '$char'\n";
+    }
+    if (length($value) > 13) {
+	die "WARNING: Value $value corresponding to experiment is too long. Please limit it to 12 characters\n";
     }
 
     $self->{'experiment'} = $value;
@@ -300,6 +344,9 @@ sub set_project {
 	my $char=$1;
 	warn "WARNING: Project value $value contains an invalid character: '$char'\n";
     }
+    if (length($value) > 13) {
+	die "WARNING: Value $value corresponding to project is too long. Please limit it to 12 characters\n";
+    }
 
     $self->{'project'} = $value;
 
@@ -312,7 +359,7 @@ sub set_qualities {
 
     unless ($value=~/(solexa|phred|ignore)$/o) {
 	my $char=$1;
-	warn "WARNING: Qualities value $value contains an invalid character: '$char'\n";
+	die "WARNING: Qualities value $value contains an invalid character: '$char'\n";
     }
 
     return $self->{'qualities'} = $value;
@@ -324,7 +371,7 @@ sub set_preprocess_trim_length {
 
     unless ($value=~/^(<?=?(\d)+)$/o) {
 	my $char=$1;
-	warn "WARNING: Qualities value $value contains an invalid character: '$char'\n";
+	die "WARNING: Qualities value $value contains an invalid character: '$char'\n";
     }
     
     $self->{'preprocess_trim_length'} = $value;
@@ -332,17 +379,17 @@ sub set_preprocess_trim_length {
     return($self);
 }
 
-
 sub set_genome {
     my $self=shift;
     my $file=shift;
 
-    unless (-r $file) {
-	warn "WARNING: Genome file supplied is not readable: $!\n";
+    unless ($file && -r $file) {
+	die "Genome file supplied is not readable: $!\n";
     }
     
     return $self->{'genome'} = $file;
 }
+
 # Set the information dependent on the species
 sub set_species_tables {
     my $self=shift;
@@ -786,40 +833,334 @@ sub _fill_fasta_table {
     $self->{$type}=$fasta_name;
 }
 
-#sub set_genomeindex {
-#    my $self=shift;
-#    my $filetype=shift;
-#    my $present=0;
+sub set_indices_tables {
+    my $self=shift;
 
-#    my $table='indices';
-#    my $project_dir=$self->get_projectdir();
-#    my $fasta_name=$self->get_genome();
-#    $fasta_name=~s/\.fa$//;
-#    my $location=$project_dir.'/GEMIndices/'.$fasta_name;
+    my $dbh=$self->get_commondbh();
+    my $table='indices';
+
+    # Check if the table is present and create it if not
+    my $present=check_table_existence($dbh,
+				      $table);
+
+    unless ($present) {
+	my $tables=$self->get_CommonTables();
+	my $database=$self->get_commondb();
+	create_MySQL_table($database,
+			   $table,
+			   $tables->{$table});
+    }
+
+    # Fill in the different indices
+    _fill_indices_table($self,
+			'genomeindex');
+    _fill_indices_table($self,
+			 'junctionsindex');
+    _fill_indices_table($self,
+			'transcriptomeindex');
+}
+
+sub _fill_indices_table {
+    my $self=shift;
+    my $type=shift;
+
+    my $table='indices';
+    my $annotation_id=$self->get_annotation_id();
+    my $genome_id=$self->get_genome_id();
+    my $annotation=$self->get_annotation();
+    my $genome=$self->get_genome();
+    my $dbh=$self->get_commondbh();
+    my $indexdir=$self->get_indexdir();
+    my $species_id=$self->get_species_id();
+
+    my %suffix=('genomeindex' => 'genome',
+		'transcriptomeindex' => 'transcriptome',
+		'junctionsindex' => 'junctions');
+
+    # Check if the table exists and die it if it does not, as it should
+    # have been created in sub that calls this one
+    my $present=check_table_existence($dbh,
+				      $table);
+
+    unless ($present) {
+	die "$table is absent\n";
+    }
+
+    # If the index is a genome index we don't need the annotation index
+    if ($type eq 'genomeindex') {
+	$annotation_id = 0;
+    }
+
+    my ($query,$sth,$count,$index);
+    $query ='SELECT location ';
+    $query.="FROM $table ";
+    $query.='WHERE annotation_id = ? AND genome_id = ? AND type = ?';
+    $sth=$dbh->prepare($query);
+
+    # Set or get the information on the naming of the annotation tables that
+    # correspond to the genome and annotation we are looking at.
+    # Get the common sth for this table
+    $count=$sth->execute($annotation_id,$genome_id,$type);
+    if ($count > 0) {
+	if ($count == 1) {
+	    ($index)=$sth->fetchrow_array();
+	} else {
+	    die "More than one $table entry retrieved for $genome_id and $annotation_id\n";
+	}
+    } else {
+	# Get the required information from the annotation and genome
+	$genome=~s/.*\///;
+	$annotation=~s/.*\///;
+	if ($type eq 'genomeindex') {
+	    $index=$genome;
+	} else {
+	    $index=$annotation.'.'.$genome;
+	}
+	
+	$index=~s/\.g[tf]f//g;
+	$index=~s/\.fa(stq)?$//;
+	$index.='.'.($suffix{$type} || $type);
+	$index=$indexdir.'/'.$index;
+	print STDERR "$type entry not present. Will be built in $index\n";
+
+	# The entry is not present so we will fill into the database the 
+	# location where the file will be built
+	my ($ins_query,$ins_sth);
+	$ins_query ="INSERT INTO $table ";
+	$ins_query.='SET genome_id = ?,annotation_id = ?, species_id = ?,';
+	$ins_query.='type = ?,location = ?';
+	$ins_sth=$dbh->prepare($ins_query);
+
+	# The entry is absent and we must set it
+	print STDERR "Executing: $ins_query\n";
+	$ins_sth->execute($genome_id,$annotation_id,$species_id,
+			  $type,$index);
+    }
+    $self->{$type}=$index;
+}
+
+# Build the protocol info table and fill it with any available protocol
+# information
+# Set the information dependent on the species
+sub set_protocol_info {
+    my $self=shift;
+    my $protocol=$self->get_protocolinfo();
+    my $short=$self->get_protocolshort();
+
+    # Annotation tables: Depend only on species
+    my $table='protocol_info';
+    my $type='abbreviation';
+    my $field='protocol_id';
+    my $dbh=$self->get_commondbh() || die "Unknown dbh\n";
+
+    my ($query,$sth,$protocol_id);
+
+    # Check if the table is present and create it if not
+    my $present=check_table_existence($dbh,
+				      $table);
+    unless ($present) {
+	my $tables=$self->get_CommonTables();
+	my $database=$self->get_commondb();
+	create_MySQL_table($database,
+			   $table,
+			   $tables->{$table});
+    }
+
+    # Check if the value is already defined
+    $sth=check_field_value($dbh,
+			   [$type,$short],
+			   $table,
+			   $field);
     
-#    my $count=$sth->execute($genome_id,0,'genome');
-#    if ($count > 0) {
-#	if ($count == 1) {
-#	    ($location)=$sth1->fetchrow_array();
-#	    $present=1;
-#	} else {
-#	    warn "More than one entry retrieved for $genome\n";
-#	    $present=1
-#	}
-#    }
-#    if ($present) {
-#	print $log_fh "File present at $location\n";
-#    } else {
-#	print $log_fh "File not present. Will be built at $location\n";
-#	# The entry is absent and we must set it
-#	print $log_fh "Executing: $ins_query1 for $location\n";
-#	$ins_sth1->execute($genome_id,0,$species_id,
-#			   $filetype,$location);
-#    }
-#    return($location);
-#};
+    my $count=$sth->execute($short);
+    if ($count == 1) {
+	# The entry is present
+	($protocol_id)=$sth->execute($short);
+    } elsif ($count > 1) {
+	# There is a problem
+	die "Entry $short is present more than once in $table\n";
+    } else {
+	# The entry is absent and we must set it
+	# Insert the info into the database
+	my $query;
+	$query ="INSERT INTO $table ";
+	$query.='SET abbreviation = ? , description = ?';
+	print STDERR "Executing: $query\n";
+	my $sth2=$dbh->prepare($query);
+	$sth2->execute($short,$protocol);
+    }
+    # Get the Id of the value we just inserted
+    $sth->execute($short);
+    ($protocol_id)=$sth->fetchrow_array();
 
+    $self->{'protocol_id'} = $protocol_id;
+}
 
+# Add the project and experiment information to the database
+sub add_project {
+    my $self=shift;
+
+    my $project=$self->get_project();
+    my $species=$self->get_species();
+    my $proj_desc=$self->get_projdesc();
+    my $secret=$self->get_secret();
+    my $dbh=$self->get_commondbh();
+
+    print STDERR "Checking for the presence of $project in the database...\n";
+    my $table='projects';
+    my ($query,$sth,$count,$proj_id);
+
+    # Check if the table is present and create it if not
+    my $present=check_table_existence($dbh,
+				      $table);
+    unless ($present) {
+	my $tables=$self->get_CommonTables();
+	my $database=$self->get_commondb();
+	create_MySQL_table($database,
+			   $table,
+			   $tables->{$table});
+    }
+
+    $query ='SELECT project_id ';
+    $query.="FROM $table ";
+    $query.="WHERE project_id = ?";
+    $sth=$dbh->prepare($query);
+    $count=$sth->execute($project);
+
+    my $update=0;
+    if ($count == 1) {
+	($proj_id)=$sth->fetchrow_array();
+	print STDERR "$project is present in the database\n";
+	print STDERR "Do you want to overwrite existing info? (y/N): ";
+	my $yes=<STDIN>;
+	chomp($yes);
+	if ($yes=~/^y/i){
+	    $update=1;
+	    $query ="UPDATE $table ";
+	    $query.='SET species = ? , project_id = ?, proj_description = ?,';
+	    $query.='secret = ?';
+	}
+    } elsif ($count > 1) {
+	die "Project ID is present many times. This should not happen\n";
+    } else {
+	print STDERR "$project is not present in the database\n";
+	print STDERR "Adding a new entry\n";
+	$update=1;
+	$query ="INSERT INTO $table ";
+	$query.='SET species = ? , project_id = ?, proj_description = ?,';
+	$query.='secret = ?';
+    }	
+
+    if ($update) {
+	# Insert the info into the database
+	my $sth2=$dbh->prepare($query);
+	$sth2->execute($species,$project,$proj_desc,$secret);
+    }
+
+    # Get the Id of the value we just inserted
+    $sth->execute($project);
+    ($proj_id)=$sth->fetchrow_array();
+
+    $self->set_project_id($proj_id);
+}
+
+# Add the experiment information making sure the project id is present in the
+# projects table
+sub add_experiment {
+    my $self=shift;
+
+    my $project=$self->get_project();
+    my $experiment=$self->get_experiment();
+    my $species_id=$self->get_species_id();
+    my $annotation_id=$self->get_annotation_id();
+    my $genome_id=$self->get_genome_id();
+    my $template=$self->get_template();
+    my $read_length=$self->get_readlength();
+    my $preprocess_trim_length=$self->get_preprocess_trim_length();
+    my $mismatches=$self->get_mismatches();
+    my $dbh=$self->get_commondbh();
+
+    my $cellline=$self->get_cellline();
+    my $compartment=$self->get_compartment();
+    my $expdescription=$self->get_run_description();
+    my $rnafrac=$self->get_rnafrac();
+    my $bioreplicate=$self->get_bioreplicate();
+
+    # If the preprocess trim length is constant set the new read length
+    if ($preprocess_trim_length=~/^=?(\d)+$/o) {
+	my $trim=$preprocess_trim_length;
+	$trim=~s/^=//;
+	print STDERR "Adjusting read length by $trim\n";
+	print STDERR "$preprocess_trim_length\n";
+	$read_length -= $trim;
+	$expdescription.=" Original reads were trimmed by $preprocess_trim_length nucleotides";
+    }
+
+    # Check if the table is present and create it if not
+    my $table='experiments';
+    my $present=check_table_existence($dbh,
+				      $table);
+    unless ($present) {
+	my $tables=$self->get_CommonTables();
+	my $database=$self->get_commondb();
+	create_MySQL_table($database,
+			   $table,
+			   $tables->{$table});
+    }
+
+    # Check if the experiment is already present in the database
+    print STDERR "Checking for the presence of $experiment in the database...\n";
+
+    my ($query,$sth,$count);
+
+    $query ='SELECT experiment_id ';
+    $query.="FROM $table ";
+    $query.='WHERE experiment_id = ? AND project_id = ?';
+    $sth=$dbh->prepare($query);
+    $count=$sth->execute($experiment,$project);
+
+    my $update=0;
+    if ($count == 1) {
+	print STDERR "$experiment is already present as part of $project. Are you sure you want to overrite the previous information?(y/N): ";
+	my $yes=<STDIN>;
+	chomp($yes);
+	if ($yes=~/^y/i){
+	    $update=1;
+	    print STDERR "Updating entry\n";
+	    $query ="UPDATE $table ";
+	    $query.='SET species_id = ?,';
+	    $query.='genome_id = ?, annotation_id = ?, template_file = ?,';
+	    $query.='read_length = ?, mismatches = ?, ';
+	    $query.='CellType = ?, Compartment = ?, exp_description = ?,';
+	    $query.='RNAType = ?, Bioreplicate = ?';
+	    $query.='WHERE experiment_id = ? AND project_id = ?';
+	}
+    } elsif ($count > 1) {
+	die "Project ID with experiment ID combination is present many times. This should not happen\n";
+    } else {
+	print STDERR "$experiment is not present in the database for $project\n";
+	print STDERR "Adding a new entry\n";
+	$update=1;
+	$query ="INSERT INTO $table ";
+	$query.='SET species_id = ?,';
+	$query.='genome_id = ?, annotation_id = ?, template_file = ?,';
+	$query.='read_length = ?, mismatches = ?,';
+	$query.='CellType = ?, Compartment = ?, exp_description = ?,';
+	$query.='RNAType = ?, Bioreplicate = ?,';
+	$query.='experiment_id = ?, project_id = ?';
+    }
+
+    if ($update) {
+	# Insert the info into the database
+	$sth=$dbh->prepare($query);
+	$sth->execute($species_id,
+		      $genome_id,$annotation_id,$template,
+		      $read_length,$mismatches,
+		      $cellline, $compartment, $expdescription,
+		      $rnafrac,$bioreplicate,
+		      $experiment,$project);
+    }
+}
 
 sub AUTOLOAD {
     my $self = shift;

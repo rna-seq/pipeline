@@ -77,7 +77,7 @@ sub check_option_characters {
 		my $char=$1;
 		$problems.="WARNING: Value $value corresponding to $option contains an invalid character: '$char'\n";
 	    }
-	    if (length($value) > 12) {
+	    if (length($value) > 13) {
 		$problems.="WARNING: Value $value corresponding to $option is too long. Please limit it to 12 characters\n";
 	    }
 	    next;
@@ -88,7 +88,7 @@ sub check_option_characters {
 		my $char=$1;
 		$problems.="WARNING: Value $value corresponding to $option contains an invalid character: '$char'\n";
 	    }
-	    if (length($value) > 12) {
+	    if (length($value) > 13) {
 		$problems.="WARNING: Value $value corresponding to $option is too long. Please limit it to 12 characters\n";
 	    }
 	    next;

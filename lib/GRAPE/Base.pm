@@ -155,8 +155,8 @@ sub run_system_command {
     my $log_fh=shift;
 
     if ($log_fh) {
-	print $log_fh "Executing: $command\n";
-	print $log_fh `$command`,"\n";
+	$log_fh->printlog("Executing: $command");
+	$log_fh->printlog(`$command`);
     } else {
 	$log_fh=*STDERR;
 	print $log_fh "Executing: $command\n";

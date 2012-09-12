@@ -30,8 +30,14 @@ sub new {
 sub printlog {
     my $self=shift;
     my $string=shift;
+    my $both=shift;
 
-    print {$self->{logfh}} $string,"\n";
+    if ($string) {
+	print {$self->{logfh}} $string,"\n";    
+	if ($both) {
+	    print STDERR $string,"\n";
+	}
+    }
 
     return $self;
 }

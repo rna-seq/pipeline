@@ -54,17 +54,15 @@ BEGIN {
 }
 
 use Pod::Usage;
-use GRAPE::Start ('check_option_characters','defaults',
-		  'check_base_tables',
-		  'get_species_hash','base_table_build',
+use GRAPE::Start ('base_table_build',
 		  'get_existing_data_subs',
 		  'get_tables_hash', 'build_table_files',
 		  'create_directory_structure','build_file_list',
 		  'print_config_file','print_pipeline_file',
 		  'add_project','add_proj_info','add_exp_info',
 		  'add_experiment',
-		  'clear_tables','clear_dirs','clear_common_tables',
-		  'clear_files');
+		  'clear_experiment');
+
 use RNAseq_pipeline3 ('MySQL_DB_Connect','get_fh','get_log_fh');
 use GRAPE::Logs;
 use GRAPE::Options;
@@ -73,12 +71,28 @@ use Cwd;
 my $tables=base_table_build();
 my $options=GRAPE::Options->new($tables);
 
+# Print help and exit if required
+pod2usage(1) if $options->get_help();
+pod2usage(-verbose => 2) if $options->get_man();
+
 $options->print_options(1);
 # Declare the variables
 # naming variables
 my $species=$options->get_species() || die "No species\n";
-my $proj_prefix=$options->get_project() || die "No project\n";
-my $exp_prefix=$options->get_experiment() || die "No experiment\n";
+my $project=$options->get_project() || die "No project\n";
+my $experiment=$options->get_experiment() || die "No experiment\n";
+
+# Database information
+# Most of the connection information will be read from the .my.cnf file, so it
+# is not necessary to supply this
+my $host=$options->get_host() || die "Unknown host\n";
+my $commondb=$options->get_commondb() || die "Unknown database Common\n";
+my $database=$options->get_database() || die "Unknown database\n";
+
+if ($options->get_clean()) {
+    clear_experiment($options);
+    exit;
+}
 
 # Cluster specification
 my $cluster=$options->get_cluster() || die "No cluster\n";
@@ -94,29 +108,24 @@ my $file_list='read.list'; # this file will list all the files in the
                            # directory to map as
                            # well as if they are paired, and/or stranded.
 
-# Database information
-# Most of the connection information will be read from the .my.cnf file, so it
-# is not necessary to supply this
-my $host=$options->get_host() || die "Unknown host\n";
-my $commondb=$options->get_commondb() || die "Unknown database Common\n";
-my $database=$options->get_database() || die "Unknown database\n";
-my $junctionstable;
-my $geneclasstable;
-my $transclasstable;
-my $junctionsclasstable;
-my $exonsclasstable;
+# Common tables information
+my $junctionstable=$options->get_junctionstable() || die "Unknown junctions table\n";
+my $geneclasstable=$options->get_geneclass() || die "Unknown geneclass table";
+my $transclasstable=$options->get_transclass() || die "Unknown transclass table";
+my $junctionsclasstable=$options->get_junctionsclass() || die "Unknown junctionsclass table";
+my $exonsclasstable=$options->get_exonsclass() || die "Unknown exonsclass table";
 
 # Mapping settings
 my $mismatches=$options->get_mismatches() || die "Unknown mismatches\n";
-my $paired=0;
-my $stranded=0;
-my $readlength;
-my $mapper='GEM';
-my $threads=2;
-my $qualities;
+my $paired=$options->get_paired() || 0;
+my $stranded=$options->get_stranded() || 0;
+my $readlength=$options->get_readlength() || warn "No read length supplied\n";
+my $mapper=$options->get_mapper() || warn "Unknown mapper\n";
+my $threads=$options->get_threads() || die "Unknown threads\n";
+my $qualities=$options->get_qualities() || die "Unknown qualities\n";
 
 # Flux settings
-my $fluxmem;
+my $fluxmem=$options->get_fluxmem() || warn "No fluxmem set\n";
 
 # Overlap settings
 
@@ -139,8 +148,8 @@ my $rnafraction;
 my $bioreplicate;
 
 # Preprocessing
-my $preprocess='zcat';
-my $preprocess_trim_length=0;
+my $preprocess=$options->get_preprocess();
+my $preprocess_trim_length=$options->get_preprocess_trim_length();
 
 # Get the command line for the log file
 my $program_name=$0;
@@ -154,9 +163,9 @@ my $project_dir=getcwd();
 chomp($project_dir);
 
 # Set the temporary directory
-my $localdir=$project_dir."/work";
+my $localdir=$options->get_localdir() || die "Unable to set localdir\n";
 
-# Get the options from the command line
+# Get the options from the options object
 my %options=(
 	     'genome' => \$genome_file,
 	     'files' => \$file_list,
@@ -197,177 +206,51 @@ my %options=(
 
 # Additional options should be files to be run
 
-
-# Check all the options are set correctly
-
-# Print help and exit if required
-pod2usage(1) if $options->get_help();
-pod2usage(-verbose => 2) if $options->get_man();
-
 # Get a log file
-my $log_fh=get_log_fh('start_RNAseq_pipeline.log',
-		      $debug);
-#print $log_fh "Executing: $command_line\n";
+my $log_fh=GRAPE::Logs->new('start_RNAseq_pipeline.log',
+			    $debug);
+$log_fh->printlog("Executing: $command_line");
 
-# Get some useful subs
-#*check_default=defaults($log_fh);
-
-# Select the mode in which we will run:
-if ($options->get_clean()) {
-    # We need to make sure we have values for the different options (so maybe
-    # it would be good to add here something to read the config file or at
-    # least to have)
-
-#    unless (${$options{'project'}} && ${$options{'experiment'}} &&
-#	    ${$options{'commondb'}} && ${$options{'database'}}) {
-#	die "I need to know both the project and the experiment you want to remove\n";
-#    }
-
-    # Print message if in clean mode
-    print STDERR "WARNING: Clean mode.\n";
-    print STDERR "This will remove the following:\n";
-    print STDERR "\tAll tables for this experiment ($exp_prefix) in $proj_prefix\n";
-    print STDERR "\tAll direactories that the script created originally with the files within (this includes all mappings), with the exception of the readData directory.\n";
-    print STDERR "\tAll entries in the common tables corresponding to this experiment\n";
-    print STDERR "Do you want to continue? (y/N)\n";
-    my $reply=<STDIN>;
-    chomp($reply);
-    unless ($reply=~/y/i) {
-	die "Aborting\n";
-    }
-
-    # Clear the database
-#    clear_tables(\%options);
-
-    # Clear the directories
-#    clear_dirs(\%options);
-
-    # Clear the entries from the projects and experiments tables in the commondb
-#    clear_common_tables(\%options);
-
-    # Clear some riles that may be left in the running dir
-#    clear_files(\%options);
-
-#    exit;
-} else {
-    # We go to the main body of the script
-    # check all the options for the presence of dashes or unauthorized
-    # characters that may cause problems with the database if used for naming
-    #tables
-#    my $problems=check_option_characters(\%options,
-#					 $log_fh);
-
-    # If any issues are found during the checking of the options print them all
-    # out as well as the help
-#    if ($problems) {
-#	print STDERR $problems;
-#	pod2usage(1);
-#    }
-}
-
-# Check the option actual values to see if we are missing any important
-# information for the execution of the pipeline
-#my ($missing,$guessmaster)=check_option_values(\%options);
-#pod2usage("WARNING: $missing information is necessary but missing") if $missing;
-
-# Check for the existence of the tables that will contain the annotation files
-# and the other necessary tables and if they are not present create them
-# If clean option is used this step will also delete the tables
-#check_base_tables($commondb,
-#		  $log_fh,
-#		  $clean,);
-
-# For those values that have not been provided do a bit of guess work
-# First get the required subroutines. This MUST be done here, after using check
-# values if the default database is to be used
-#*guess=get_existing_data_subs($genome_file,
-#			      $annotation_file,
-#			      $readlength,
-#			      $mismatches,
-#			      $species,
-#			      $project_dir,
-#			      $commondb,
-#			      $log_fh);
-
-#if (keys %{$guessmaster}) {
-#    guess_values($guessmaster,
-#		 \%options);
-
-    # This is specific to the CRG
-#    if (${$options{'cluster'}}) {
-       # Skip the custer setting if it is already set
-#	print $log_fh "Cluster set ot '-'. Running locally\n";
-#    } elsif($localdir=~/^\/users/) {
-#	warn "CRG specific parameter being used, maybe I'm not doing what you want\n";
-#	${$options{'cluster'}}='main';
-#    }
-#}
-
-# Check that the template file that has been supplied is readable
-#pod2usage("I need a readable template file") unless (-r $template);
 
 # All the necessary information is available so we will start the pipeline
-#print $log_fh "All necessary information seems present.\n";
-#print $log_fh "Building pipeline for:\n";
-#print $log_fh join("\n",
-#		   $species,
-#		   $proj_prefix.':'.$exp_prefix),"\n";
+$log_fh->printlog("All necessary information seems present.");
+$log_fh->printlog("Building pipeline for:");
+$log_fh->printlog(join("\n",
+		   $species,
+		   $project.':'.$experiment));
 
-# Get the species information
-#my %species=%{get_species_hash($commondb)};
+# Get the identifier string we want:
+my $prefix=$options->get_prefix();
+my $id_string=$prefix;
+$log_fh->printlog("Id string: $prefix");
 
-#unless ($species{$species}) {
-#    die "Something has happened and I cannot find $species in $commondb\n";
-#}
-#print $log_fh "Species Abbreviation will be: $species{$species}\n";
+# Get the output table fh
+my $table_fh=get_fh($prefix.'_start.txt',1);
+$log_fh->printlog("Table for this rule is: ${prefix}_start.txt");
 
-# Get the identifier string we want:
-#my $id_string=$proj_prefix.'_'.$exp_prefix;
-#print $log_fh "Id string: $id_string\n";
+# Get the necessary tables
+my %tables=%{get_tables_hash($prefix)};
+$log_fh->printlog("I will try to build the following tables");
+foreach my $table (keys %tables) {
+    $log_fh->printlog($prefix.$table);
+}
 
-# Get the output table fh
-#my $table_fh=get_fh($id_string.'_start.txt',1);
-#print $log_fh "Table for this rule is: ${id_string}_start.txt\n";
+# Create the necessary directory structure
+my %vars=%{create_directory_structure($log_fh,
+				      $options,
+				      $table_fh)};
 
-# Get the necessary tables
-#my %tables=%{get_tables_hash($id_string)};
-#print $log_fh "I will try to build the following tables\n";
-#foreach my $table (keys %tables) {
-#    print $log_fh $id_string.$table,"\n";
-#}
-
-# Create the necessary directory structure
-#my %vars=%{create_directory_structure($id_string,
-#				      $log_fh,
-#				      \%options,
-#				      $table_fh)};
-
-#my @table_files=build_table_files($id_string,
-#				  $vars{'TABLES'});
+my @table_files=build_table_files($options,
+				  $vars{'TABLES'});
 # print out pipfile
-#print_pipeline_file(\%tables,
-#		    \%vars,
-#		    $template,
-#		    $log_fh);
+print_pipeline_file(\%tables,
+		    \%vars,
+		    $template,
+		    $log_fh);
 
-# print out the configuration file
-#print_config_file(\%vars,
-#		  $log_fh);
-
-# Add the project and experiment entries to the respective tables
-#add_project($commondb,
-#	    $proj_prefix,
-#	    $species,
-#	    $log_fh);
-
-#add_proj_info(\%options,
-#	      $log_fh);
-
-#add_experiment(\%options,
-#	       $log_fh);
-
-#add_exp_info(\%options,
-#	     $log_fh);
+# Print out the configuration file
+print_config_file(\%vars,
+		  $log_fh);
 
 # close the log file
 #close($log_fh);
@@ -404,47 +287,6 @@ sub insert_value {
     $query.="SET $value_string";
     $sth=$dbh->prepare($query);
     $sth->execute(@values);
-}
-
-# This script should for each of the necessary files
-sub guess_values {
-    my $guessmaster=shift;
-    my $options=shift;
-
-    print STDERR "Some values missing; time for some guesswork...";
-    foreach my $key (keys %{$guessmaster}) {
-	print $log_fh "Guessing $key ...\n";
-	my $value=guess($key);
-	${$options->{$key}}=$value;
-	print $log_fh "done\n";
-    }
-    print STDERR "done\n";
-}
-
-
-# Check if the options are set and if not set the defaults.
-# If any option remains undefined it means we have no default and the user
-# has to supply it
-sub check_option_values {
-    my $options=shift;
-
-    my $missing;
-    my %guessmaster;
-    print STDERR "Checking arguments...\n";
-
-    foreach my $key (sort keys %{$options}) {
-	my $value=$options->{$key};
-	# Skip the behaviour switches
-	if ($key=~/(clean|help|debug|man)/) {
-	    next;
-	}
-	if (check_default($key,
-			  $value,
-			  \%guessmaster)) {
-	    $missing=$key;
-	}
-    }
-    return($missing,\%guessmaster);
 }
 
 __END__

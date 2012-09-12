@@ -11,15 +11,12 @@ package GRAPE::Start;
 # Export subroutines to the caller namespace
 use Exporter;
 @ISA=('Exporter');
-@EXPORT_OK=('check_option_characters','defaults','check_base_tables',
-	    'get_species_hash','base_table_build',
-	    'get_existing_data_subs');
+@EXPORT_OK=('base_table_build','get_existing_data_subs');
 push @EXPORT_OK,('get_tables_hash','build_table_files');
 push @EXPORT_OK,('create_directory_structure');
 push @EXPORT_OK,('print_config_file','print_pipeline_file','build_file_list');
 push @EXPORT_OK,('add_project','add_experiment','add_proj_info','add_exp_info');
-push @EXPORT_OK,('clear_tables','clear_dirs','clear_common_tables',
-		 'clear_files');
+push @EXPORT_OK,('clear_experiment');
 
 # Set strict and warnings
 use strict;
@@ -51,9 +48,11 @@ use Bio::SeqFeature::Gene::Transcript;
 use Bio::SeqFeature::Gene::Exon;
 
 ## Pipeline specific modules
-use RNAseq_pipeline3 ('get_fh','MySQL_DB_Connect','check_file_existence',
-		      'check_gff_file','check_fasta_file','run_system_command',
-		      'check_table_existence','check_field_value');
+use GRAPE::Base ('get_fh','MySQL_DB_Connect','check_file_existence',
+		 'run_system_command',
+		 'check_table_existence','check_field_value');
+use GRAPE::Formats::GFF ('check_gff_file');
+use GRAPE::Formats::Fasta ('check_fasta_file');
 
 ### Subroutines
 
@@ -62,191 +61,12 @@ use RNAseq_pipeline3 ('get_fh','MySQL_DB_Connect','check_file_existence',
 # Check the options that are provided to the script in order to decide if there 
 # are any unadvisable characters
 ## OK
-sub check_option_characters {
-    my $options=shift;
-    my $log_fh=shift;
-    my $problems='';
 
-    print $log_fh "Checking options for unadvisable characters...\n";
-    foreach my $option (keys %{$options}) {
-	my $value=${$options->{$option}} || '';
-	# Experiment id should only contain alphanumeric and underscore and the
-	# length should be limited to 10 characters
-	if ($option eq 'experiment') {
-	    if ($value=~/([^\w_])/o) {
-		my $char=$1;
-		$problems.="WARNING: Value $value corresponding to $option contains an invalid character: '$char'\n";
-	    }
-	    if (length($value) > 12) {
-		$problems.="WARNING: Value $value corresponding to $option is too long. Please limit it to 12 characters\n";
-	    }
-	    next;
-	} elsif ($option eq 'project') {
-	    # Project id should only be alphanumeric and limited to 10
-	    # characters
-	    if ($value=~/([^\w])/o) {
-		my $char=$1;
-		$problems.="WARNING: Value $value corresponding to $option contains an invalid character: '$char'\n";
-	    }
-	    if (length($value) > 12) {
-		$problems.="WARNING: Value $value corresponding to $option is too long. Please limit it to 12 characters\n";
-	    }
-	    next;
-	} elsif ($option eq 'qualities') {
-	    # Qualities can only be solexa, phred or ignore
-	    unless ($value=~/^(solexa|phred|ignore)$/o) {
-		my $char=$1;
-		$problems.="WARNING: Value for qualities is set to $value, but the only valid options are 'solexa', 'phred' or 'ignore'\n";
-	    }
-	    next;
-	} elsif ($option eq 'preprocess_trim_length') {
-	    if ($value) {
-		unless ($value=~/^(<?=?(\d)+)$/o) {
-		    my $char=$1;
-		    $problems.="WARNING: Value for preprocess_trim_length is set to $value, which is not a valid option\n";
-		}
-	    }
-	    next;
-	} elsif ($value=~/([^\w_\/\. -])/o) {
-	    my $char=$1;
-	    $problems.="WARNING: Value $value corresponding to $option contains an invalid character: '$char'\n";
-	} else {
-	    print $log_fh "Option $option => $value OK\n";
-	}
-    }
-    print $log_fh "done\n";
-
-    print $log_fh "Print checking options for common problems...\n";
-    # Check the species name to see if it has 2 words
-    my $species=${$options->{'species'}};
-    my @species=split(/\s+/,$species);
-    if (@species < 2) {
-	$problems.="WARNING: Species name ($species) does not look right. Should have a Genus and species name at least\n";
-    }
-    print $log_fh "done\n";
-
-    return($problems);
-}
-
-# This contains the default values for each of the variables and contains a
-# subroutine that will set them or change them
-## OK
-sub defaults {
-    my $log_fh=shift;
-    my %defaults=('species' => undef,
-		  'project' => undef,
-		  'experiment' => undef,
-		  'template' => 'template.txt',
-		  'annotation' => undef,
-		  'genome' => undef,
-		  'files' => 'read.list.txt',
-		  'commondb' => 'RNAseqPipelineCommon',
-		  'database' => 'RNAseqPipeline',
-		  'mismatches' => 2,
-		  'paired' => 0,
-		  'stranded' => 0,
-		  'readlength' => undef,
-		  'mapper' => 'GEM',
-		  'threads' => 2,
-		  'localdir' => undef,
-		  'cluster' => '-', # Should be defined to the local cluster
-		  'qualities' => undef,
-		  'preprocess' => 'zcat',
-		  'preprocess_trim_length' => 0,
-		  'fluxmem' => '16G'
-	);
-    my $check_default=sub {
-	my $variable=shift;
-	my $value=shift;
-	my $guessmaster=shift;
-
-	my $missing=0;
-	print STDERR $variable,":\t";
-
-	# Check if a value has been supplied
-	if (defined $$value) {
-	    print STDERR "Value supplied as: $$value\n";
-
-	    # If the value is one of the genome or annotation files check that
-	    # it actually exists
-	    if (($variable eq 'annotation') ||
-		($variable eq 'genome')){
-		check_file_existence($$value,
-				     $log_fh);
-	    }
-	} elsif (exists $defaults{$variable}) {
-	    print STDERR "No value supplied. ";
-	    if (defined $defaults{$variable}) {
-		my $default=$defaults{$variable};
-		$$value=$default;
-		print STDERR "Setting to $default\n";
-	    } else {
-		print STDERR "WARNING: No default for $variable please specify a value\n";
-		$missing=1;
-	    }
-	} else {
-	    print STDERR "No value supplied. ";
-	    print STDERR "I'll try to guess...\n";
-	    $guessmaster->{$variable}=1;
-	}
-	return($missing);
-    };
-    return($check_default);
-}
 
 ## Subroutines used for building the tables for the common database and
 # populating it
 # Build the tables that will be shared between the projects and experiments
-sub check_base_tables {
-    my $database=shift;
-    my $log_fh=shift;
-    my $clean=shift;
-    
-    my $dbh=MySQL_DB_Connect($database);
-    
-    my %tables=%{base_table_build()};
-    
-    print $log_fh "Checking the common tables...\n";
-    
-    foreach my $table (keys %tables) {
-	my $present=check_table_existence($dbh,
-					  $table);
-	
-	if ($present) {
-	    # Print the table location for the junctions of this experiment
-	    print $log_fh join("\t",
-			      $table,
-			      "Present"),"\n";
-                print $log_fh $tables{$table},"\n";
-	    if ($clean) {
-		print STDERR "Deleting $table\n";
-		my $query="drop table $table";
-		my $sth=$dbh->prepare($query);
-		print STDERR "Executing: $query\n";
-		$sth->execute();
-	    }
-	} else {
-	    unless ($clean) {
-		# Continue, as the table must be created
-		print $log_fh $table,"\tIs not present\n";
-		my $file_name=$table.'.sql';
-		my $table_fh=get_fh($file_name,1);
-		print $table_fh "SET FOREIGN_KEY_CHECKS=0;\n";
-		print $table_fh $tables{$table},"\n";
-		print $table_fh "SET FOREIGN_KEY_CHECKS=1;\n";
-		close($table_fh);
-		my $command="mysql $database < $file_name";
-		run_system_command($command,
-				   $log_fh);
-		$command="rm $file_name";
-		run_system_command($command);
-		print $log_fh join("\t",
-				   $table,
-				   "Generated"),"\n";
-	    }
-	}
-    }
-}
+
 
 # Actual table syntax
 sub base_table_build {
@@ -349,326 +169,14 @@ sub base_table_build {
 );',
 		'protocol_info' => 'CREATE TABLE IF NOT EXISTS protocol_info (
        protocol_id mediumint unsigned NOT NULL AUTO_INCREMENT,
-       abbreviation varchar(20) NOT NULL,
-       description varchar(100) NOT NULL,
+       abbreviation varchar(20) NULL,
+       description varchar(200) NOT NULL,
        PRIMARY KEY (protocol_id)
 );'
 );
     return(\%tables);
 }
 
-## Species information. This should be added to a table with the same
-# subroutine as an interface, as that woudl allow us to add a species
-sub get_species_hash {
-    my $database=shift;
-    my $dbh=MySQL_DB_Connect($database);
-    my %species;
-    my $table='species_info';
-
-    my ($query,$sth);
-    $query ='SELECT species, abbreviation ';
-    $query.="FROM $table";
-    $sth=$dbh->prepare($query);
-    $sth->execute();
-
-    while (my ($species,$abbrev)=$sth->fetchrow_array()) {
-	if ($species{$species}) {
-	    print STDERR $species,"Seems to appear more than once in $table\n";
-	} else {
-	    $species{$species}=$abbrev;
-	}
-    }
-    $dbh->disconnect();
-
-    return(\%species);
-}
-
-# This subroutine will check the tables for available files using the
-# following information:
-# genome, annotation, project, experiment, mismatches and readlength
-### TO DO rewrite to reduce code, some is very redundant
-sub get_existing_data_subs {
-    my $genome=shift;
-    my $annotation=shift;
-    my $readlength=shift;
-    my $mismatches=shift;
-    my $species=shift;
-    my $project_dir=shift;
-    my $database=shift;
-    my $log_fh=shift;
-    my %guessing_subs;
-
-    # Connect to the database as we will need the info in
-    my $dbh=MySQL_DB_Connect($database);
-
-    # Get the genome unique id and the annotation unique id
-    my $species_id=gset_field_id($dbh,
-				 $species,
-				 'species_info',
-				 'species_id',
-				 'species',
-				 '',
-				 $log_fh);
-    my $genome_id=gset_field_id($dbh,
-				$genome,
-				'genome_files',
-				'genome_id',
-				'genome',
-				$species_id,
-				$log_fh);
-
-    my $annotation_id=gset_field_id($dbh,
-				    $annotation,
-				    'annotation_files',
-				    'annotation_id',
-				    'annotation',
-				    $species_id,
-				    $log_fh);
-
-    # Get the tables where the files and tables dependent on the genome
-    # and annotation will be stored
-    my $table1='indices';
-    my $table2='exclusion_files';
-    my $table3='annotation_tables';
-    my $table5='fasta_files';
-
-    $genome=~s/.*\///;
-    $annotation=~s/.*\///;
-    $genome=~s/\/$//;
-    $annotation=~s/\/$//;
-
-    # Prepare the queries
-    # Index query: depends on genome and annotation
-    my ($query1,$sth1);
-    $query1 ='SELECT location ';
-    $query1.="FROM $table1 ";
-    $query1.='WHERE genome_id = ? AND annotation_id = ? AND type = ?';
-    $sth1=$dbh->prepare($query1);
-
-
-    # Fasta files for building indices: Depend on annotation and genome
-    my ($query5,$sth5);
-    $query5 ='SELECT file_name ';
-    $query5.="FROM $table5 ";
-    $query5.='WHERE annotation_id = ? AND genome_id = ? AND filetype = ?';
-    $sth5=$dbh->prepare($query5);
-
-    # Get the indices
-    # Prepare an sth for the indices table
-    my ($ins_query1,$ins_sth1);
-    $ins_query1 ="INSERT INTO $table1 ";
-    $ins_query1.='SET genome_id = ?,annotation_id = ?,species_id = ?,';
-    $ins_query1.='type = ?,location = ?';
-    $ins_sth1=$dbh->prepare($ins_query1);
-
-    $guessing_subs{'genomeindex'}=sub {
-	my $filetype=shift;
-	my $present=0;
-	my $fasta_name=$genome;
-	$fasta_name=~s/\.fa$//;
-	my $location=$project_dir.'/GEMIndices/'.$fasta_name;
-	
-	my $count=$sth1->execute($genome_id,0,$filetype);
-	if ($count > 0) {
-	    if ($count == 1) {
-		($location)=$sth1->fetchrow_array();
-		$present=1;
-	    } else {
-		warn "More than one entry retrieved for $genome\n";
-		$present=1
-	    }
-	}
-	if ($present) {
-	    print $log_fh "File present at $location\n";
-	} else {
-	    print $log_fh "File not present. Will be built at $location\n";
-	    # The entry is absent and we must set it
-	    print $log_fh "Executing: $ins_query1 for $location\n";
-	    $ins_sth1->execute($genome_id,0,$species_id,
-			       $filetype,$location);
-	}
-	return($location);
-    };
-    $guessing_subs{'transcriptomeindex'}=sub {
-	my $filetype=shift;
-	my $present=0;
-	my $fasta_name=$annotation.'.'.$genome;
-	$fasta_name=~s/\.g[tf]f//g;
-	$fasta_name=~s/\.fa(stq)?$//;
-	$fasta_name.='.transcriptome';
-	my $location=$project_dir.'/GEMIndices/'.$fasta_name;
-
-	my $count=$sth1->execute($genome_id,$annotation_id,$filetype);
-	if ($count > 0) {
-	    if ($count == 1) {
-		($location)=$sth1->fetchrow_array();
-		$present=1;
-	    } else {
-		warn "More than one entry retrieved for $genome $annotation\n";
-		$present=1
-	    }
-	} elsif (defined $count) {
-	    print $log_fh "$filetype absent\n";
-	} else {
-	    print $log_fh "Failed at:\t",join("\t",$genome_id,$annotation_id,$filetype),"\n";
-	}
-	if ($present) {
-	    print $log_fh "File present at $location\n";
-	} else {
-	    print $log_fh "File not present. Will be built at $location\n";
-	    # The entry is absent and we must set it
-	    print $log_fh "Executing: $ins_query1 for $location\n";
-	    $ins_sth1->execute($genome_id,$annotation_id,$species_id,
-			       $filetype,$location);
-	}
-	return($location);
-    };
-    $guessing_subs{'junctionsindex'}=sub {
-	my $filetype=shift;
-	my $present=0;
-	my $fasta_name=$annotation.'.'.$genome;
-	$fasta_name=~s/\.g[tf]f//g;
-	$fasta_name=~s/\.fa(stq)?$//;
-	$fasta_name.='.junctions';
-	my $location=$project_dir.'/GEMIndices/'.$fasta_name;
-
-	my $count=$sth1->execute($genome_id,$annotation_id,$filetype);
-	if ($count > 0) {
-	    if ($count == 1) {
-		($location)=$sth1->fetchrow_array();
-		$present=1;
-	    } else {
-		warn "More than one entry retrieved for $genome $annotation\n";
-		$present=1
-	    }
-	} elsif (defined $count) {
-	    print $log_fh "$filetype absent\n";
-	} else {
-	    print $log_fh "Failed at:\t",join("\t",$genome_id,$annotation_id,$filetype),"\n";
-	}
-	if ($present) {
-	    print $log_fh "File present at $location\n";
-	} else {
-	    print $log_fh "File not present. Will be built at $location\n";
-	    # The entry is absent and we must set it
-	    print $log_fh "Executing: $ins_query1\n";
-	    $ins_sth1->execute($genome_id,$annotation_id,$species_id,
-			       $filetype,$location);
-	}
-	return($location);
-    };
-
-    # Get the locations of the files for building the indices
-    # Get a comon stk for the fasta files
-    my ($ins_query5,$ins_sth5);
-    $ins_query5 ="INSERT INTO $table5 ";
-    $ins_query5.='SET genome_id = ?,annotation_id = ?,';
-    $ins_query5.='filetype = ?,file_name = ?';
-    $ins_sth5=$dbh->prepare($ins_query5);
-
-    $guessing_subs{'exonsfasta'}=sub {
-	my $filetype=shift;
-	my $present=0;
-	my $fasta_name=$annotation.'.'.$genome;
-	$fasta_name=~s/\.g[tf]f//g;
-	$fasta_name=~s/\.fa(stq)?$//;
-	$fasta_name.='.exons.fa';
-	my $location=$project_dir.'/GEMIndices/'.$fasta_name;
-	
-	my $count=$sth5->execute($annotation_id,$genome_id,$filetype);
-	if ($count > 0) {
-	    if ($count == 1) {
-		($location)=$sth5->fetchrow_array();
-		$present=1;
-	    } else {
-		warn "More than one entry retrieved for $genome\n";
-		$present=1
-	    }
-	}
-	if ($present) {
-	    print $log_fh "File present at $location\n";
-	} else {
-	    print $log_fh "File not present. Will be built at $location\n";
-	    # The entry is absent and we must set it
-	    print $log_fh "Executing: $ins_query5 for $location\n";
-	    $ins_sth5->execute($genome_id,$annotation_id,
-			       $filetype,$location);
-	}
-	return($location);
-    };
-    $guessing_subs{'transcriptomefasta'}=sub {
-	my $filetype=shift;
-	my $present=0;
-	my $fasta_name=$annotation.'.'.$genome;
-	$fasta_name=~s/\.g[tf]f//g;
-	$fasta_name=~s/\.fa(stq)?$//;
-	$fasta_name.='.transcripts.fa';
-	my $location=$project_dir.'/GEMIndices/'.$fasta_name;
-	
-	my $count=$sth5->execute($annotation_id,$genome_id,$filetype);
-	if ($count > 0) {
-	    if ($count == 1) {
-		($location)=$sth5->fetchrow_array();
-		$present=1;
-	    } else {
-		warn "More than one entry retrieved for $genome\n";
-		$present=1
-	    }
-	}
-	if ($present) {
-	    print $log_fh "File present at $location\n";
-	} else {
-	    print $log_fh "File not present. Will be built at $location\n";
-	    # The entry is absent and we must set it
-	    print $log_fh "Executing: $ins_query5\n";
-	    $ins_sth5->execute($genome_id,$annotation_id,
-			       $filetype,$location);
-	}
-	return($location);
-    };
-    $guessing_subs{'junctionsfasta'}=sub {
-	my $filetype=shift;
-	my $present=0;
-	my $fasta_name=$annotation.'.'.$genome;
-	$fasta_name=~s/\.g[tf]f//g;
-	$fasta_name=~s/\.fa(stq)?$//;
-	$fasta_name.='.junctions.fa';
-	my $location=$project_dir.'/GEMIndices/'.$fasta_name;
-	
-	my $count=$sth5->execute($annotation_id,$genome_id,$filetype);
-	if ($count > 0) {
-	    if ($count == 1) {
-		($location)=$sth5->fetchrow_array();
-		$present=1;
-	    } else {
-		warn "More than one entry retrieved for $genome\n";
-		$present=1
-	    }
-	}
-	if ($present) {
-	    print $log_fh "File present at $location\n";
-	} else {
-	    print $log_fh "File not present. Will be built at $location\n";
-	    # The entry is absent and we must set it
-	    print $log_fh "Executing: $ins_query5\n";
-	    $ins_sth5->execute($genome_id,$annotation_id,
-			       $filetype,$location);
-	}
-	return($location);
-    };
-
-    my $guess=sub {
-	my $key=shift;
-	if ($guessing_subs{$key}) {
-	    my $value=$guessing_subs{$key}->($key);
-	} else {
-	    print $log_fh "Haven't heard of $key\n";
-	    return();
-	}
-    };
-
-    return($guess);
-}
 
 # This script should for each of the necessary files
 sub guess_values {
@@ -765,8 +273,9 @@ sub get_tables_hash {
 
 # This sub will create the mysql command files necessary for building the tables
 sub build_table_files {
-    my $prefix=shift;
+    my $options=shift;
     my $mysql_dir=shift;
+    my $prefix=$options->get_prefix();
 
     # Description of the tables to be created
     my %tables=('_start' => "DROP TABLE IF EXISTS ${prefix}_start;
@@ -849,19 +358,6 @@ CREATE TABLE ${prefix}_read_classification (
        TptFrac double unsigned NOT NULL,
        index idx_lane (lane_id)
 );",
-#		'_exon_inclusion' => "DROP TABLE IF EXISTS ${prefix}_exon_inclusion;
-#CREATE TABLE ${prefix}_exon_inclusion (
-#       gene_id varchar(50) NOT NULL,
-#       exon_id varchar(50) NOT NULL,
-#       ExIncl double unsigned NOT NULL,
-#       JuncInc double unsigned NOT NULL,
-#       JuncExc double unsigned NOT  NULL,
-#       inc_rate double unsigned NULL,
-#       lane_id varchar(100) NOT NULL,
-#       index idx_gene (gene_id),
-#       index idx_exon (exon_id),
-#       index idx_lane (lane_id)
-#);",
 		'_exon_inclusion_reads' => "DROP TABLE IF EXISTS ${prefix}_exon_inclusion_reads;
 CREATE TABLE ${prefix}_exon_inclusion_reads (
        exon_id varchar(50) NOT NULL,
@@ -896,18 +392,6 @@ CREATE TABLE ${prefix}_inclusion_dist (
     LaneName varchar(50) not null,
     INDEX idx_lane (LaneName)
 );",
-#		'_transcript_expression_levels' => "DROP TABLE IF EXISTS ${prefix}_transcript_expression_levels;
-#CREATE TABLE ${prefix}_transcript_expression_levels (
-#       gene_id varchar(50) NOT NULL,
-#       transcript_id varchar(50) NOT NULL,
-#       flux_locus varchar(50) NOT NULL,
-#       rpkm double unsigned NULL,
-#       lane_id varchar(100) NOT NULL,
-#       index idx_gene (gene_id),
-#       index idx_transcript (transcript_id),
-#       index idx_flux_locus (flux_locus),
-#       index idx_lane (lane_id)
-#);",
 		'_transcript_expression_levels_pooled' => "DROP TABLE IF EXISTS ${prefix}_transcript_expression_levels_pooled;
 CREATE TABLE ${prefix}_transcript_expression_levels_pooled (
        gene_id varchar(50) NOT NULL,
@@ -1277,7 +761,7 @@ CREATE TABLE ${prefix}_register_results (
     );",
 	);
 
-    my $working_dir=getcwd();
+    my $working_dir=$options->get_projectdir();
     unless ($mysql_dir) {
 	$mysql_dir=$working_dir.'/mysql/table_build';
     }
@@ -1296,18 +780,18 @@ CREATE TABLE ${prefix}_register_results (
 
 # Create the directory structure necessary for the running of the pipeline
 sub create_directory_structure {
-    my $prefix=shift;
     my $log_fh=shift;
     my $options=shift;
     my $table_fh=shift;
 
+    my $prefix=$options->get_prefix();
+
     # First check the directory structure and create any directories that are
     # not there
-    print $log_fh "Checking directory structure and attempting creation of missing dirs...\n";
+    $log_fh->printlog("Checking directory structure and attempting creation of missing dirs...");
 
-    $options->{'localdir'}=~s/\/$//;
-    my $localdir=${$options->{'localdir'}};
-    print $log_fh "Setting localdir as: $localdir\n";
+    my $localdir=$options->get_localdir();
+    $log_fh->printlog("Setting localdir as: $localdir");
     my @directories=('mysql',
 		     'mysql/table_build',
 		     'mysql/table_data',
@@ -1330,65 +814,65 @@ sub create_directory_structure {
 #		     'results',
 		     'SAM',
 		     'work');
-    # The -L option is necessary to print the same path for all nodes
-    my $project_dir=getcwd();
-    print $log_fh "Using dir: ".$project_dir,"\n";
+    # The -L option is necessary to print the same path for all nodes
+    my $project_dir=$options->get_projectdir();
+    $log_fh->printlog("Using dir: ".$project_dir);
 
-    my %vars=('COMMONDB' => ${$options->{'commondb'}},
-	      'DB'=> ${$options->{'database'}},
+    my %vars=('COMMONDB' => $options->get_commondb(),
+	      'DB'=> $options->get_database(),
 	      'PROJECT' => $project_dir,
 	      'TABLES' => 'mysql/table_build',
 	      'TAB_DAT' => 'mysql/table_data',
 	      'BIN' => 'bin',
 	      'LOGS' => 'logs',
-	      'PAIRED' => ${$options->{'paired'}},
+	      'PAIRED' => $options->get_paired(),
 	      'READDIR' => 'readData',
 	      'SEQUENCEDIR' => 'sequence', # (Raw data if not fa or fastq)
 	      'GEMINDICES' => 'GEMIndices',
 	      'SPLITMAPDIR' => 'splitmapping',
 	      'RECMAPDIR' => 'recursivemap',
 	      'GRAPHS' => 'graphs',
-	      'SPECIES' => ${$options->{'species'}},
-	      'PROJECTID' => ${$options->{'project'}},
-	      'EXPID' => ${$options->{'experiment'}},
+	      'SPECIES' => $options->get_species(),
+	      'PROJECTID' => $options->get_project(),
+	      'EXPID' => $options->get_experiment(),
 	      'PREFIX' => $prefix,
-	      'ANNOTATION' => (abs_path(${$options->{'annotation'}}) || die "SORRY, I can't find the specified annotation file, please check the path"),
-	      'GENOMESEQ' => (abs_path(${$options->{'genome'}}) || die "SORRY, I can't find the specified genome file, please check the path\n"),
+	      'ANNOTATION' => (abs_path($options->get_annotation()) || die "SORRY, I can't find the specified annotation file, please check the path"),
+	      'GENOMESEQ' => (abs_path($options->get_genome()) || die "SORRY, I can't find the specified genome file, please check the path\n"),
 	      'TRANSDIR' => 'transcriptome',
 	      'EXONDIR' => 'exons',
 	      'JUNCTIONSDIR' => 'junctions',
-	      'MISMATCHES' => ${$options->{'mismatches'}},
-	      'LOCALDIR' => ${$options->{'localdir'}},
-	      'GENOMEINDEX' => ${$options->{'genomeindex'}},
-	      'TRANSCRIPTOMEINDEX' => ${$options->{'transcriptomeindex'}},
-	      'JUNCTIONSINDEX' => ${$options->{'junctionsindex'}},
-	      'EXCLUSIONFILE' => ${$options->{'exclusionfile'}},
-	      'EXONSFASTA' => ${$options->{'exonsfasta'}},
-	      'JUNCTIONSFASTA' => ${$options->{'junctionsfasta'}},
-	      'TRANSCRIPTOMEFASTA' => ${$options->{'transcriptomefasta'}},
+	      'MISMATCHES' => $options->get_mismatches(),
+	      'LOCALDIR' => $options->get_localdir(),
+	      'GENOMEINDEX' => $options->get_genomeindex(),
+	      'TRANSCRIPTOMEINDEX' => $options->get_transcriptomeindex(),
+	      'JUNCTIONSINDEX' => $options->get_junctionsindex(),
+	      'EXCLUSIONFILE' => $options->get_exclusionfile(),
+	      'EXONSFASTA' => $options->get_exonsfasta(),
+	      'JUNCTIONSFASTA' => $options->get_junctionsfasta(),
+	      'TRANSCRIPTOMEFASTA' => $options->get_transcriptomefasta(),
 	      'GENOMEDIR' => 'genome',
-	      'STRANDED' => ${$options->{'stranded'}},
-	      'READLENGTH' => ${$options->{'readlength'}},
-	      'GENECLASSTABLE' => ${$options->{'geneclass'}},
-	      'TRANSCLASSTABLE' => ${$options->{'transclass'}},
-	      'JUNCTIONSTABLE' => ${$options->{'junctionstable'}},
-	      'JUNCTIONSCLASSTABLE' => ${$options->{'junctionsclass'}},
-	      'EXONSCLASSTABLE' => ${$options->{'exonsclass'}},
-	      'FILELIST' => ${$options->{'files'}},
-	      'THREADS' => ${$options->{'threads'}},
-	      'MAPPER' => ${$options->{'mapper'}},
+	      'STRANDED' => $options->get_stranded(),
+	      'READLENGTH' => $options->get_readlength(),
+	      'GENECLASSTABLE' => $options->get_geneclass(),
+	      'TRANSCLASSTABLE' => $options->get_transclass(),
+	      'JUNCTIONSTABLE' => $options->get_junctionstable(),
+	      'JUNCTIONSCLASSTABLE' => $options->get_junctionsclass(),
+	      'EXONSCLASSTABLE' => $options->get_exonsclass(),
+	      'FILELIST' => $options->get_files(),
+	      'THREADS' => $options->get_threads(),
+	      'MAPPER' => $options->get_mapper(),
 	      'CLUSTERDIR' => 'clusters',
-	      'CLUSTER' => ${$options->{'cluster'}},
+	      'CLUSTER' => $options->get_cluster(),
 	      'SAMDIR' => 'SAM',
 	      'LOCALPARALLEL' => 'work',
-	      'QUALITIES' =>${$options->{'qualities'}},
-	      'PREPROCESS' => ${$options->{'preprocess'}},
+	      'QUALITIES' =>$options->get_qualities(),
+	      'PREPROCESS' => $options->get_preprocess(),
 	      'RESULTS' => 'results',
-	      'FLUXMEM' => ${$options->{'fluxmem'}}
+	      'FLUXMEM' => $options->get_fluxmem()
 );
 
     foreach my $dir (@directories) {
-	print $log_fh "Checking $dir...\n";
+	$log_fh->printlog("Checking $dir...");
 	check_dir($dir,
 		  $log_fh,
 		  $table_fh);
@@ -1396,7 +880,7 @@ sub create_directory_structure {
 	run_system_command($command,
 			   $log_fh);
     }
-    print $log_fh "done\n";
+    $log_fh->printlog("done");
     return(\%vars);
 }
 
@@ -1405,13 +889,13 @@ sub check_dir {
     my $log_fh=shift;
     my $table_fh=shift;
     if (-e $dir) {
-	print $log_fh "$dir already exists\n";
-	print $log_fh "Skipping\n";
+	$log_fh->printlog("$dir already exists");
+	$log_fh->printlog("Skipping");
     } elsif ($dir=~/^bin/) {
 	warn "THIS SHOULD NOT HAPPEN\n";
     } else {
 	mkdir($dir) &&
-	    print $log_fh "Creating dir $dir\n";
+	    $log_fh->printlog("Creating dir $dir");
     }
 
     print $table_fh join ("\t",
@@ -1428,7 +912,7 @@ sub print_config_file {
     my $conf_file='project_config.txt';
     my $conf_fh=get_fh($conf_file,1);
 
-    print $log_fh "Creating the configuration file at $conf_file...";
+    $log_fh->printlog("Creating the configuration file at $conf_file...");
 
     # Print the keys sorted as it makes it easier to check the file if necessary
     foreach my $var (sort keys %{$vars}) {
@@ -1442,7 +926,7 @@ sub print_config_file {
 	}
     }
     close($conf_fh);
-    print $log_fh "done\n";
+    $log_fh->printlog("done");
 }
 
 # Print the pipeline file
@@ -1453,7 +937,7 @@ sub print_pipeline_file {
     my $log_fh=shift;
     my $pipfile='RNAseq_pipeline.txt';
 
-    print $log_fh "Creating the master file at $pipfile...";
+    $log_fh->printlog("Creating the master file at $pipfile...");
 
     my $template_fh=get_fh($template);
     my $new_pip_fh=get_fh($pipfile,1);
@@ -1472,9 +956,9 @@ sub print_pipeline_file {
 				$vars->{'PROJECT'},
 				$vars->{$variable});
 		}
-		print $log_fh join("\t",
-				   $variable,
-				   $value),"\n";
+		$log_fh->printlog(join("\t",
+				       $variable,
+				       $value));
 		$line=join(' = ',
 			   $variable,
 			   $value);
@@ -1497,308 +981,49 @@ sub print_pipeline_file {
 	}
 	print $new_pip_fh $line,"\n";
     }
-    print $log_fh "done\n";
-}
-
-# Add the project and experiment information to the database
-sub add_project {
-    my $database=shift;
-    my $project=shift;
-    my $species=shift;
-    my $log_fh=shift;
-
-    my $dbh=MySQL_DB_Connect($database);
-
-    print $log_fh "Checking for the presence of $project in the database...\n";
-    my $table='projects';
-    my ($query,$sth,$count);
-
-    $query ='SELECT project_id ';
-    $query.="FROM $table ";
-    $query.="WHERE project_id = ?";
-    $sth=$dbh->prepare($query);
-    $count=$sth->execute($project);
-
-    if ($count == 1) {
-	print $log_fh "$project is present in the database\n";
-    } elsif ($count > 1) {
-	die "Project ID is present many times. This should not happen\n";
-    } else {
-	print $log_fh "$project is not present in the database\n";
-	print $log_fh "Adding a new entry\n";
-
-	# Insert the info into the database
-	$query ="INSERT INTO $table ";
-	$query.='SET species = ? , project_id = ?';
-	print $log_fh "Executing: $query\n";
-	$sth=$dbh->prepare($query);
-	$sth->execute($species,$project);
-    }
-    return();
-}
-
-# Add the experiment information making sure the project id is present in the
-# projects table
-sub add_experiment {
-    my $opts=shift;
-    my $database=${$opts->{'commondb'}};
-    my $project_id=${$opts->{'project'}};
-    my $exp_id=${$opts->{'experiment'}};
-    my $species=${$opts->{'species'}};
-    my $annotation=${$opts->{'annotation'}};
-    my $genome=${$opts->{'genome'}};
-    my $template=${$opts->{'template'}};
-    my $read_length=${$opts->{'readlength'}}; 
-    my $preprocess_trim_length=${$opts->{'preprocess_trim_length'}};
-    my $mismatches=${$opts->{'mismatches'}};
-
-    # If the preprocess trim length is constant set the new read length
-    if ($preprocess_trim_length=~/^=?(\d)+$/o) {
-	my $trim=$preprocess_trim_length;
-	$trim=~s/^=//;
-	print STDERR "Adjusting read length by $trim\n";
-	print STDERR "$preprocess_trim_length\n";
-	$read_length -= $trim;
-    }
-
-    my $log_fh=shift;
-
-    my $dbh=MySQL_DB_Connect($database);
-
-    my $species_id=gset_field_id($dbh,
-				 $species,
-				 'species_info',
-				 'species_id',
-				 'species',
-				 '',
-				 $log_fh);
-    my $genome_id=gset_field_id($dbh,
-				$genome,
-				'genome_files',
-				'genome_id',
-				'genome',
-				$species_id,
-				$log_fh);
-
-    my $annotation_id=gset_field_id($dbh,
-				    $annotation,
-				    'annotation_files',
-				    'annotation_id',
-				    'annotation',
-				    $species_id,
-				    $log_fh);
-
-    print $log_fh "Checking for the presence of $exp_id in the database...\n";
-    my $table='experiments';
-    my ($query,$sth,$count);
-
-    $query ='SELECT experiment_id ';
-    $query.="FROM $table ";
-    $query.='WHERE experiment_id = ? AND project_id = ?';
-    $sth=$dbh->prepare($query);
-    $count=$sth->execute($exp_id,$project_id);
-
-    my $update=0;
-    if ($count == 1) {
-	print $log_fh "$exp_id is already present in the database for $project_id\n";
-	print STDERR "$exp_id is already present as part of $project_id. Are you
-sure you want to overrite the previous information?(y/N)";
-	my $yes=<STDIN>;
-	chomp($yes);
-	if ($yes=~/^y/i){
-	    $update=1;
-	    print $log_fh "Updating entry\n";
-	    $query ="UPDATE $table ";
-	    $query.='SET species_id = ?,';
-	    $query.='genome_id = ?, annotation_id = ?, template_file = ?,';
-	    $query.='read_length = ?, mismatches = ? ';
-	    $query.='WHERE experiment_id = ? AND project_id = ?';
-	}
-    } elsif ($count > 1) {
-	die "Project ID with experiment ID combination is present many times. This should not happen\n";
-    } else {
-	print $log_fh "$exp_id is not present in the database for $project_id\n";
-	print $log_fh "Adding a new entry\n";
-	$update=1;
-	$query ="INSERT INTO $table ";
-	$query.='SET species_id = ?,';
-	$query.='genome_id = ?, annotation_id = ?, template_file = ?,';
-	$query.='read_length = ?, mismatches = ?, experiment_id = ?,';
-	$query.='project_id = ?';
-    }
-
-    if ($update) {
-	# Insert the info into the database
-	print $log_fh "Executing: $query\n";
-	$sth=$dbh->prepare($query);
-	$sth->execute($species_id,
-		      $genome_id,$annotation_id,$template,
-		      $read_length,$mismatches,$exp_id,$project_id);
-    }
-}
-
-sub add_proj_info {
-    my $opts=shift;
-    my $database=${$opts->{'commondb'}};
-    my $proj_id=${$opts->{'project'}};
-    my $project_desc=${$opts->{'projdesc'}};
-
-    my $log_fh=shift;
-
-    my $dbh=MySQL_DB_Connect($database);
-
-    if ($project_desc) {
-	print $log_fh "Inserting description $project_desc of $proj_id into the database...\n";
-    } else {
-	print $log_fh "No project description supplied\n";
-	return();
-    }
-
-    my $table='projects';
-    my ($query,$sth,$count);
-
-    $query ='SELECT proj_description ';
-    $query.="FROM $table ";
-    $query.='WHERE project_id = ? AND proj_description IS NOT NULL';
-    $sth=$dbh->prepare($query);
-    $count=$sth->execute($proj_id);
-
-    my $overwrite=0;
-    if ($count == 1) {
-	print STDERR "$proj_id already has a description. Do you want to overwrite it?(y/n)\n";
-	my $reply=<STDIN>;
-	chomp($reply);
-	if ($reply=~/^y/i) {
-	    $overwrite=1;
-	    $query ="UPDATE $table ";
-	    $query.='SET proj_description = ? ';
-	    $query.='WHERE project_id = ?';
-	}
-    } elsif ($count > 1) {
-	die "Project ID with experiment ID combination is present many times. This should not happen\n";
-    } else {
-	$overwrite=1;
-	$query ="INSERT INTO $table ";
-	$query.='SET proj_description = ?,';
-	$query.='project_id = ?';
-    }
-
-    if ($overwrite) {
-	print $log_fh "Adding project description\n";
-
-	# Insert the info into the database
-	print $log_fh "Executing: $query\n";
-	$sth=$dbh->prepare($query);
-	$sth->execute($project_desc,$proj_id);
-    }
-}
-
-sub add_exp_info {
-    my $opts=shift;
-    my $log_fh=shift;
-
-    my $database=${$opts->{'commondb'}};
-    my $proj_id=${$opts->{'project'}};
-    my $exp_id=${$opts->{'experiment'}};
-    my $preprocess_trim_length=${$opts->{'preprocess_trim_length'}};
-    
-    my %vals;
-    $vals{'CellType'}=${$opts->{'cellline'}};
-    $vals{'Compartment'}=${$opts->{'compartment'}};
-    $vals{'exp_description'}=${$opts->{'run_description'}};
-    $vals{'RNAType'}=${$opts->{'rnafrac'}};
-    $vals{'Bioreplicate'}=${$opts->{'bioreplicate'}};
-
-    # If the trimm length is not constant add the info to the description
-    if ($preprocess_trim_length) {
-	$vals{'exp_description'}.=" Original reads were trimmed by $preprocess_trim_length nucleotides";
-    }
-    
-    my $dbh=MySQL_DB_Connect($database);
-
-    my $table='experiments';
-    my ($query,$sth,$count);
-    
-    my $overwrite_all=0;
-    foreach my $key (keys %vals) {
-	my $value=$vals{$key};
-	unless ($value) {
-	    print $log_fh "No $key supplied form $exp_id\n";
-	    next;
-	}
-	
-	$query ="SELECT $key ";
-	$query.="FROM $table ";
-	$query.='WHERE project_id = ? AND experiment_id = ? ';
-	$sth=$dbh->prepare($query);
-	$count=$sth->execute($proj_id,$exp_id);
-	
-	my $overwrite=$overwrite_all;
-	if ($count == 1) {
-	    my ($existing)=$sth->fetchrow_array() || '';
-	    # If the keys are already the same or if the key is not provided
-	    # skip
-	    unless ($value) {next;}
-	    if ($existing eq $value) {next;}
-
-	    # If the key already has a value check if it should be altered
-	    if ($existing) {
-		print STDERR "$exp_id from $proj_id may already have a $key set to $existing. Do you want to overwrite $existing with $value?(y/n/all)\n";
-		my $reply=<STDIN>;
-		chomp($reply);
-		if ($reply=~/^y/i) {
-		    $overwrite=1;
-		} elsif ($reply=~/^all$/i) {
-		    $overwrite=1;
-		    $overwrite_all=1;
-		} else {
-		    next;
-		}
-	    } else {
-		$overwrite=1
-	    }
-	    $query ="UPDATE $table ";
-	    $query.="SET $key = ? ";
-	    $query.='WHERE project_id = ? and experiment_id = ?';
-	} elsif ($count > 1) {
-	    die "Project $proj_id with experiment $exp_id combination is present many times. This should not happen\n";
-	} else {
-	    $overwrite=1;
-	    $query ="INSERT INTO $table ";
-	    $query.="SET $key = ?,";
-	    $query.='project_id = ? and experiment_id = ?';
-	}
-
-	if ($overwrite) {
-	    print $log_fh "Setting $key for experiment $exp_id from $proj_id to $value \n";
-	    # Insert the info into the database
-	    print $log_fh "Executing: $query\n";
-	    $sth=$dbh->prepare($query);
-	    $sth->execute($value,$proj_id,$exp_id);
-	}
-    }
+    $log_fh->printlog("done");
 }
 
 ###
 # Some subroutines to clean a directory and start from scratch
 sub clear_tables {
-    my $opts=shift;
-    my $proj_id=${$opts->{'project'}};
-    my $exp_id=${$opts->{'experiment'}};
-    my $commondb=${$opts->{'database'}};
-    my $prefix=$proj_id.'_'.$exp_id;
+    my $options=shift;
+    my $database=$options->get_database();
 
-    my %tables=%{get_tables_hash($prefix)};
+    my @tables=@{get_tables_list($options)};
 
-    foreach my $table (keys %tables) {
-	my $value=$tables{$table};
-	my $command="mysql $commondb -e 'DROP TABLE IF EXISTS $value'";
+    foreach my $table (@tables) {
+	my $command="mysql $database -e 'DROP TABLE IF EXISTS $table'";
+
 	run_system_command($command);
     }
 }
 
+# Get a list of all the tables starting with a certain prefix
+sub get_tables_list {
+    my $options=shift;
+    my $dbh=$options->get_dbh();
+    my $prefix=$options->get_prefix() || die "No table prefix\n";
+
+    my ($query,$sth);
+    $query= "SHOW tables";
+    $sth=$dbh->prepare($query);
+    $sth->execute();
+
+    my @tables;
+    while (my ($table)=$sth->fetchrow_array()) {
+	if ($table=~/^$prefix/) {
+	    push @tables, $table;
+	} else {
+#	    print STDERR "Skipping $table\n";
+	}
+    }
+
+    return(\@tables);
+}
+
 # These are subs that will clear the directories in the project directory
-### TO DO make an additionla level of clean so the genome directory and maybe
+### TO DO make an additional level of clean so the genome directory and maybe
 # some other ones are not completely wiped
 sub clear_dirs {
     my $options=shift;
@@ -1807,11 +1032,10 @@ sub clear_dirs {
     # not there
     print STDERR "Checking directory structure...\n";
 
-    $options->{'localdir'}=~s/\/$//;
-    my $localdir=${$options->{'localdir'}};
-    print STDERR "Setting localdir as: $localdir\n";
+    my $localdir=$options->get_localdir();
+    my $project_dir=$options->get_projectdir();
+    print STDERR "Setting localdir to: $localdir\n";
     my @directories=('mysql',
-#		     'GEMIndices',
 		     'genome',
 		     'transcriptome',
 		     'junctions',
@@ -1827,12 +1051,11 @@ sub clear_dirs {
 		     'SAM',
 		     'work');
     # The -L option is necessary to print the same path for all nodes
-    my $project_dir=getcwd();
     print STDERR "Using dir: ".$project_dir,"\n";
 
     foreach my $dir (@directories) {
 	my $command="rm -r $dir";
-	if (-r $dir) {
+	if (-s $dir && -r $dir) {
 	    run_system_command($command);
 	}
     }
@@ -1841,40 +1064,33 @@ sub clear_dirs {
 # Delete some files that may be left in the directory
 sub clear_files {
     my $opts=shift;
-    my $proj_id=${$opts->{'project'}};
-    my $exp_id=${$opts->{'experiment'}};
+    my $prefix=$opts->get_prefix();
 
-    my $prefix=$proj_id.'_'.$exp_id;
     my $command;
 
-    # Remove any table files that are left over
-    $command="rm $prefix*";
-    run_system_command($command);
-
-    # Remove leftover log files
-    $command='rm *.log';
-    run_system_command($command);
-
-    # remove the pipeline file
-    $command='rm RNAseq_pipeline.txt';
-    run_system_command($command);
-
-    # remove possible temporary files left by the build sequences part
-    $command='rm *.tmp.sequences.txt';
-    run_system_command($command);
+    # Remove any table files that are left over as well as log files the
+    # pipeline file and other temporary files
+    $command="ls $prefix* *.log RNAseq_pipeline.txt *.tmp.sequences.txt 2>/dev/null";
+    my @list=`$command`;
+    foreach my $file (@list) {
+	chomp($file);
+	print STDERR $file,"\n";
+	if (-r $file) {
+	    $command="rm $file";
+	    run_system_command($command);
+	}
+    }
 }
 
 # Delete the information from the projects and experiments tables
 sub clear_common_tables {
     my $opts=shift;
 
-    my $proj_id=${$opts->{'project'}};
-    my $exp_id=${$opts->{'experiment'}};
-    my $commondb=${$opts->{'commondb'}};
+    my $proj_id=$opts->get_project();
+    my $exp_id=$opts->get_experiment();
+    my $dbh=$opts->get_commondbh();
     my $proj_tab='projects';
     my $exp_tab='experiments';
-
-    my $dbh=MySQL_DB_Connect($commondb);
 
     my ($query,$sth,$count);
 
@@ -1891,7 +1107,6 @@ sub clear_common_tables {
     $query ="SELECT experiment_id FROM $exp_tab ";
     $query.='WHERE project_id = ?';
     $sth=$dbh->prepare($query);
-    print STDERR "Executing: $query\n";
     $count=$sth->execute($proj_id);
 
     if ($count > 0) {
@@ -1902,9 +1117,50 @@ sub clear_common_tables {
 	$query ="DELETE FROM $proj_tab ";
 	$query.='WHERE project_id = ?';
 	$sth=$dbh->prepare($query);
-	print STDERR "Executing: $query\n";
 	$sth->execute($proj_id);
     }
+}
+
+sub clear_experiment {
+    my $options=shift;
+
+    # We need to make sure we have values for the different options (so maybe
+    # it would be good to add here something to read the config file or at
+    # least to have)
+    my $project=$options->get_project();
+    my $experiment=$options->get_experiment();
+    my $commondb=$options->get_commondb();
+    my $database=$options->get_database();
+
+    unless ($project && $experiment &&
+	    $commondb && $database) {
+	die "I need to know both the project and the experiment you want to remove\n";
+    }
+
+    # Print message if in clean mode
+    print STDERR "WARNING: Clean mode.\n";
+    print STDERR "This will remove the following:\n";
+    print STDERR "\tAll tables for this experiment ($experiment) in $project\n";
+    print STDERR "\tAll direactories that the script created originally with the files within (this includes all mappings), with the exception of the readData directory.\n";
+    print STDERR "\tAll entries in the common tables corresponding to this experiment\n";
+    print STDERR "Do you want to continue? (y/N)\n";
+    my $reply=<STDIN>;
+    chomp($reply);
+    unless ($reply=~/y/i) {
+	die "Aborting\n";
+    }
+
+    # Clear the database
+    clear_tables($options);
+
+    # Clear the directories
+    clear_dirs($options);
+
+    # Clear the entries from the projects and experiments tables in the commondb
+    clear_common_tables($options);
+
+    # Clear some riles that may be left in the running dir
+    clear_files($options);
 }
 
 1;
