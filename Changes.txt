@@ -1,3 +1,23 @@
+Ongoing
+========
+
+Features
+-------
+
+- Rewrite the Star script in order to facilitate maintenance.
+
+
+Bug fixes
+-------
+
+- Set the number of CPUs used by fastquc to one.
+- Change hardcoded directory in build_register_results.pl
+
+Internal
+-------
+- Set the trimming threshold to 40 and the length to trim each round to 15. This
+  will speed up the recursive mapping without a signifficant loss of hits
+
 6.4 (2012-07-25)
 ================
 

@@ -64,14 +64,14 @@ sub parse_gem_line {
     $line{'id'}=~s/\|p1$/\/1/o;
     $line{'id'}=~s/\|p2$/\/2/o;
 
-    # Fix Down syndrome reads problem
-#    if ($line{'id'}=~s/ 1:/_X:/o) {
-#	# Down synbdrome reads
-#	$line{'id'}=~s/$/\/1/o;
-#    } elsif ($line{'id'}=~s/ 2:/_X:/o) {
-#	# Down syndrome reads
-#	$line{'id'}=~s/$/\/2/o;
-#    }
+    # Fix Hi Seq  reads problem
+    if ($line{'id'}=~s/ 1:/_X:/o) {
+	# Down synbdrome reads
+	$line{'id'}=~s/$/\/1/o;
+    } elsif ($line{'id'}=~s/ 2:/_X:/o) {
+	# Down syndrome reads
+	$line{'id'}=~s/$/\/2/o;
+    }
 
     $line{'seq'}=$line[1];
     $line{'matches'}=$line[2];
@@ -388,7 +388,7 @@ sub trim_reads {
     my $threshold=40;
 
     unless($trim) {
-	$trim=10;
+	$trim=15;
     }
 
     my $left=0;
@@ -456,7 +456,7 @@ sub trim_ambiguous {
     my $infile=shift;
     my $trimmed=shift;
     my $log_fh=shift;
-    my $threshold=25;
+    my $threshold=40;
 
     my $left=0;
     my $total=0;

@@ -161,7 +161,7 @@ my $left=trim_ambiguous($infile,
 
 unless($left) {
     warn "I can't find ambiguous reads??\n";
-    print $log_fh "WARNING:No unmapped reads found\n";
+    print $log_fh "WARNING: No unmapped reads found\n";
 }
 
 my @mapping_files;
