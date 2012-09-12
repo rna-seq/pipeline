@@ -51,11 +51,15 @@ bin/cluster_run_flux.main.RNAseq.pl -text
 bin/compare_exon_RPKM.RNAseqComp.pl -text
 bin/compare_fusions.RNAseqComp.pl -text
 bin/compare_gene_RPKM.RNAseqComp.pl -text
+bin/compare_gene_RPKM_unfiltered.RNAseqComp.pl -text
 bin/compare_gene_readcounts.RNAseqComp.pl -text
+bin/compare_gene_readcounts_unfiltered.RNAseqComp.pl -text
 bin/compare_individual_genes.RNAseqComp.pl -text
+bin/compare_individual_genes_readcount.RNAseqComp.pl -text
 bin/compare_individual_junctions.RNAseqComp.pl -text
 bin/compare_individual_transcripts.RNAseqComp.pl -text
 bin/compare_splicing.RNAseqComp.pl -text
+bin/compare_splicing_summary.RNAseqComp.pl -text
 bin/compare_transcript_RPKM.RNAseqComp.pl -text
 bin/compare_unique_maps_genome.RNAseqComp.pl -text
 bin/completed.RNAseq.pl -text
