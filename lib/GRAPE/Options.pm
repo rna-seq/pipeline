@@ -117,6 +117,9 @@ sub set_files {
     } else {
 	die "Unable to decide if input read files are paired or not\n";
     }
+
+    $self->set_filelist(\@files);
+    
     return($self)
 }
 
@@ -138,8 +141,6 @@ sub set_database {
     my $dbh=MySQL_DB_Connect($value);
     $self->{'dbh'}=$dbh;
     $self->{'database'}=$value;
-
-    print STDERR "Here";
 
     return($self);
 }
@@ -248,12 +249,12 @@ sub _initialize {
     $self->set_project('QuickRun') unless $self->get_project();
     $self->set_experiment('QuickRun') unless $self->get_experiment();
     $self->set_template('template.txt') unless $self->get_template();
-    $self->{'annotation'} = undef unless $self->{'annotation'};
+    $self->set_annotation(undef) unless $self->get_annotation();
     $self->set_genome(undef) unless $self->get_genome();
     $self->{'files'} = 'read.list.txt' unless $self->{'files'};
     $self->{'host'} = 'localhost' unless $self->{'host'};
-    $self->set_commondb('TestRNAseqPipelineCommon') unless $self->get_commondb();
-    $self->set_database('TestRNAseqPipeline') unless $self->get_database();
+    $self->set_commondb('test') unless $self->get_commondb();
+    $self->set_database('test') unless $self->get_database();
     $self->{'mismatches'} = 2 unless $self->{'mismatches'};
     $self->{'stranded'} = 0 unless $self->{'stranded'};
     $self->{'paired'} = 0 unless $self->{'paired'};
@@ -384,10 +385,21 @@ sub set_genome {
     my $file=shift;
 
     unless ($file && -r $file) {
-	die "Genome file supplied is not readable: $!\n";
+	die "Genome file is not readable: $!\n";
     }
     
     return $self->{'genome'} = $file;
+}
+
+sub set_annotation {
+    my $self=shift;
+    my $file=shift;
+
+    unless ($file && -r $file) {
+	die "Annotation file is not readable: $!\n";
+    }
+    
+    return $self->{'annotation'} = $file;
 }
 
 # Set the information dependent on the species
@@ -1132,7 +1144,7 @@ sub add_experiment {
 	    $query.='genome_id = ?, annotation_id = ?, template_file = ?,';
 	    $query.='read_length = ?, mismatches = ?, ';
 	    $query.='CellType = ?, Compartment = ?, exp_description = ?,';
-	    $query.='RNAType = ?, Bioreplicate = ?';
+	    $query.='RNAType = ?, Bioreplicate = ? ';
 	    $query.='WHERE experiment_id = ? AND project_id = ?';
 	}
     } elsif ($count > 1) {

@@ -90,7 +90,7 @@ sub base_table_build {
        expDate date NULL,
        CellType varchar(50) NULL,
        RNAType varchar(50) NULL,
-       Compartment varchar(50) NOT NULL DEFAULT "CELL",
+       Compartment varchar(50) NULL DEFAULT "CELL",
        Bioreplicate varchar(10) DEFAULT 1,
        partition varchar(50) NULL,
        md5sum varchar(45) NULL,
@@ -796,7 +796,7 @@ sub create_directory_structure {
 		     'mysql/table_build',
 		     'mysql/table_data',
 #		     'bin',
-#		     'GEMIndices',
+		     'GEMIndices',
 		     'genome',
 		     'sequence',
 		     'transcriptome',
@@ -811,7 +811,7 @@ sub create_directory_structure {
 		     "$localdir",
 		     'clusters',
 		     'exclusion',
-#		     'results',
+		     'results',
 		     'SAM',
 		     'work');
     # The -L option is necessary to print the same path for all nodes
@@ -1055,7 +1055,7 @@ sub clear_dirs {
 
     foreach my $dir (@directories) {
 	my $command="rm -r $dir";
-	if (-s $dir && -r $dir) {
+	if (-r $dir) {
 	    run_system_command($command);
 	}
     }
@@ -1070,7 +1070,7 @@ sub clear_files {
 
     # Remove any table files that are left over as well as log files the
     # pipeline file and other temporary files
-    $command="ls $prefix* *.log RNAseq_pipeline.txt *.tmp.sequences.txt 2>/dev/null";
+    $command="ls $prefix* *.log RNAseq_pipeline.txt *.tmp.sequences.txt execute_pipeline.err exon.strange.list rep.exons.txt 2>/dev/null";
     my @list=`$command`;
     foreach my $file (@list) {
 	chomp($file);
@@ -1159,7 +1159,7 @@ sub clear_experiment {
     # Clear the entries from the projects and experiments tables in the commondb
     clear_common_tables($options);
 
-    # Clear some riles that may be left in the running dir
+    # Clear some files that may be left in the running dir
     clear_files($options);
 }
 

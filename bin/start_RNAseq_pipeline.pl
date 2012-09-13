@@ -71,11 +71,16 @@ use Cwd;
 my $tables=base_table_build();
 my $options=GRAPE::Options->new($tables);
 
+# Behaviour
+my $debug=$options->get_debug();
+
 # Print help and exit if required
 pod2usage(1) if $options->get_help();
 pod2usage(-verbose => 2) if $options->get_man();
 
-$options->print_options(1);
+if ($debug) {
+    $options->print_options(1);
+}
 # Declare the variables
 # naming variables
 my $species=$options->get_species() || die "No species\n";
@@ -96,9 +101,6 @@ if ($options->get_clean()) {
 
 # Cluster specification
 my $cluster=$options->get_cluster() || die "No cluster\n";
-
-# Behaviour
-my $debug=$options->get_debug();
 
 # Basic files
 my $template=$options->get_template() || die "No template\n";
@@ -205,6 +207,18 @@ my %options=(
     );
 
 # Additional options should be files to be run
+my @files=sort @{$options->get_filelist()};
+my $quickrun=0;
+if (@files) {
+    $quickrun=1;
+}
+
+# If this is a quickrun we need to link the files in the readData
+# directory and the read.list.txt file
+if ($quickrun) {
+    create_read_list_file($options);
+    link_files($options);
+}
 
 # Get a log file
 my $log_fh=GRAPE::Logs->new('start_RNAseq_pipeline.log',
@@ -257,36 +271,53 @@ print_config_file(\%vars,
 
 exit;
 
-sub insert_value {
-    my $database=shift;
-    my $table=shift;
-    my $keys=shift;
-    my $values=shift;
+sub create_read_list_file {
+    my $self=shift;
 
-    my $dbh=MySQL_DB_Connect($database);
+    my @files=sort @{$options->get_filelist()};
+    my $paired=$self->get_paired();
 
-    # Build the key string
-    my $key_string;
-    my @keys;
-    foreach my $key (@{$keys}) {
-	$key_string.=$key->[0]." = ? ";
-	push @keys, $key->[1];
+    my $fh=get_fh('read.list.txt',1);
+
+
+    foreach my $file (@files) {
+	$file=~s/.*\///;
+	$file=~s/.gz$//;
     }
 
-    # Build the value string
-    my $value_string;
-    my @values;
-    foreach my $value (@{$values}) {
-	$value_string.=$value->[0]." = ? ";
-	push @values, $value->[1];
+    if ($paired) {
+	print $fh join("\t",
+		       $files[0],
+		       'Quick',
+		       'Quick.1',
+		       'Quick'),"\n";
+	print $fh join("\t",
+		       $files[1],
+		       'Quick',
+		       'Quick.2',
+		       'Quick'),"\n";
+    } else {
+	print $fh join("\t",
+		       $files[0],
+		       'Quick',
+		       'Quick',
+		       'Quick'),"\n";
     }
+    close($fh);
+}
 
-    # Run queries
-    my ($query,$sth,$count);
-    $query ="INSERT INTO $table ";
-    $query.="SET $value_string";
-    $sth=$dbh->prepare($query);
-    $sth->execute(@values);
+sub link_files {
+    my $self=shift;
+
+    my @files=sort @{$options->get_filelist()};
+
+    foreach my $file (@files) {
+	my $source=$file;
+	$file=~s/.*\///;
+	my $dir.='readData/'.$file;
+	my $symlink_ok = eval {symlink($source,$dir);1};
+	die "Unable to create link\n" unless $symlink_ok;
+    }
 }
 
 __END__
