@@ -244,6 +244,10 @@ sub _initialize {
 	$self->$subname($options->{$option});
     }
 
+    ### TO DO
+    # Read the project_config file if available for any additional options that
+    # may be present there.
+
     # Add the defaults for those cases that have not been defined
     $self->set_species(undef) unless $self->get_species();
     $self->set_project('QuickRun') unless $self->get_project();

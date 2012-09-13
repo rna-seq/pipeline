@@ -210,6 +210,12 @@ my %options=(
 my @files=sort @{$options->get_filelist()};
 my $quickrun=0;
 if (@files) {
+    # Check that the reads are fastq
+    foreach my $file (@files) {
+	unless ($file=~/fastq(.gz)?$/) {
+	    die "Currently quickrun is available only for fastq files\n";
+	}
+    }
     $quickrun=1;
 }
 
@@ -328,7 +334,7 @@ __END__
     
 =head1 SYNOPSIS
     
-    start_pair_pipeline.3.0.pl -species ... -genome ... -annotation ... -project ... -experiment ... -template ... -readlength...-qualities
+    start_pair_pipeline.3.0.pl -species ... -genome ... -annotation ... -readlength...
     
   Help options:
     -help:           brief help message
@@ -340,35 +346,47 @@ __END__
                      experiment as well as all directories
 
   Mandatory options:
-    -species:        Species for which the pipeline is run.
-    -genome:         File with the genomic sequence.
-    -annotation:     File with the annotation to use.
+    -species:        Species for which the pipeline is run. Mandatory
+    -genome:         File with the genomic sequence. Mandatory
+    -annotation:     File with the annotation to use. Mandatory
     -project:        The project to which the experiment will be added.
-    -experiment:     The set of reads to be added.
+                     Recommended
+    -experiment:     The set of reads to be added. Recommended
     -template:       File containing the commands that will be executed.
-    -readlength:     Nucleotide length of the reads.
-    -qualities:      Encoding of the qualities in fastq format (solexa|phred|none). The none option will perform the mapping ignoring the quality information
+                     Mandatory unless present in the same directory as
+                     template.txt
+    -readlength:     Nucleotide length of the reads. Mandatory
+    -qualities:      Encoding of the qualities in fastq format (solexa|phred|
+                     ignore). The none option will perform the mapping ignoring
+                     the quality information
 
   Mapping Options:
     -mapper:         Mapper to be used.
-                      Defaults to GEM which is the only one supported currently
+                     Defaults to GEM which is the only one supported currently
     -mismatches:     Number of mismatches with which the mapping will be done.
-                      Default 2.
-    -stranded:       Reads are stranded.
-    -threads:        Number of threads to use for mapping.
-                      (if mapper allows multiple threads)
+                     Default 2.
+    -stranded:       Reads are stranded. Default unstranded
+    -threads:        Number of threads to use for those parts of the pipeline
+                     that can benefit from multithreading. Default 2
     
   Advanced Options:
     -database:       Sets the database to use for the experiment tables.
+                     Recommended
     -commondb:       Sets the database to use for the common tables.
-    -localdir:       Directory in which to store the temporary files generated during the pipeline execution. It is advisable to set it to a local drive.
+                     Recommended
+    -localdir:       Directory in which to store the temporary files generated
+                     during the pipeline execution. It is advisable to set it
+                     to a local drive, particularly in NFS mounted systems where
+                     it could cause significant network traffic if not. The
+                     default is a directory named work within the project
+                     directory
 
   Optional
-    -cellline:      Sets the cell line on which the experiment was performed
-    -compartment:   Sets the compartment on which the experiment was performed
-    -run_description: Experiment description
+    -cellline:      Sets the cell line on which the experiment was performed.
+    -compartment:   Sets the compartment on which the experiment was performed.
+    -run_description:   Experiment description
     -projdesc:      Project description
-    -rnafrac:       RNA fraction on whihc the experiment was performed
+    -rnafrac:       RNA fraction on which the experiment was performed.
     -bioreplicate:  Bioreplicate (if the experiment is a bioreplicate)
     -preprocess:    Preprocessing script to be run on each of the read files
                     before anything else
@@ -377,6 +395,15 @@ __END__
                              number of nucleotides that could be trimmed (as
                              when an adaptor is trimmed and the whole adaptor
                              is found).
+    -fluxmem:       Amount of memory to use for the Flux Capacitor during
+                    transcript quantification. Default 16G
+    -genomeassembly:    Assembly version of the reference genome.
+    -genomesource:  Source of the reference genome
+    -gender:        Gender of the individual from which the RNA was obtained.
+    -annotationversion: Version of the reference annotation
+    -annotationsource:  Source of the reference annotation
+    -protocolinfo:  Information on the protocol used
+    -protocolshort: Abbreviation for the protocol used
         
 =head1 OPTIONS
     
@@ -393,21 +420,31 @@ __END__
 =item B<-clean>
     
     This option will remove all the tables from the database as well as removing
-    all the directories in the project directory with the exception of the bin
-    and readData directories.
-
-    In order to work it needs to know the project Id, experiment id and database
-    names
+    all the directories in the project directory with the exception of the bin,
+    results, sequences and readData directories.
     
 =item B<-preprocess>
 
-    The script or command line supplied her must take as an input a fasta/fastq
+    The script or command line supplied here must take as an input a fasta/fastq
     file and output fasta/fastq format
 
 =back
     
 =head1 DESCRIPTION
     
-    This program is not documented yet, sorry
+    This script creates the configuration files and directory structure that are
+    necessary for running the GRAPE RNAseq analysis pipeline. Ideally each run
+    should be configured via buildout using an accessions and a profile files
+    that will be kept for future reference in order to store the complete
+    settings used.
+
+    There is also a minimal QuickRun mode, which requires the species, genome,
+    annotation and read length to be provided on the command line as well as
+    one (single) or two (paired) read files in fastq(.gz) format. In this case
+    all additional options are set to reasonable defaults and the database used
+    is the test database that is usually available to all users in most standard
+    MySQL installations. For these runs the template file if not provided as an
+    argument should be in the project directory and named template.txt. The
+    qualities are not taken into account in the mapping.
 
 =cut

@@ -225,7 +225,6 @@ sub build_run_mapper_submission {
 #\$ -t 1-$filenum
 #\$ -pe smp $threads
 
-# Request 2 cpus this cannot be done, but we can request memmory
 #\$ -l h_vmem=6G
 
 # Write in to the current working directory

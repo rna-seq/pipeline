@@ -4,13 +4,16 @@ Ongoing
 Features
 -------
 
-- Rewrite the Star script in order to facilitate maintenance.
-
+- Rewrite the Start script in order to facilitate maintenance.
+  - Allow for the running of the start script with only species, genome,
+  annotation and read length specified appart from a list of one or two files.
+  The rest of the options are all set to defaults and the database used is the
+  test database. Currently this is only possible with fastq files.
 
 Bug fixes
 -------
 
-- Set the number of CPUs used by fastquc to one.
+- Set the number of CPUs used by fastqc to one.
 - Change hardcoded directory in build_register_results.pl
 
 Internal
