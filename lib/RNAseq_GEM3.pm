@@ -65,11 +65,9 @@ sub parse_gem_line {
     $line{'id'}=~s/\|p2$/\/2/o;
 
     # Fix Hi Seq  reads problem
-    if ($line{'id'}=~s/ 1:/_X:/o) {
-	# Down synbdrome reads
+    if ($line{'id'}=~s/[ _]1:/_X:/o) {
 	$line{'id'}=~s/$/\/1/o;
-    } elsif ($line{'id'}=~s/ 2:/_X:/o) {
-	# Down syndrome reads
+    } elsif ($line{'id'}=~s/[ _]2:/_X:/o) {
 	$line{'id'}=~s/$/\/2/o;
     }
 
