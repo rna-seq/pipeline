@@ -1,4 +1,4 @@
-Ongoing
+6.5 (2012-09-14)
 ========
 
 Features
@@ -9,18 +9,20 @@ Features
   annotation and read length specified appart from a list of one or two files.
   The rest of the options are all set to defaults and the database used is the
   test database. Currently this is only possible with fastq files.
+  - Updated the help provided by the start_rnaseq_pipeline.pl script
 
 Bug fixes
 -------
 
 - Set the number of CPUs used by fastqc to one.
 - Change hardcoded directory in build_register_results.pl
+- Fix a bug that prevented the correct running of the Flux when the read Ids
+  came from HiSeq
 
 Internal
 -------
-- Set the trimming threshold to 40 and the length to trim each round to 15. This
-  will speed up the recursive mapping without a signifficant loss of hits
-
+- Add verbose to the mysqlimport statement in the build_exon_junctions.RNAseq.pl
+  
 6.4 (2012-07-25)
 ================
 

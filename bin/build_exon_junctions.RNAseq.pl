@@ -132,13 +132,10 @@ if (-r $table.'.sql') {
     $command="mysql $database < $table.sql";
     print $log_fh "Executing:\t",$command,"\n";
     print $log_fh `$command`,"\n";
-    $command="mysqlimport -L $database $juncfn";
+    $command="mysqlimport --verbose -L $database $juncfn";
     print $log_fh "Executing:\t",$command,"\n";
     print $log_fh `$command`,"\n";
     sleep(1);
-    $command="rm $table.sql $juncfn";
-    run_system_command($command,
-		       $log_fh);
 } else {
     die "Can't find $table.sql\n";
 }
@@ -147,11 +144,15 @@ if (-r $table.'.sql') {
 $present=check_table_existence($dbh,
 			       $table);
 
-unless ($present) {
-    die "ERROR: $table does not seem to be present\n";
-}
-
 close($log_fh);
+
+if ($present) {
+    my $command="rm $table.sql $juncfn";
+    run_system_command($command,
+		       $log_fh);
+} else {
+    die "ERROR: $table has not been created correctly. This may be due to insufficient memmory\n";
+}
 
 exit;
 
