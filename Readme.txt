@@ -25,4 +25,4 @@ http://big.crg.cat/services/grape
 
 * 8Gb RAM in each of the machines/nodes
 
-* 4Gb RAM for may be sufficient for smaller datasets - YMMV
+* 4Gb RAM may be sufficient for smaller datasets - YMMV
