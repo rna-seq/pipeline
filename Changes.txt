@@ -5,17 +5,21 @@ Features
 -------
 
 - Rewrite the Start script in order to facilitate maintenance.
+
   - Allow for the running of the start script with only species, genome,
   annotation and read length specified appart from a list of one or two files.
   The rest of the options are all set to defaults and the database used is the
   test database. Currently this is only possible with fastq files.
+
   - Updated the help provided by the start_rnaseq_pipeline.pl script
 
 Bug fixes
 -------
 
 - Set the number of CPUs used by fastqc to one.
+
 - Change hardcoded directory in build_register_results.pl
+
 - Fix a bug that prevented the correct running of the Flux when the read Ids
   came from HiSeq
 
@@ -40,6 +44,9 @@ Features
     - Use the main queue instead of mem_6, and set threads to 2 
       in bin/run_recursive_mapper_cluster.RNAseq.pl
 
+- The output from the Flux capacitor is not deleted any more, making it available for
+  further analysis
+
 Bug fixes
 ---------
 
@@ -51,7 +58,9 @@ Internal
 
 - Remove obsolete bin/run_recursive_mapper.RNAseq.parallel.pl 
     
-- In bin/get_unmapped_reads.RNAseq.pl, change dependencies in the unmapped reads 
+- In bin/get_unmapped_reads.RNAseq.pl, the calculation of unmapped reads no longer
+  requires the transcriptome mapping. The unmapped reads are calculated from the ones
+  neither mapping to the genome nor the junctions.
 
 6.3 (2012-07-10)
 ================
