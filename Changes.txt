@@ -1,8 +1,8 @@
-6.5 (2012-09-14)
-========
+6.5 (2012-09-17)
+================
 
 Features
--------
+--------
 
 - Rewrite the Start script in order to facilitate maintenance.
 
@@ -14,7 +14,7 @@ Features
   - Updated the help provided by the start_rnaseq_pipeline.pl script
 
 Bug fixes
--------
+---------
 
 - Set the number of CPUs used by fastqc to one.
 
@@ -24,7 +24,8 @@ Bug fixes
   came from HiSeq
 
 Internal
--------
+--------
+
 - Add verbose to the mysqlimport statement in the build_exon_junctions.RNAseq.pl
   
 6.4 (2012-07-25)
