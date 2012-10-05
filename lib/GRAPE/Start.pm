@@ -1095,29 +1095,38 @@ sub clear_common_tables {
     my ($query,$sth,$count);
 
     # Delete the entry from the experiments table
-    $query ="DELETE FROM $exp_tab ";
-    $query.='WHERE project_id = ? AND experiment_id = ?';
-    $sth=$dbh->prepare($query);
-    print STDERR "Executing: $query\n";
-    $sth->execute($proj_id,$exp_id);
 
-    # Check if there are any entries left in the experiments table
-    # corresponding to the project and if not remove it also from the
-    # projects table
-    $query ="SELECT experiment_id FROM $exp_tab ";
-    $query.='WHERE project_id = ?';
-    $sth=$dbh->prepare($query);
-    $count=$sth->execute($proj_id);
+    # Check if the table is present and create it if not
+    my $present=check_table_existence($dbh,
+				      $exp_tab);
 
-    if ($count > 0) {
-	print STDERR $count,"\tExperiments left in $exp_tab corresponding to $proj_id\n";
-    } else {
-	print STDERR "No experiments left in $exp_tab corresponding to $proj_id\n";
-	# Delete the entry from the projects table
-	$query ="DELETE FROM $proj_tab ";
+    if ($present) {
+	$query ="DELETE FROM $exp_tab ";
+	$query.='WHERE project_id = ? AND experiment_id = ?';
+	$sth=$dbh->prepare($query);
+	print STDERR "Executing: $query\n";
+	$sth->execute($proj_id,$exp_id);
+
+	# Check if there are any entries left in the experiments table
+	# corresponding to the project and if not remove it also from the
+	# projects table
+	$query ="SELECT experiment_id FROM $exp_tab ";
 	$query.='WHERE project_id = ?';
 	$sth=$dbh->prepare($query);
-	$sth->execute($proj_id);
+	$count=$sth->execute($proj_id);
+	
+	if ($count > 0) {
+	    print STDERR $count,"\tExperiments left in $exp_tab corresponding to $proj_id\n";
+	} else {
+	    print STDERR "No experiments left in $exp_tab corresponding to $proj_id\n";
+	    # Delete the entry from the projects table
+	    $query ="DELETE FROM $proj_tab ";
+	    $query.='WHERE project_id = ?';
+	    $sth=$dbh->prepare($query);
+	    $sth->execute($proj_id);
+	}
+    } else {
+	print STDERR "No entry for $exp_id in $exp_tab\n";
     }
 }
 

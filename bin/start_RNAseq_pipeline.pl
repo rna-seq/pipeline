@@ -272,9 +272,6 @@ print_pipeline_file(\%tables,
 print_config_file(\%vars,
 		  $log_fh);
 
-# close the log file
-#close($log_fh);
-
 exit;
 
 sub create_read_list_file {
