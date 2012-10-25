@@ -189,6 +189,7 @@ foreach my $pair (keys %lane_files) {
 	print STDERR "Parsing rec maps from $rec_map...";
 	my $recfh=get_fh($rec_map);
 	while (my $line=<$recfh>) {
+	    if ($line=~/^\s*$/) {next;}
 	    my %line=%{parse_gem_line($line)};
 	    my $oldbed='';
 	    if ($line{'type'} eq 'S') {
