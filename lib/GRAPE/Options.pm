@@ -74,7 +74,8 @@ sub new {
 			   'annotationversion=s',
 			   'annotationsource=s',
 			   'protocolinfo=s',
-			   'protocolshort=s'
+			   'protocolshort=s',
+			   'trimlength=s'
 	);
 
     # Determine if the options were all read correctly
@@ -87,9 +88,7 @@ sub new {
 
     # Determine if there were additional parameters that were not options. If
     # so, these should be files
-    if (@ARGV) {
-	$self->set_files(@ARGV);
-    }
+    $self->set_files(@ARGV);
 
     # Add those parameters that are dependent on the provided values
     if ($tables) {
@@ -103,6 +102,16 @@ sub new {
 sub set_files {
     my $self=shift;
     my @files=@_;
+
+    # If there are no arguments this means we are using pregenerated file
+    unless (@files) {
+	if (-r 'read.list.txt') {
+	    $self->set_filelist([]);
+	    return($self);
+	} else {
+	    die "No input read files\n";
+	}
+    }
 
     # Check if we can guess from the files what they are
     if (@files == 1) {
@@ -277,6 +286,7 @@ sub _initialize {
     $self->set_protocolinfo('none') unless $self->get_protocolinfo();
     $self->set_protocolshort('-') unless $self->get_protocolshort();
     $self->set_projdesc('-') unless $self->get_projdesc();
+    $self->{'trimlength'}= 40 unless $self->{'trimlength'};
 
     return $self;
 }
@@ -1054,7 +1064,8 @@ sub add_project {
 	    $update=1;
 	    $query ="UPDATE $table ";
 	    $query.='SET species = ? , project_id = ?, proj_description = ?,';
-	    $query.='secret = ?';
+	    $query.='secret = ? ';
+	    $query.="WHERE project_id = '$project'";
 	}
     } elsif ($count > 1) {
 	die "Project ID is present many times. This should not happen\n";
@@ -1070,6 +1081,7 @@ sub add_project {
     if ($update) {
 	# Insert the info into the database
 	my $sth2=$dbh->prepare($query);
+	print STDERR $query,"\n";
 	$sth2->execute($species,$project,$proj_desc,$secret);
     }
 
@@ -1185,7 +1197,10 @@ sub AUTOLOAD {
     if (($AUTOLOAD =~ /.*set_(\w+)/) and (@_)) {
 	my $key=$1;
 	my $value=shift;
-	if ($value=~/([^\w_\/\. -])/o) {
+	# Skip checking for references
+	if (ref($value)) {
+	    # We will not check for references
+	} elsif ($value=~/([^\w_\/\. -])/o) {
 	    my $char=$1;
 	    warn "WARNING: Value $value corresponding to $key contains an invalid character: '$char'\n";
 	}
