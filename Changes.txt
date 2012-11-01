@@ -1,10 +1,39 @@
+6.5.1 (2012-10-31)
+================
+
+Features
+--------
+
+  - Add trimlength option that allows to tune the minimum length to which a
+  read will be trimmed during the recursive mapping.
+  - Add the basic scripts to run the IDR. This is not incorporated yet to the pipeline
+  itself, bu the scripts can be used to run it.
+
+Bug fixes
+---------
+
+  - Fix a bug that prevented the correct construction of the bed file when the
+  reads were 50 bp long or shorter.
+
+  - Fix a bug that prevented the correct update of the database when running the
+  start script on an already existing project.
+
+  - Fix bug that caused an uninitialized value warning and a non-allowed
+  character error when running the start script with no file arguments
+
+Internal
+--------
+
+- Add verbose to the mysqlimport statement in the build_exon_junctions.RNAseq.p
+
+
 6.5 (2012-09-17)
 ================
 
 Features
 --------
 
-- Rewrite the Start script in order to facilitate maintenance.
+  - Rewrite the Start script in order to facilitate maintenance.
 
   - Allow for the running of the start script with only species, genome,
   annotation and read length specified appart from a list of one or two files.
