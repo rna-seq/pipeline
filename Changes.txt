@@ -1,13 +1,14 @@
-6.5.1 (2012-10-31)
-================
+6.5.1 (2012-11-07)
+==================
 
 Features
 --------
 
-  - Add trimlength option that allows to tune the minimum length to which a
-  read will be trimmed during the recursive mapping.
+  - Add trimlength option that allows tuning the minimum length to which a
+    read will be trimmed during the recursive mapping.
+
   - Add the basic scripts to run the IDR. This is not incorporated yet to the pipeline
-  itself, bu the scripts can be used to run it.
+    itself, but the scripts can be used to run it.
 
 Bug fixes
 ---------
