@@ -126,6 +126,7 @@ my $mapper=$options->get_mapper() || warn "Unknown mapper\n";
 my $threads=$options->get_threads() || die "Unknown threads\n";
 my $qualities=$options->get_qualities() || die "Unknown qualities\n";
 my $trimlength=$options->get_trimlength() || 40;
+my $maxintronlength=$options->get_maxintronlength() || 500000;
 
 # Flux settings
 my $fluxmem=$options->get_fluxmem() || warn "No fluxmem set\n";
@@ -205,7 +206,8 @@ my %options=(
 	     'preprocess' => \$preprocess,
 	     'preprocess_trim_length' => \$preprocess_trim_length,
              'fluxmem' => \$fluxmem,
-             'trimlength' => \$trimlength
+             'trimlength' => \$trimlength,
+             'maxintronlength' => \$maxintronlength
     );
 
 # Additional options should be files to be run

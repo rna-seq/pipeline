@@ -67,7 +67,7 @@ sub new {
 			   'bioreplicate=s',
 			   'preprocess=s',
 			   'preprocess_trim_length=s',
-			   'fluxmem=i',
+			   'fluxmem=s',
 			   'genomeassembly=s',
 			   'genomesource=s',
 			   'gender=s',
@@ -75,7 +75,8 @@ sub new {
 			   'annotationsource=s',
 			   'protocolinfo=s',
 			   'protocolshort=s',
-			   'trimlength=s'
+			   'trimlength=i',
+			   'maxintronlength=i'
 	);
 
     # Determine if the options were all read correctly
@@ -287,6 +288,7 @@ sub _initialize {
     $self->set_protocolshort('-') unless $self->get_protocolshort();
     $self->set_projdesc('-') unless $self->get_projdesc();
     $self->{'trimlength'}= 40 unless $self->{'trimlength'};
+    $self->{'maxintronlength'}= 50000 unless $self->{'maxintronlength'};
 
     return $self;
 }

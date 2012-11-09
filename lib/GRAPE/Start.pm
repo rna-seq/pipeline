@@ -869,7 +869,8 @@ sub create_directory_structure {
 	      'PREPROCESS' => $options->get_preprocess(),
 	      'RESULTS' => 'results',
 	      'FLUXMEM' => $options->get_fluxmem(),
-	      'TRIMLENGTH' => $options->get_trimlength()
+	      'TRIMLENGTH' => $options->get_trimlength(),
+	      'MAXINTRONLENGTH' => $options->get_maxintronlength()
 );
 
     foreach my $dir (@directories) {
