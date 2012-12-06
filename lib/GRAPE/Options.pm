@@ -826,7 +826,7 @@ sub _fill_fasta_table {
 	# Get the required information from the annotation and genome
 	$genome=~s/.*\///;
 	$annotation=~s/.*\///;
-	my $fasta_name=$annotation.'.'.$genome;
+	$fasta_name=$annotation.'.'.$genome;
 	$fasta_name=~s/\.g[tf]f//g;
 	$fasta_name=~s/\.fa(stq)?$//;
 	$fasta_name.='.'.($suffix{$type} || $type);
