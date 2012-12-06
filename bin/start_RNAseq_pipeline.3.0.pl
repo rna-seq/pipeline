@@ -125,6 +125,8 @@ my $readlength=$options->get_readlength() || warn "No read length supplied\n";
 my $mapper=$options->get_mapper() || warn "Unknown mapper\n";
 my $threads=$options->get_threads() || die "Unknown threads\n";
 my $qualities=$options->get_qualities() || die "Unknown qualities\n";
+my $trimlength=$options->get_trimlength() || 40;
+my $maxintronlength=$options->get_maxintronlength() || 500000;
 
 # Flux settings
 my $fluxmem=$options->get_fluxmem() || warn "No fluxmem set\n";
@@ -203,7 +205,9 @@ my %options=(
 	     'bioreplicate' => \$bioreplicate,
 	     'preprocess' => \$preprocess,
 	     'preprocess_trim_length' => \$preprocess_trim_length,
-	     'fluxmem' => \$fluxmem
+             'fluxmem' => \$fluxmem,
+             'trimlength' => \$trimlength,
+             'maxintronlength' => \$maxintronlength
     );
 
 # Additional options should be files to be run
@@ -353,6 +357,8 @@ __END__
                      Mandatory unless present in the same directory as
                      template.txt
     -readlength:     Nucleotide length of the reads. Mandatory
+    -trimlength;     Minimum length to which the read should be trimmed.
+                     Default 40.
     -qualities:      Encoding of the qualities in fastq format (solexa|phred|
                      ignore). The none option will perform the mapping ignoring
                      the quality information

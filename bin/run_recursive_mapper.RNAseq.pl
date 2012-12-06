@@ -69,6 +69,7 @@ my $mismatches;
 my $readlength;
 my $maxmismatch;
 my $trimthreshold=15;
+my $trimlengththreshold;
 my $debug=1;
 
 # Get some options from the command line
@@ -86,6 +87,7 @@ $tempdir=$options{'LOCALDIR'};
 $mismatches=$options{'MISMATCHES'};
 $readlength=$options{'READLENGTH'};
 $recmapdir=$options{'RECMAPDIR'};
+$trimlengththreshold=$options{'TRIMLENGTH'} || 40;
 $maxmismatch=int($readlength / 25);
 
 # Get a log_fh
@@ -230,14 +232,22 @@ while ($mismatches < $maxmismatch) {
 # Map with the initial number of mismatches but trimming the reads
 $mismatches=$options{'MISMATCHES'};
 print $log_fh "Resetting mismatches to $mismatches and performing trimmed mapping\n";
+
 my $round=0;
 while (1) {
+    # Skip the trimming step if the trimmed length threshold is equal or larger
+    # than the  read length minus the trimthreshold.
+    if (($readlength < $trimthreshold) <= $trimlengththreshold) {
+	last;
+    }
+
     my $command;
     print $log_fh "Triming round $round\n";
     my $trimmed=$tempdir.'/'.$basename.".trimmed.$mismatches.$round.$$";
     my $initial=trim_reads($unmapped,
 			   $trimmed,
-			   $trimthreshold);
+			   $trimthreshold,
+			   $trimlengththreshold);
 
     $command="rm $unmapped";
     run_system_command($command,

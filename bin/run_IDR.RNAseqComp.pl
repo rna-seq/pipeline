@@ -48,6 +48,7 @@ my $debug=1;
 my $breakdown;
 my $tabsuffix='gene_RPKM_pooled';
 my $fraction='';
+my $bindir='';
 
 # Get command line options
 GetOptions('nolabels|n' => \$nolabels,
@@ -62,6 +63,7 @@ if ($breakdown) {
 # read the config file
 my %options=%{read_config_file()};
 $project=$options{'PROJECTID'};
+$bindir=$options{'BINDIR'};
 
 # get a log file
 my $log_fh=get_log_fh('compare_gene_RPKM.RNAseqComp.log',
@@ -97,7 +99,8 @@ foreach my $sample (keys %pairs) {
 	my $outputfile=$sample.'.IDR.out';
 	print $log_fh "I have two replicates for $sample\n";
 	print $log_fh "printing IDR to $outputfile\n";
-	my $command="/users/rg/amerkel/bin/RAPexonRPKM_to_IDR_matchedPeaks.pl ";
+#	my $command="/users/rg/amerkel/bin/RAPexonRPKM_to_IDR_matchedPeaks.pl ";
+        my $command=$bindir."/RAPexonRPKM_to_IDR_matchedPeaks.pl";
 	$command.="-i1 $files[0] ";
 	$command.="-i2 $files[1] ";
 	$command.="-o $outputfile";
@@ -106,12 +109,14 @@ foreach my $sample (keys %pairs) {
 	run_system_command($command);
 	
 	# Run the IDR code
-	$command="/users/rg/amerkel/bin/runR.sh /users/rg/amerkel/projects/ENCODE/gene_expression/IDR-discret.Qunha/batch-IDR-mappedInput-discrete-p.r $outputfile $sample T 10 0.95";
+#	$command="/users/rg/amerkel/bin/runR.sh /users/rg/amerkel/projects/ENCODE/gene_expression/IDR-discret.Qunha/batch-IDR-mappedInput-discrete-p.r $outputfile $sample T 10 0.95";
+	$command=$bindir."/runR.sh ".$bindir."/batch-IDR-mappedInput-discrete-p.r $outputfile $sample T 10 0.95";
 	run_system_command($command);
 	
 	# IDR code fix: reassign the element IDs back to the peaks (they are not
 	# kept in the original code)
-	$command="/users/rg/amerkel/bin/Idrdiscrete_to_overlapPeaks.pl--infile *-categories.txt --ref *matchedPeaks.txt --outfile somemeaningfulname";
+#	$command="/users/rg/amerkel/bin/Idrdiscrete_to_overlapPeaks.pl--infile *-categories.txt --ref *matchedPeaks.txt --outfile somemeaningfulname";
+	$command=$bindir."/Idrdiscrete_to_overlapPeaks.pl--infile *-categories.txt --ref *matchedPeaks.txt --outfile idrout.txt";
 	run_system_command($command);
 
 	last;

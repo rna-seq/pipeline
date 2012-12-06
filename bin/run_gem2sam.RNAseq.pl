@@ -58,6 +58,7 @@ my $tmpdir;
 my $samdir;
 my $file_list;
 my $bindir;
+my $maxintron;
 
 # Read the configuration file
 my %options=%{read_config_file()};
@@ -67,6 +68,7 @@ $genomefile=$options{'GENOMESEQ'};
 $samdir=$options{'SAMDIR'};
 $file_list=$options{'FILELIST'};
 $bindir=$options{'BIN'};
+$maxintron=$options{'MAXINTRONLENGTH'};
 
 # Add the bindir to the path
 $ENV{'PATH'}.=":$bindir";
@@ -113,7 +115,8 @@ foreach my $pair (keys %lane_files) {
     # will crash due to the hard clippings from GEM
     print STDERR "$genomefile.fai not present\n";
     generate_sam_header($genomefile,
-			$samfn);
+			$samfn,
+			$maxintron);
     generate_sorted_bam($samfn,
 			$bamfn);
     generate_bam_index($bamfn);
@@ -233,18 +236,18 @@ sub generate_sam_header {
 				  "Hard clipping:",
 				  @line),"\n";
 		next;
-#	    } elsif ($line[5]=~/^\d+M\d+N\d+M$/o) {
-#		my @coords=split(/N/,$line[5]);
-#		my $gap=$coords[0];
-#		$gap=~s/.+[^\d]//o;
-#		$gap=~s/N//o;
-#		if ($gap && $gap > $maxintronlength) {
-#		    $invalid++;
-#		    print STDERR join("\t",
-#				      "Gap Too large:",
-#				      @line),"\n";
-#		    next;
-#		}
+	    } elsif ($maxintronlength && $line[5]=~/^\d+M\d+N\d+M$/o) {
+		my @coords=split(/N/,$line[5]);
+		my $gap=$coords[0];
+		$gap=~s/.+[^\d]//o;
+		$gap=~s/N//o;
+		if ($gap && $gap > $maxintronlength) {
+		    $invalid++;
+		    print STDERR join("\t",
+				      "Gap Too large:",
+				      @line),"\n";
+		    next;
+		}
 	    }
 
 	    # This probably should be removed as it is a patch to avoid linking
