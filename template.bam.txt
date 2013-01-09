@@ -251,10 +251,10 @@ _unique_maps_transcripts: _transcriptome_mapping
 	cluster_run.RNAseq.pl gem2gff_transcriptome.RNAseq.pl
 	cluster_run.RNAseq.pl get_transcript_lengths.RNAseq.pl
 	plot_gff_transcript_coverage.RNAseq.pl
-        mysql $DB < $TABLES/$(echo $PREFIX)_read_dist_transcripts.sql
-        mysqlimport -L $DB _read_dist_transcripts.txt
-        gzip -9 _read_dist_transcripts.txt
-        mv _read_dist_transcripts.txt.gz $TAB_DAT
+	mysql $DB < $TABLES/$(echo $PREFIX)_read_dist_transcripts.sql
+	mysqlimport -L $DB _read_dist_transcripts.txt
+	gzip -9 _read_dist_transcripts.txt
+	mv _read_dist_transcripts.txt.gz $TAB_DAT
 	mv *.gtf.gz $TRANSDIR
 	plot_transcript_saturation.RNAseq.pl
 	mv *.ps $GRAPHS
