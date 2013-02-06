@@ -93,9 +93,9 @@ foreach my $infile (keys %files) {
 
     # Identify the file type
     my $filetype;
-    if ($infile=~/.fa(sta)?$/) {
+    if ($infile=~/\.fa(sta)?$/) {
 	$filetype='fasta';
-    } elsif ($infile=~/.fastq$/) {
+    } elsif ($infile=~/\.fastq$/) {
 	$filetype='fastq';
     } elsif ($infile=~/.bam$/) {
 	$filetype='bam';
