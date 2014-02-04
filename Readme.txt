@@ -1,7 +1,7 @@
 Copyright (C) 2011-2012 Centre for Genomic Regulation (CRG)
 
 Authors: David Gonzalez Knowles david.gonzalez@crg.eu
-         Maik Ršder maikroeder@gmail.com
+         Maik Rï¿½der maikroeder@gmail.com
 
 = RNASeq Pipeline =
 
@@ -19,7 +19,7 @@ http://big.crg.cat/services/grape
 
 == Recommended Setup ==
 
-* SGI cluster
+* SGE cluster (Sun Grid Engine, currently Oracle Grid Engine)
 
 * 64bit machines
 
